@@ -1,0 +1,12 @@
+{
+  "n_docs_sampled": 300,
+  "n_judge_calls": 1200,
+  "parse_ok_rate": 0.9991666666666666,
+  "approx_cost_usd": 0.10843452,
+  "seed": 42,
+  "n_per_cell": 60,
+  "judges": [
+    "llama-3.3-70b",
+    "gemini-2.0-flash"
+  ]
+}

@@ -1,0 +1,144 @@
+"""OpenRouter client for LLM-as-a-judge scoring."""
+from __future__ import annotations
+
+import json
+import os
+import re
+import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Optional
+
+import requests
+
+
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+
+# Model ids on OpenRouter. These are the two in-scope judge models per plan.md
+# (Llama 3.3 70B and Gemini 2.0 Flash). GPT-4o-mini and Claude Haiku 3.5 are
+# held-out and NOT used here.
+JUDGE_MODELS = {
+    "llama-3.3-70b": "meta-llama/llama-3.3-70b-instruct",
+    "gemini-2.0-flash": "google/gemini-2.0-flash-001",
+}
+
+
+def load_api_key() -> str:
+    env_path = Path(__file__).resolve().parent.parent / ".env"
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" in line:
+                k, v = line.split("=", 1)
+                if k.strip() == "OPENROUTER_API_KEY_EXPERIMENTS":
+                    return v.strip()
+    key = os.environ.get("OPENROUTER_API_KEY_EXPERIMENTS")
+    if not key:
+        raise RuntimeError("OPENROUTER_API_KEY_EXPERIMENTS not found in .env or environment")
+    return key
+
+
+@dataclass
+class CallResult:
+    ok: bool
+    score: Optional[int]
+    reasoning: Optional[str]
+    raw: str
+    error: Optional[str]
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+
+
+_JSON_OBJ_RE = re.compile(r"\{.*?\}", re.DOTALL)
+
+
+def _extract_json(text: str) -> Optional[dict]:
+    """Pull the first JSON object out of a model response."""
+    try:
+        return json.loads(text)
+    except Exception:
+        pass
+    match = _JSON_OBJ_RE.search(text)
+    if not match:
+        return None
+    snippet = match.group(0)
+    try:
+        return json.loads(snippet)
+    except Exception:
+        # Try relaxed: find "score": N
+        m = re.search(r'"score"\s*:\s*(-?\d+(?:\.\d+)?)', text)
+        if m:
+            return {"score": float(m.group(1)), "reasoning": text[:400]}
+    return None
+
+
+def call_judge(
+    model_id: str,
+    system_prompt: str,
+    user_prompt: str,
+    api_key: str,
+    max_tokens: int = 300,
+    temperature: float = 0.0,
+    retries: int = 3,
+    timeout: int = 60,
+) -> CallResult:
+    """One judge call. Returns CallResult with parsed score."""
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": model_id,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "response_format": {"type": "json_object"},
+    }
+    last_err = None
+    for attempt in range(retries):
+        try:
+            resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=timeout)
+            if resp.status_code == 429 or resp.status_code >= 500:
+                last_err = f"HTTP {resp.status_code}: {resp.text[:200]}"
+                time.sleep(2 ** attempt)
+                continue
+            resp.raise_for_status()
+            data = resp.json()
+            raw = data["choices"][0]["message"]["content"]
+            usage = data.get("usage", {}) or {}
+            parsed = _extract_json(raw)
+            if parsed is None or "score" not in parsed:
+                return CallResult(
+                    ok=False,
+                    score=None,
+                    reasoning=None,
+                    raw=raw,
+                    error="could not parse score",
+                    prompt_tokens=usage.get("prompt_tokens", 0),
+                    completion_tokens=usage.get("completion_tokens", 0),
+                )
+            score_val = parsed["score"]
+            try:
+                score_int = int(round(float(score_val)))
+            except Exception:
+                return CallResult(False, None, None, raw, f"score not numeric: {score_val}",
+                                  usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0))
+            score_int = max(0, min(100, score_int))
+            return CallResult(
+                ok=True,
+                score=score_int,
+                reasoning=str(parsed.get("reasoning", ""))[:600],
+                raw=raw,
+                error=None,
+                prompt_tokens=usage.get("prompt_tokens", 0),
+                completion_tokens=usage.get("completion_tokens", 0),
+            )
+        except requests.RequestException as e:
+            last_err = str(e)
+            time.sleep(2 ** attempt)
+    return CallResult(False, None, None, "", last_err or "unknown error")

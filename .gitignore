@@ -1,0 +1,4 @@
+.env
+__pycache__/
+*.pyc
+agreement_model/runs/

@@ -37,3 +37,9 @@ Known problems:
     - External side effects: GPU (A100, ~15 GB used during training). Will release when run finishes.
     - Main run (runs/main): DeBERTa-v3-base fp32, 4 epochs, group-by-proposition 80/10/10. Test MAE=0.080, Pearson=0.937 (overall).
     - Current: hold-out sweep running (13 configs, 3 epochs each, ~3 hrs wall). Writes runs/sweep/summary.{json,csv}.
+- 2026-04-17 (agent: judge+rewriters, status: IN PROGRESS):
+    - Goal: plan items (1) LLM-as-a-judge and (3) judge-free rewriters.
+    - Judge built in `judge/` — clarity + informativeness rubrics with 0-100 anchored scoring and JSON chain-of-thought output; OpenRouter client for Llama 3.3 70B + Gemini 2.0 Flash (the two in-scope judges; GPT-4o-mini and Claude Haiku 3.5 are held out).
+    - Baseline eval on 300 stratified docs (tag `baseline`, `judge/results/`): parse OK 99.9%, spend ~$0.11, overall Pearson vs human means: Llama 0.49/0.61 (clarity/inf), Gemini 0.55/0.60; judge-judge Pearson 0.90/0.77. Weak cell: clarity on writer paragraphs (both judges under-rate human-written paragraphs).
+    - Files owned: `judge/`, `rewriters/` (new), `COORDINATION.md`, `.env`, `.gitignore`.
+    - Next: implement + run the two judge-free rewriters (naive, literature-informed) and re-score with the judges.
