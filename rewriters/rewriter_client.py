@@ -78,7 +78,13 @@ def call_rewriter(
                 continue
             resp.raise_for_status()
             data = resp.json()
-            raw = data["choices"][0]["message"]["content"]
+            # OpenRouter can return 200 with an `error` object and no `choices`
+            # under transient upstream failures (429-equivalent, provider quotas).
+            if "choices" not in data or not data["choices"]:
+                last_err = f"no choices in response: {str(data)[:300]}"
+                time.sleep(2 ** attempt)
+                continue
+            raw = data["choices"][0]["message"].get("content") or ""
             usage = data.get("usage", {}) or {}
             return RewriteResult(
                 ok=True,
@@ -89,5 +95,8 @@ def call_rewriter(
             )
         except requests.RequestException as e:
             last_err = str(e)
+            time.sleep(2 ** attempt)
+        except (KeyError, TypeError, IndexError) as e:
+            last_err = f"bad response shape: {e}"
             time.sleep(2 ** attempt)
     return RewriteResult(False, None, last_err or "unknown error")
