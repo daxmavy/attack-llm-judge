@@ -31,4 +31,9 @@ Known problems:
 - Is it possible to estimate the deviation from human judgement accurately? We could learn a model to estimate `criterion` of paragraphs using paul_data - but problem is, very high-quality generations might be created, whose true quality is above that observed in the distribution used to train the quality-estimating model. This suggests that we shouldn't try to estimate the deviation between LLM judge estimates and the 'true' estimate; am leaving this out of scope for the moment.
 
 *ACTIVE AGENTS* (write down when you started, what your goal is, and what you're working on):
-- 2026-04-17: training an agreement-score regressor on paul_data/prepared/documents.csv (proposition + paragraph -> agreement_score, 0-1). Fine-tuning DeBERTa-v3-base on A100. Goal: produce a reusable model + eval on human-only and held-out AI splits per plan item (2).
+- 2026-04-17 (agent: agreement-model, status: IN PROGRESS training):
+    - Goal: plan item (2) — train agreement-score regressor on paul_data/prepared/documents.csv (proposition + paragraph -> agreement_score, 0-1 using aggregated rater stance, not writer self-report).
+    - Files owned: `agreement_model/` (train.py, runs/, model checkpoints). Please don't modify.
+    - External side effects: GPU (A100, ~15 GB used during training). Will release when run finishes.
+    - Current run: DeBERTa-v3-base, fp32, 4 epochs, group-by-proposition 80/10/10 split. Epoch 1 val MAE=0.092, Pearson=0.94.
+    - Next: evaluate held-out AI-only / writer-only splits per plan (2).
