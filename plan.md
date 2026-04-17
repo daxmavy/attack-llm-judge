@@ -35,5 +35,5 @@ Known problems:
     - Goal: plan item (2) — train agreement-score regressor on paul_data/prepared/documents.csv (proposition + paragraph -> agreement_score, 0-1 using aggregated rater stance, not writer self-report).
     - Files owned: `agreement_model/` (train.py, runs/, model checkpoints). Please don't modify.
     - External side effects: GPU (A100, ~15 GB used during training). Will release when run finishes.
-    - Current run: DeBERTa-v3-base, fp32, 4 epochs, group-by-proposition 80/10/10 split. Epoch 1 val MAE=0.092, Pearson=0.94.
-    - Next: evaluate held-out AI-only / writer-only splits per plan (2).
+    - Main run (runs/main): DeBERTa-v3-base fp32, 4 epochs, group-by-proposition 80/10/10. Test MAE=0.080, Pearson=0.937 (overall).
+    - Current: hold-out sweep running (13 configs, 3 epochs each, ~3 hrs wall). Writes runs/sweep/summary.{json,csv}.
