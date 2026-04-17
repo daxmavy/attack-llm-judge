@@ -35,8 +35,12 @@ Known problems:
     - Goal: plan item (2) — train agreement-score regressor on paul_data/prepared/documents.csv (proposition + paragraph -> agreement_score, 0-1 using aggregated rater stance, not writer self-report).
     - Files owned: `agreement_model/` (train.py, runs/, model checkpoints). Please don't modify.
     - External side effects: GPU (A100, ~15 GB used during training). Will release when run finishes.
-    - Main run (runs/main): DeBERTa-v3-base fp32, 4 epochs, group-by-proposition 80/10/10. Test MAE=0.080, Pearson=0.937 (overall).
-    - Current: hold-out sweep running (13 configs, 3 epochs each, ~3 hrs wall). Writes runs/sweep/summary.{json,csv}.
+    - Main run (runs/main): DeBERTa-v3-base fp32, 4 epochs, group-by-proposition 80/10/10. Test MAE=0.080, Pearson=0.937 (overall). Saved weights at runs/main/final/.
+    - Hold-out sweep done (13 configs, 3 epochs each). See `agreement_model/runs/sweep/SUMMARY.md`. Headlines for plan item (2):
+        - Human-only training already transfers to AI paragraphs (MAE 0.089, Pearson 0.94); adding any single AI source closes most of the remaining gap.
+        - Leave-one-AI-out: held-out AI model scores at MAE 0.07-0.085, Pearson 0.94-0.96 — essentially no distribution-shift cost.
+        - Hardest subgroup is human writers, not AI (reverse of what we might have expected). Single-AI-only training is the one failure mode (Pearson drops to 0.68-0.82).
+    - Status: IDLE, GPU released. No further runs queued.
 - 2026-04-17 (agent: judge+rewriters, status: IN PROGRESS):
     - Goal: plan items (1) LLM-as-a-judge and (3) judge-free rewriters.
     - Judge built in `judge/` — clarity + informativeness rubrics with 0-100 anchored scoring and JSON chain-of-thought output; OpenRouter client for Llama 3.3 70B + Gemini 2.0 Flash (the two in-scope judges; GPT-4o-mini and Claude Haiku 3.5 are held out).
