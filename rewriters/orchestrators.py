@@ -154,18 +154,24 @@ def run_icir_single(proposition: str, paragraph: str, api_key: str,
     best_score = -1.0
 
     def _score_with_panel(text: str) -> tuple[float, str, dict, int, int, int]:
-        """Returns (mean_score, combined_reasoning, per_judge, calls, ptok, ctok)."""
+        """Returns (mean_score, combined_reasoning, per_judge, calls, ptok, ctok).
+        Runs the panel judges in parallel — independent API calls, no reason
+        to wait for one before issuing the next."""
         prompt = build_prompt("clarity", proposition, text)
+        def _go(j):
+            jr = call_judge(j.model_id, JUDGE_SYSTEM, prompt, api_key,
+                            max_tokens=250, temperature=0.0,
+                            timeout=30, retries=1)
+            return (j, jr)
+        with cf.ThreadPoolExecutor(max_workers=max(len(panel_judges), 2)) as ex:
+            results = list(ex.map(_go, panel_judges))
         parts_reason = []
         per = {}
         calls_ = 0
         ptok = 0
         ctok = 0
         vals = []
-        for j in panel_judges:
-            jr = call_judge(j.model_id, JUDGE_SYSTEM, prompt, api_key,
-                            max_tokens=250, temperature=0.0,
-                            timeout=30, retries=1)
+        for j, jr in results:
             calls_ += 1
             ptok += jr.prompt_tokens or 0
             ctok += jr.completion_tokens or 0

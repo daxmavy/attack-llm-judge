@@ -132,7 +132,7 @@ if __name__ == "__main__":
     p.add_argument("--criterion", default="clarity")
     p.add_argument("--panel", default="attack", choices=["attack", "gold", "all"])
     p.add_argument("--where", default=None)
-    p.add_argument("--max-workers", type=int, default=8)
+    p.add_argument("--max-workers", type=int, default=24)
     p.add_argument("--force", action="store_true")
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args()
