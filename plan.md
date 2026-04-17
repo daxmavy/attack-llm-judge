@@ -60,3 +60,32 @@ Known problems:
         - lit_informed → lit_informed_tight: pct_err 15.5% → 7.0%; within ±10% 28% → 76%; within ±20% 74% → 99%; under 0.80× 25% → 1%.
         - Judge deltas held up or improved slightly: lit_informed_tight vs lit_informed Llama informativeness delta +9.7 vs +6.9, clarity about the same; same on Gemini. Length control did not cost quality.
         - Old v1 methods kept in place. Total rewriter+judge spend incl. v2: ~$0.30.
+    - UPDATE 2026-04-17 (second phase — evaluation suite): scope expanded per operator. Now building a systematic eval suite (`eval_suite/` + `data/`):
+        - Criterion: CLARITY only for now, but all code parameterised so informativeness can be added by adding a row to the criteria config.
+        - Attack panel (5, family-diverse, small): meta-llama/llama-3.1-8b-instruct, qwen/qwen-2.5-7b-instruct, mistralai/mistral-7b-instruct, google/gemma-2-9b-it, microsoft/phi-3.5-mini-instruct. Leave-one-out generalisation across the 5.
+        - Gold panel (5, disjoint, strong): anthropic/claude-sonnet-4.6, google/gemini-2.5-pro, openai/gpt-5-mini, deepseek/deepseek-v3, meta-llama/llama-3.1-405b-instruct. Option (ii) per operator.
+        - Rewriter methods: 10 total. The 4 we already have (naive, lit_informed, naive_tight, lit_informed_tight) plus 6 new ones designed by a sub-agent (ICIR, BoN-ensemble, injection, rules-explicit, rubric-aware, structure-scaffolded). All inference-only; training-based methods out of scope for now.
+        - Storage: SQLite at `data/paragraphs.db`, tables: `paragraphs` (originals + rewrites, document_id + base_document_id + method info + stance/type), `methods` (rewriter config), `evaluations` (long format: paragraph_id × metric × judge/model × value), `criteria` (clarity now, informativeness later). Plus a parquet denormalised view for analysis.
+        - Extra metrics beyond user's 6: embedding cosine similarity to base original (e5-large-v2), hallucinated-specifics rate (regex + spaCy NER, new entities/numbers in rewrite but not in original).
+        - Top-10% flag: WILL COMPUTE for writer paragraphs as "top-10% by `mean_human_clarity` within each (proposition × agreement-score quintile) cell." If operator wanted a different ranking metric, update this entry; operator flagged ambiguity in last message but moved on.
+        - Two sub-agents in progress: (a) AI-detector research → Binoculars install plan; (b) methods 5-10 design. Will integrate when they return.
+        - Gold-panel cost at full corpus (10 methods × 4503 writer paragraphs + 4503 originals + ~5500 other-type-originals ≈ 55k paragraphs × 5 gold × 1 criterion ≈ 275k gold calls) is projected to exceed the $100 limit from earlier; will compute exact number after smoke test and flag to operator before launching the full run.
+
+    - CURRENT SPRINT (2026-04-17, still running):
+
+        **What's already done (this sprint):**
+        - DB schema `eval_suite/schema.py` with tables: `paragraphs`, `methods`, `evaluations` (long format), `criteria`. SQLite + WAL at `data/paragraphs.db`. Schema is append-only and criterion-agnostic.
+        - Ingest `eval_suite/ingest.py` — populated DB with 10,008 originals (4,503 writer + 4,503 model + 1,002 edited). Computed top-decile flag for each writer paragraph as: within (proposition × agreement-score quintile), top 10% by `mean_human_clarity`. Per-quintile counts: 917/898/889/901/898, top-deciles 102/100/100/100/100.
+        - Judge panels `eval_suite/panels.py`: 5 attack + 5 gold configs with OpenRouter pricing for cost estimation.
+        - Judge runner `eval_suite/judge_runner.py`: parameterised by criterion + panel, idempotent via PRIMARY KEY on (paragraph_id, metric, criterion, source), writes straight to DB.
+        - Research outputs saved: `background_docs/methods_5_10_design.md` (6 new methods with exact prompts + algorithms + expected transfer ranking), `background_docs/ai_detector_plan.md` (Binoculars install + caveat + Fast-DetectGPT backup).
+
+        **Next steps, in order:**
+        1. Metric modules (`eval_suite/metrics/`): word_count, embed_sim (e5-large-v2), hallucinated_specifics (regex + spaCy NER), agreement-model inference wrapper, clarity-regressor inference wrapper, Binoculars wrapper. Each metric exposes `.score(paragraph_ids) -> dict` AND `.benchmark()` that runs on paul_data's labeled human-vs-AI split (per operator's latest request).
+        2. Implement 6 new rewriter methods (`rewriters/rewrite_prompts.py` extend + `rewriters/pipeline.py`, `panel_scorer.py`, `iterative.py`, `parsing.py` helpers). All 10 methods registered in `methods` DB table.
+        3. Train a clarity regressor on `mean_human_clarity` (DeBERTa-v3-base, group-by-proposition split; same pattern as the existing agreement_model).
+        4. Integrate Binoculars (runs on A100 when free; co-tenant with agreement_model weights loaded in memory).
+        5. End-to-end smoke test on 50 paragraphs × 10 methods. Populate DB. Compute each metric's paul_data benchmark.
+        6. Project full-corpus cost (especially gold panel). **Flag to operator before launching the expensive gold-panel eval.** Likely ~$250–300 for gold at current spec; operator's earlier stated budget was $100. Will propose: downgrade gold to cheaper strong models (e.g. swap Sonnet 4.6 → Claude Haiku 4.5, Gemini 2.5 Pro → Flash), OR subsample to a fixed N per method.
+
+        **Files this sprint will own:** `eval_suite/*`, `data/paragraphs.db`, `criterion_model/*`, `background_docs/methods_5_10_design.md`, `background_docs/ai_detector_plan.md`, extend `rewriters/*`. Will NOT touch `agreement_model/*`.
