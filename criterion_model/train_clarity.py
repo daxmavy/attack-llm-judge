@@ -150,6 +150,7 @@ def main():
     tok = AutoTokenizer.from_pretrained(args.model)
     model = AutoModelForSequenceClassification.from_pretrained(
         args.model, num_labels=1, problem_type="regression",
+        use_safetensors=True, torch_dtype=torch.float32,
     )
 
     train_ds = CritDataset(train_df, tok, args.max_length)
@@ -184,7 +185,7 @@ def main():
         args=train_args,
         train_dataset=train_ds,
         eval_dataset=val_ds,
-        tokenizer=tok,
+        processing_class=tok,
         data_collator=DataCollatorWithPadding(tok),
         compute_metrics=metrics_fn,
     )
