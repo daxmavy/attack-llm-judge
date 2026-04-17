@@ -116,34 +116,64 @@ def main():
     p.add_argument("--epochs", type=float, default=4.0)
     p.add_argument("--batch_size", type=int, default=32)
     p.add_argument("--eval_batch_size", type=int, default=64)
-    p.add_argument("--lr", type=float, default=2e-5)
+    p.add_argument("--lr", type=float, default=1e-5)
     p.add_argument("--max_length", type=int, default=256)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--weight_decay", type=float, default=0.01)
     p.add_argument("--warmup_ratio", type=float, default=0.06)
+    # Training-set filters. Evaluation is ALWAYS on the full test split so all runs
+    # share the same held-out propositions and subgroup metrics are comparable.
+    p.add_argument("--train_include_writer", type=int, default=1, help="1 to include human (writer) paragraphs in training")
+    p.add_argument("--train_include_edited", type=int, default=1, help="1 to include human-edited AI paragraphs in training")
     p.add_argument(
-        "--paragraph_types",
-        default="writer,model,edited",
-        help="comma-separated subset to train on (filters df before split)",
+        "--train_ai_models",
+        default="all",
+        help="'all', 'none', or comma-separated model_names to include in training (among paragraph_type=model rows)",
     )
+    p.add_argument("--no_save_model", action="store_true", default=False, help="skip writing model weights (for experiment sweeps)")
+    # DeBERTa-v3 can produce NaNs in bf16/fp16 due to disentangled-attention softmax; fp32 is reliable.
     p.add_argument("--fp16", action="store_true", default=False)
-    p.add_argument("--bf16", action="store_true", default=True)
+    p.add_argument("--bf16", action="store_true", default=False)
     args = p.parse_args()
 
     Path(args.output_dir).mkdir(parents=True, exist_ok=True)
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 
-    df = pd.read_csv(DATA_CSV)
-    keep = set(args.paragraph_types.split(","))
-    df = df[df["paragraph_type"].isin(keep)].reset_index(drop=True)
-    print(f"Loaded {len(df)} rows after paragraph_type filter {sorted(keep)}")
+    df_all = pd.read_csv(DATA_CSV)
+    print(f"Loaded {len(df_all)} total rows")
 
-    df_train, df_val, df_test = group_split(df, group_col="proposition_id", seed=args.seed)
+    df_train_full, df_val_full, df_test = group_split(df_all, group_col="proposition_id", seed=args.seed)
+
+    # Apply training-set filters AFTER splitting so test is always the same full set.
+    def apply_train_filter(df: pd.DataFrame) -> pd.DataFrame:
+        mask = pd.Series(False, index=df.index)
+        if args.train_include_writer:
+            mask |= df["paragraph_type"] == "writer"
+        if args.train_include_edited:
+            mask |= df["paragraph_type"] == "edited"
+        ai_spec = args.train_ai_models.strip()
+        if ai_spec == "all":
+            mask |= df["paragraph_type"] == "model"
+        elif ai_spec == "none":
+            pass
+        else:
+            wanted = set(m.strip() for m in ai_spec.split(",") if m.strip())
+            mask |= (df["paragraph_type"] == "model") & df["model_name"].isin(wanted)
+        return df[mask].reset_index(drop=True)
+
+    df_train = apply_train_filter(df_train_full)
+    df_val = apply_train_filter(df_val_full)
     print(
-        f"Split sizes train={len(df_train)} val={len(df_val)} test={len(df_test)} "
-        f"(propositions: {df_train.proposition_id.nunique()}/{df_val.proposition_id.nunique()}/{df_test.proposition_id.nunique()})"
+        f"Full split: train_grp={len(df_train_full)} val_grp={len(df_val_full)} test={len(df_test)} "
+        f"(propositions: {df_train_full.proposition_id.nunique()}/{df_val_full.proposition_id.nunique()}/{df_test.proposition_id.nunique()})"
     )
+    print(
+        f"After training filter (include_writer={args.train_include_writer}, include_edited={args.train_include_edited}, "
+        f"ai_models={args.train_ai_models}): train={len(df_train)} val={len(df_val)}"
+    )
+    print("Train composition:")
+    print(df_train.groupby(["paragraph_type", "model_name"], dropna=False).size().to_string())
 
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     model = AutoModelForSequenceClassification.from_pretrained(
@@ -151,7 +181,9 @@ def main():
         num_labels=1,
         problem_type="regression",
         use_safetensors=True,
+        torch_dtype=torch.float32,
     )
+    model.to(torch.float32)
 
     train_ds = AgreementDataset(df_train, tokenizer, args.max_length)
     val_ds = AgreementDataset(df_val, tokenizer, args.max_length)
@@ -198,12 +230,30 @@ def main():
     test_report = subgroup_report(trainer, df_test, tokenizer, args.max_length)
     print("Test (overall):", test_report["overall"])
 
-    final_dir = Path(args.output_dir) / "final"
-    trainer.save_model(str(final_dir))
-    tokenizer.save_pretrained(str(final_dir))
+    if not args.no_save_model:
+        final_dir = Path(args.output_dir) / "final"
+        trainer.save_model(str(final_dir))
+        tokenizer.save_pretrained(str(final_dir))
 
+    train_composition = (
+        df_train.groupby(["paragraph_type", "model_name"], dropna=False)
+        .size()
+        .reset_index(name="n")
+        .to_dict(orient="records")
+    )
     with open(Path(args.output_dir) / "metrics.json", "w") as f:
-        json.dump({"val": val_metrics, "test": test_report, "args": vars(args)}, f, indent=2)
+        json.dump(
+            {
+                "val": val_metrics,
+                "test": test_report,
+                "args": vars(args),
+                "train_n": int(len(df_train)),
+                "train_composition": train_composition,
+            },
+            f,
+            indent=2,
+            default=str,
+        )
 
     for sub_key in ("by_paragraph_type", "by_model_name", "by_model_input_condition"):
         print(f"\n{sub_key}:")
