@@ -43,10 +43,13 @@ from run_manifest import capture_manifest  # noqa: E402
 
 
 REWRITER = "Qwen/Qwen2.5-1.5B-Instruct"
-JUDGE_ENSEMBLE = [
-    ("judge_qwen7b", "Qwen/Qwen2.5-7B-Instruct"),
-    ("judge_llama8b", "meta-llama/Llama-3.1-8B-Instruct"),
-]
+# Three candidate judges. Two are used as training proxies (via --train-judges),
+# the remaining one is held-out for post-training evaluation.
+JUDGE_REGISTRY = {
+    "qwen7b":  ("judge_qwen7b",  "Qwen/Qwen2.5-7B-Instruct"),
+    "llama8b": ("judge_llama8b", "meta-llama/Llama-3.1-8B-Instruct"),
+    "gemma9b": ("judge_gemma9b", "google/gemma-2-9b-it"),
+}
 
 OUT_DIR = Path("/workspace/grpo_run")
 
@@ -192,8 +195,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--max-steps", type=int, default=15)
     ap.add_argument("--name-suffix", type=str, default="pilot")
-    ap.add_argument("--alpha", type=float, default=25.0, help="length penalty weight")
-    ap.add_argument("--tol", type=float, default=0.10, help="length penalty tolerance band")
+    ap.add_argument("--alpha", type=float, default=100.0, help="length penalty weight")
+    ap.add_argument("--tol", type=float, default=0.10, help="length penalty tolerance band (only for additive shape)")
+    ap.add_argument("--penalty-shape", type=str, default="quadratic",
+                    choices=["additive", "quadratic"],
+                    help="quadratic: alpha*(r-1)^2 (gentle in-band, steep outside); "
+                         "additive: alpha*max(0, |r-1|-tol)")
     ap.add_argument("--lr", type=float, default=5e-6)
     ap.add_argument("--beta", type=float, default=0.01)
     ap.add_argument("--temperature", type=float, default=1.0)
@@ -206,12 +213,40 @@ def main():
                     help="if set, save final rewriter to this dir")
     ap.add_argument("--n-train", type=int, default=200)
     ap.add_argument("--n-eval", type=int, default=50)
+    ap.add_argument("--train-judges", type=str, default="qwen7b,llama8b",
+                    help="comma-separated slugs from JUDGE_REGISTRY (qwen7b, llama8b, gemma9b). "
+                         "The one not named is the held-out judge.")
+    ap.add_argument("--n-propositions", type=int, default=None,
+                    help="if set, subsample to the first N distinct propositions "
+                         "(used for 3-fold cross-judge mission)")
     args = ap.parse_args()
+
+    train_judge_keys = [s.strip() for s in args.train_judges.split(",")]
+    assert all(k in JUDGE_REGISTRY for k in train_judge_keys), f"unknown judge: {train_judge_keys}"
+    judge_ensemble = [JUDGE_REGISTRY[k] for k in train_judge_keys]
+    heldout_keys = [k for k in JUDGE_REGISTRY if k not in train_judge_keys]
+    heldout_judge = JUDGE_REGISTRY[heldout_keys[0]] if heldout_keys else None
+    print(f"train judges: {train_judge_keys}, held-out: {heldout_keys}", flush=True)
     t_start = time.time()
     print(f"[{time.strftime('%H:%M:%S')}] start (pilot-len-pen, args={vars(args)})", flush=True)
 
     rows = load_data()
     print(f"top-decile writer rows: {len(rows)}", flush=True)
+    if args.n_propositions is not None:
+        # Subsample to first N distinct propositions (deterministic by proposition_id order)
+        # rows already ordered by proposition_id, document_id
+        seen = []
+        filtered = []
+        for r in rows:
+            # r = (document_id, proposition, text, word_count, human_mean_clarity)
+            # proposition text identifies the proposition group
+            if r[1] not in seen:
+                if len(seen) >= args.n_propositions:
+                    continue
+                seen.append(r[1])
+            filtered.append(r)
+        rows = [r for r in filtered if r[1] in seen]
+        print(f"filtered to {args.n_propositions} propositions → {len(rows)} paragraphs", flush=True)
     train_rows = rows[:args.n_train]
     eval_rows = rows[args.n_train:args.n_train + args.n_eval]
 
@@ -226,7 +261,7 @@ def main():
     # Load both vLLM judges simultaneously
     print(f"[{time.strftime('%H:%M:%S')}] loading vLLM judges...", flush=True)
     t_load = time.time()
-    judges = [JudgeVLLM(name, mid) for name, mid in JUDGE_ENSEMBLE]
+    judges = [JudgeVLLM(name, mid) for name, mid in judge_ensemble]
     print(f"[{time.strftime('%H:%M:%S')}] judges loaded in {time.time()-t_load:.1f}s  "
           f"VRAM={torch.cuda.memory_allocated()/1e9:.1f}GB", flush=True)
 
@@ -237,7 +272,7 @@ def main():
         group="mission_20260418",
         config={
             "rewriter": REWRITER,
-            "train_judges": [m for _, m in JUDGE_ENSEMBLE],
+            "train_judges": [m for _, m in judge_ensemble],
             "judge_backend": "vllm",
             "n_train_prompts": len(train_data),
             "n_eval_prompts": len(eval_rows),
@@ -269,7 +304,8 @@ def main():
         # Length penalty on each rollout
         gen_wcs = [_wc(r) for r in rewrites]
         len_ratios = [gw / max(tw, 1) for gw, tw in zip(gen_wcs, target_wcs)]
-        penalties = [compute_length_penalty(gw, tw, alpha=args.alpha, tol=args.tol)
+        penalties = [compute_length_penalty(gw, tw, alpha=args.alpha, tol=args.tol,
+                                            shape=args.penalty_shape)
                      for gw, tw in zip(gen_wcs, target_wcs)]
         penalised = [ej - p for ej, p in zip(ensemble_judge, penalties)]
 
@@ -333,7 +369,7 @@ def main():
             script_path=__file__,
             grpo_config=cfg,
             extra={
-                "judges_train": [m for _, m in JUDGE_ENSEMBLE],
+                "judges_train": [m for _, m in judge_ensemble],
                 "judge_backend": "vLLM (JudgeVLLM class, 2 engines colocate)",
                 "rewriter_backend": "HF transformers generate (TRL default, no use_vllm)",
                 "reward_formula": f"mean(judge1,judge2) - length_penalty(alpha={args.alpha}, tol={args.tol})",
