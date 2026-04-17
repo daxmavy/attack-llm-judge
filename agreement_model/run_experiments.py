@@ -46,9 +46,14 @@ EXPERIMENTS = [
 ]
 
 
-def run_one(name: str, kwargs: dict, epochs: float, seed: int, extra_args: list[str]) -> dict | None:
+def run_one(name: str, kwargs: dict, epochs: float, seed: int, extra_args: list[str], skip_existing: bool) -> dict | None:
     out_dir = RUNS / "sweep" / name
     out_dir.mkdir(parents=True, exist_ok=True)
+    metrics_path = out_dir / "metrics.json"
+    if skip_existing and metrics_path.exists():
+        print(f"[{name}] skipping — metrics.json already exists")
+        with metrics_path.open() as f:
+            return json.load(f)
     cmd = [
         sys.executable,
         str(TRAIN),
@@ -56,6 +61,8 @@ def run_one(name: str, kwargs: dict, epochs: float, seed: int, extra_args: list[
         "--epochs", str(epochs),
         "--seed", str(seed),
         "--no_save_model",
+    ]
+    cmd += [
         "--train_include_writer", str(kwargs["train_include_writer"]),
         "--train_include_edited", str(kwargs["train_include_edited"]),
         "--train_ai_models", kwargs["train_ai_models"],
@@ -68,7 +75,6 @@ def run_one(name: str, kwargs: dict, epochs: float, seed: int, extra_args: list[
         rc = subprocess.run(cmd, stdout=lf, stderr=subprocess.STDOUT).returncode
     dur = time.time() - t0
     print(f"[{name}] exit={rc} in {dur/60:.1f} min; log -> {log_file}")
-    metrics_path = out_dir / "metrics.json"
     if rc != 0 or not metrics_path.exists():
         return None
     with metrics_path.open() as f:
@@ -92,6 +98,7 @@ def main():
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--only", nargs="*", default=None, help="subset of experiment names to run")
     p.add_argument("--extra", nargs="*", default=[], help="additional args to forward to train.py")
+    p.add_argument("--rerun", action="store_true", help="rerun experiments that already have metrics.json")
     args = p.parse_args()
 
     RUNS.mkdir(parents=True, exist_ok=True)
@@ -109,7 +116,7 @@ def main():
     all_rows = []
     summary = {}
     for name, kwargs in selected:
-        metrics = run_one(name, kwargs, args.epochs, args.seed, list(args.extra))
+        metrics = run_one(name, kwargs, args.epochs, args.seed, list(args.extra), skip_existing=not args.rerun)
         if metrics is None:
             print(f"[{name}] FAILED; continuing")
             continue

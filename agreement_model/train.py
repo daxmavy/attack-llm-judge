@@ -188,6 +188,9 @@ def main():
     train_ds = AgreementDataset(df_train, tokenizer, args.max_length)
     val_ds = AgreementDataset(df_val, tokenizer, args.max_length)
 
+    # Sweep runs (--no_save_model) skip per-epoch checkpoints entirely to avoid
+    # filling disk with optimizer state (~2 GB/epoch for DeBERTa-v3-base).
+    save_epoch_ckpts = not args.no_save_model
     training_args = TrainingArguments(
         output_dir=args.output_dir,
         num_train_epochs=args.epochs,
@@ -197,13 +200,13 @@ def main():
         weight_decay=args.weight_decay,
         warmup_ratio=args.warmup_ratio,
         eval_strategy="epoch",
-        save_strategy="epoch",
+        save_strategy="epoch" if save_epoch_ckpts else "no",
         logging_strategy="steps",
         logging_steps=50,
-        load_best_model_at_end=True,
-        metric_for_best_model="mae",
-        greater_is_better=False,
-        save_total_limit=1,
+        load_best_model_at_end=save_epoch_ckpts,
+        metric_for_best_model="mae" if save_epoch_ckpts else None,
+        greater_is_better=False if save_epoch_ckpts else None,
+        save_total_limit=1 if save_epoch_ckpts else None,
         fp16=args.fp16 and not args.bf16,
         bf16=args.bf16,
         report_to="none",
