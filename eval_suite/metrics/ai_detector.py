@@ -1,21 +1,26 @@
-"""Metric 6: AI-generated-text probability via Binoculars.
+"""Metric 6: AI-generated-text probability (Fast-DetectGPT-lite).
 
-Binoculars (Hans et al. ICML 2024): ratio of log-perplexity under a base
-model to cross-perplexity under an instruct model, with the two models
-from the same family (Falcon-7B / Falcon-7B-Instruct). Lower raw score
-= more machine-like.
+Falcon-7B (Binoculars) doesn't fit in available disk (needs ~28GB for
+base+instruct). We fall back to the sub-agent's backup recommendation
+(Fast-DetectGPT, Bao et al. 2023) in its single-model analytic form
+using GPT2-XL (~3GB fp16). It computes the "sampling discrepancy":
+for each token t, how far the scored model's log-likelihood of the
+actual token deviates from the distribution-expected log-likelihood.
+Higher = more likely machine-generated (machines pick near-modal tokens).
 
-We do NOT use the author-shipped global threshold. We store both the raw
-score AND a calibrated P(machine) that is fit on paul_data's labelled
-human (writer) vs. AI (model) paragraphs via a logistic regression.
+Reference implementation:
+  github.com/baoguangsheng/fast-detect-gpt (MIT)
 
-Benchmark: AUROC of raw score and calibrated P(machine) at
-distinguishing original_writer vs. original_model on paul_data.
+We store two metrics per paragraph:
+- ai_detector_raw_score  (discrepancy, higher = more AI)
+- ai_detector_p_machine  (logistic-regression calibrated on the
+                           paul_data writer-vs-model split)
+
+Benchmark: AUROC on the writer (human) vs model (AI) split of paul_data.
 """
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 import numpy as np
@@ -28,44 +33,82 @@ from eval_suite.schema import DEFAULT_DB_PATH, connect
 
 METRIC_RAW = "ai_detector_raw_score"
 METRIC_P_MACHINE = "ai_detector_p_machine"
-SOURCE = "binoculars_falcon7b"
+SOURCE = "fastdetectgpt_gpt2xl"
 
-CALIBRATOR_PATH = Path("/home/max/attack-llm-judge/data/binoculars_calibrator.json")
+CALIBRATOR_PATH = Path("/home/max/attack-llm-judge/data/ai_detector_calibrator.json")
+DEFAULT_MODEL = "gpt2-xl"
 
 
-class BinocularsRunner:
-    def __init__(self, batch_size: int = 32):
-        from binoculars import Binoculars
-        self.bino = Binoculars()
-        self.batch_size = batch_size
+class FastDetectGPT:
+    """Single-model analytic Fast-DetectGPT. Higher raw_score = more machine-like."""
 
-    def compute_raw(self, texts: list[str]) -> np.ndarray:
-        # Binoculars.compute_score handles batching internally; we chunk to
-        # keep VRAM stable on a shared A100.
+    def __init__(self, model_name: str = DEFAULT_MODEL, device: str | None = None,
+                  max_length: int = 512):
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_name, torch_dtype=torch.float16 if self.device != "cpu" else torch.float32,
+        ).to(self.device)
+        self.model.eval()
+        self.max_length = max_length
+        self.model_name = model_name
+
+    @torch.inference_mode()
+    def _score_one(self, text: str) -> float | None:
+        """Compute the analytic sampling-discrepancy for a single text."""
+        enc = self.tokenizer(text, return_tensors="pt", truncation=True,
+                              max_length=self.max_length, return_token_type_ids=False)
+        if enc["input_ids"].size(1) < 8:
+            return None
+        ids = enc["input_ids"].to(self.device)
+        logits = self.model(input_ids=ids).logits  # [1, L, V]
+        # Shift: predict token t from position t-1
+        logits_score = logits[:, :-1, :]         # [1, L-1, V]
+        labels = ids[:, 1:]                       # [1, L-1]
+        # For the analytic form: under the model's own distribution, compute
+        # mean and variance of the log-likelihood contribution; then the
+        # discrepancy is (actual - expected) / sqrt(var).
+        lprobs = torch.log_softmax(logits_score.float(), dim=-1)
+        probs = torch.softmax(logits_score.float(), dim=-1)
+        log_likelihood = lprobs.gather(dim=-1, index=labels.unsqueeze(-1)).squeeze(-1)  # [1, L-1]
+        mean_ref = (probs * lprobs).sum(dim=-1)
+        var_ref = (probs * torch.square(lprobs)).sum(dim=-1) - torch.square(mean_ref)
+        actual_sum = log_likelihood.sum(dim=-1)
+        expected_sum = mean_ref.sum(dim=-1)
+        var_sum = var_ref.sum(dim=-1)
+        if var_sum.item() <= 0:
+            return None
+        discrepancy = (actual_sum - expected_sum) / torch.sqrt(var_sum)
+        return float(discrepancy.item())
+
+    def compute_scores(self, texts: list[str]) -> np.ndarray:
         out = []
-        for i in range(0, len(texts), self.batch_size):
-            chunk = texts[i:i + self.batch_size]
-            scores = self.bino.compute_score(chunk)
-            out.extend(list(scores))
+        for t in texts:
+            try:
+                s = self._score_one(t)
+            except Exception as e:
+                s = None
+            out.append(s if s is not None else np.nan)
         return np.array(out, dtype=np.float64)
 
 
 def fit_calibrator(raw_scores: np.ndarray, labels: np.ndarray,
                     calibrator_path: Path = CALIBRATOR_PATH) -> dict:
-    """Fit a univariate logistic regression P(machine=1 | raw_score)."""
     from sklearn.linear_model import LogisticRegression
-    # Lower raw = more machine, so we feed -raw as the feature so positive coef
-    # means "more likely machine" (not strictly necessary for logistic, but
-    # keeps the stored weights human-readable).
-    X = (-raw_scores).reshape(-1, 1)
+    mask = np.isfinite(raw_scores)
+    X = raw_scores[mask].reshape(-1, 1)  # higher raw = more machine
+    y = labels[mask]
     clf = LogisticRegression(max_iter=500)
-    clf.fit(X, labels)
+    clf.fit(X, y)
     calib = {
         "intercept": float(clf.intercept_[0]),
         "coef": float(clf.coef_[0][0]),
-        "feature": "neg_raw_score",
-        "n_human": int((labels == 0).sum()),
-        "n_machine": int((labels == 1).sum()),
+        "feature": "raw_score",
+        "n_human": int((y == 0).sum()),
+        "n_machine": int((y == 1).sum()),
     }
     calibrator_path.parent.mkdir(parents=True, exist_ok=True)
     calibrator_path.write_text(json.dumps(calib, indent=2))
@@ -79,34 +122,36 @@ def load_calibrator(calibrator_path: Path = CALIBRATOR_PATH) -> dict | None:
 
 
 def apply_calibrator(raw: np.ndarray, calib: dict) -> np.ndarray:
-    x = -raw
-    z = calib["intercept"] + calib["coef"] * x
+    z = calib["intercept"] + calib["coef"] * raw
     return 1.0 / (1.0 + np.exp(-z))
 
 
-def score_all_and_calibrate(db_path: Path = DEFAULT_DB_PATH,
-                              calibrator_path: Path = CALIBRATOR_PATH) -> dict:
-    """Score everything in the paragraphs table. Also fits the calibrator
-    using original_writer (label 0) vs original_model (label 1) and
-    applies it to produce P(machine) for every row."""
+def score_all_and_calibrate(model_name: str = DEFAULT_MODEL,
+                              db_path: Path = DEFAULT_DB_PATH,
+                              calibrator_path: Path = CALIBRATOR_PATH,
+                              where: str | None = None) -> dict:
     con = connect(db_path)
     try:
-        df = pd.read_sql_query(
-            "SELECT document_id, text, origin_kind FROM paragraphs", con)
+        sql = "SELECT document_id, text, origin_kind FROM paragraphs"
+        if where:
+            sql += f" WHERE {where}"
+        df = pd.read_sql_query(sql, con)
     finally:
         con.close()
-    runner = BinocularsRunner(batch_size=32)
-    raw = runner.compute_raw(df["text"].tolist())
+    runner = FastDetectGPT(model_name=model_name)
+    raw = runner.compute_scores(df["text"].tolist())
     df = df.assign(raw=raw)
 
-    # Fit calibrator on writer vs model.
-    calib_df = df[df["origin_kind"].isin(["original_writer", "original_model"])]
+    calib_df = df[df["origin_kind"].isin(["original_writer", "original_model"])].dropna(subset=["raw"])
     labels = (calib_df["origin_kind"] == "original_model").astype(int).to_numpy()
     calib = fit_calibrator(calib_df["raw"].to_numpy(), labels, calibrator_path)
-    p_machine = apply_calibrator(df["raw"].to_numpy(), calib)
+    valid = np.isfinite(df["raw"].to_numpy())
+    p_machine = np.where(valid, apply_calibrator(df["raw"].to_numpy(), calib), np.nan)
 
     rows = []
     for (_, r), raw_v, p in zip(df.iterrows(), df["raw"], p_machine):
+        if np.isnan(raw_v):
+            continue
         rows.append(MetricRow(r["document_id"], METRIC_RAW, None, SOURCE, None,
                                float(raw_v), None).to_tuple())
         rows.append(MetricRow(r["document_id"], METRIC_P_MACHINE, None, SOURCE, None,
@@ -116,13 +161,12 @@ def score_all_and_calibrate(db_path: Path = DEFAULT_DB_PATH,
         write_rows(con, rows)
     finally:
         con.close()
-    return {"n_rows_scored": int(len(df)), "calibrator": calib}
+    return {"n_rows_scored": int(len(df)), "n_valid": int(valid.sum()),
+            "calibrator": calib, "model": model_name}
 
 
 def benchmark(db_path: Path = DEFAULT_DB_PATH,
                calibrator_path: Path = CALIBRATOR_PATH) -> dict:
-    """Compute AUROC of raw score and calibrated P(machine) on
-    original_writer (label 0) vs original_model (label 1)."""
     from sklearn.metrics import roc_auc_score
     con = connect(db_path)
     try:
@@ -139,17 +183,19 @@ def benchmark(db_path: Path = DEFAULT_DB_PATH,
     finally:
         con.close()
     df = df.dropna(subset=["raw", "p_machine"])
-    y = (df["origin_kind"] == "original_model").astype(int).to_numpy()
-    if len(df) < 10 or y.sum() == 0 or (1 - y).sum() == 0:
+    if len(df) < 10:
         return {"error": "insufficient labelled data", "n": int(len(df))}
+    y = (df["origin_kind"] == "original_model").astype(int).to_numpy()
+    if y.sum() == 0 or (1 - y).sum() == 0:
+        return {"error": "only one class present"}
     return {
         "n": int(len(df)),
         "n_human": int((y == 0).sum()),
         "n_machine": int((y == 1).sum()),
-        # Lower raw = more machine, so we pass -raw for ROC direction.
-        "auroc_raw": float(roc_auc_score(y, -df["raw"].to_numpy())),
+        "auroc_raw": float(roc_auc_score(y, df["raw"].to_numpy())),
         "auroc_p_machine": float(roc_auc_score(y, df["p_machine"].to_numpy())),
         "calibrator": load_calibrator(calibrator_path),
+        "source": SOURCE,
     }
 
 
@@ -157,8 +203,9 @@ if __name__ == "__main__":
     import argparse
     p = argparse.ArgumentParser()
     p.add_argument("--mode", choices=["score", "benchmark"], default="score")
+    p.add_argument("--where", default=None)
     args = p.parse_args()
     if args.mode == "score":
-        print(json.dumps(score_all_and_calibrate(), indent=2))
+        print(json.dumps(score_all_and_calibrate(where=args.where), indent=2))
     else:
         print(json.dumps(benchmark(), indent=2))

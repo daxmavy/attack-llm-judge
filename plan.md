@@ -89,3 +89,17 @@ Known problems:
         6. Project full-corpus cost (especially gold panel). **Flag to operator before launching the expensive gold-panel eval.** Likely ~$250–300 for gold at current spec; operator's earlier stated budget was $100. Will propose: downgrade gold to cheaper strong models (e.g. swap Sonnet 4.6 → Claude Haiku 4.5, Gemini 2.5 Pro → Flash), OR subsample to a fixed N per method.
 
         **Files this sprint will own:** `eval_suite/*`, `data/paragraphs.db`, `criterion_model/*`, `background_docs/methods_5_10_design.md`, `background_docs/ai_detector_plan.md`, extend `rewriters/*`. Will NOT touch `agreement_model/*`.
+
+    - PROGRESS UPDATE 2026-04-17 late-afternoon:
+        - DB schema + ingest: ✅ done. 10,008 originals, top-decile flags ~100/quintile.
+        - 10 rewriter methods: ✅ implemented (naive, lit_informed, naive_tight, lit_informed_tight, injection_leadin, rules_explicit, rubric_aware, scaffolded_cot_distill, icir_single, bon_panel).
+        - Clarity regressor: ✅ trained. Test Pearson 0.758 / MAE 0.072 (writer cell 0.68, model cell 0.74). Weights at criterion_model/clarity/final/ (704MB, gitignored).
+        - Judge panels calibrated to live OpenRouter slugs:
+          - Attack: llama-3.1-8b, qwen-2.5-7b, ministral-8b-2512, gemma-3-4b-it, grok-3-mini
+          - Gold (operator downgraded sonnet→haiku + pro→flash to fit $100): claude-haiku-4.5, gemini-2.5-flash, gpt-5-mini, deepseek-v3.2, llama-4-maverick
+          - Reasoning-model handling (reasoning.effort=low) added to judge client for Gemini 2.5 Pro / GPT-5-mini.
+        - Stratified sample `main_20pct`: ✅ 903 writer paragraphs across 10 strata (5 quintiles × 2 top-decile classes).
+        - Main run in progress: rewrites + attack panel + gold panel + non-LLM metrics on 903 writers + 9030 rewrites = 9933 paragraphs. `naive` complete (903 in 693s, $0.08). 9 methods to go. Estimated total wall ~2–3 hrs, spend ~$40.
+        - AI detector: switched from Binoculars (28GB Falcon-7B pair didn't fit 20GB disk) to Fast-DetectGPT-lite with GPT2-XL (single model, analytic form). Vendored Binoculars into `eval_suite/binoculars/` in case disk grows later. Currently running detector on all 10k originals for calibrator + benchmark.
+        - AutoCLI `gh` installed at `~/.local/bin/gh`; operator asked to run `gh auth login` to unblock GitHub push.
+        - Next after main_run finishes: (a) detector rescoring over rewrites, (b) regressor inference on full sample scope, (c) benchmark run producing the paul_data benchmark JSON.
