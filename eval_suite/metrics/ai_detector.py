@@ -33,10 +33,14 @@ from eval_suite.schema import DEFAULT_DB_PATH, connect
 
 METRIC_RAW = "ai_detector_raw_score"
 METRIC_P_MACHINE = "ai_detector_p_machine"
-SOURCE = "fastdetectgpt_gpt2xl"
+SOURCE = "fastdetectgpt_qwen2.5_1.5b"
 
 CALIBRATOR_PATH = Path("/home/max/attack-llm-judge/data/ai_detector_calibrator.json")
-DEFAULT_MODEL = "gpt2-xl"
+# Qwen-2.5-1.5B: ~3GB fp16, same model family as the rewriter and planned
+# RL base, so the log-probabilities of machine-generated text should
+# strongly align with what Fast-DetectGPT's analytic form expects. GPT-2XL
+# (our first pick that fit disk) gave AUROC 0.60 — too weak.
+DEFAULT_MODEL = "Qwen/Qwen2.5-1.5B"
 
 
 class FastDetectGPT:
