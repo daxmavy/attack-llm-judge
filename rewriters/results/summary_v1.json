@@ -1,0 +1,17 @@
+{
+  "rewriter": "qwen-2.5-72b",
+  "rewriter_model": "qwen/qwen-2.5-72b-instruct",
+  "judges": [
+    "llama-3.3-70b",
+    "gemini-2.0-flash"
+  ],
+  "n_source_docs": 100,
+  "n_rewrites": 200,
+  "n_judge_calls": 800,
+  "rewrite_ok_rate": 1.0,
+  "judge_parse_ok_rate": 1.0,
+  "cost_rewrite_usd": 0.020284680000000003,
+  "cost_judge_usd": 0.0704638,
+  "cost_total_usd": 0.09074847999999999,
+  "seed": 17
+}

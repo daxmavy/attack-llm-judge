@@ -43,3 +43,11 @@ Known problems:
     - Baseline eval on 300 stratified docs (tag `baseline`, `judge/results/`): parse OK 99.9%, spend ~$0.11, overall Pearson vs human means: Llama 0.49/0.61 (clarity/inf), Gemini 0.55/0.60; judge-judge Pearson 0.90/0.77. Weak cell: clarity on writer paragraphs (both judges under-rate human-written paragraphs).
     - Files owned: `judge/`, `rewriters/` (new), `COORDINATION.md`, `.env`, `.gitignore`.
     - Next: implement + run the two judge-free rewriters (naive, literature-informed) and re-score with the judges.
+    - UPDATE 2026-04-17 (rewriters done): `rewriters/` with Qwen 2.5 72B as rewriter (not a judge, not a paul_data original author — avoids self-preference both ways). Two prompts: `naive` (rewrite with stance + word-count constraint) and `lit_informed` (GEO/Prometheus/G-Eval rewrite heuristics: specific facts, explicit reasoning chain, authoritative register, main-claim-first structure; same constraints). Ran on 100 stratified baseline docs × 2 methods × 2 judges × 2 criteria = 800 judge calls. Rewrite success 100%, judge parse 100%, word ratio 0.87-0.90 vs originals, spend $0.09 (rewrites+judging). Key results (mean delta vs original):
+        - naive: clarity +5.3 (Gemini) / +6.3 (Llama); informativeness +2.9 / +1.7.
+        - lit_informed: clarity +8.0 / +6.6; informativeness +6.5 / +6.9.
+        - lit_informed beats naive on informativeness by ~+4-5 and on clarity by ~+2 (Gemini) / 0 (Llama).
+        - Gains are dominated by writer-paragraphs (+18-25 clarity, +7-14 informativeness); AI-authored originals already score high and improve only marginally.
+        - Suggests the two prompts are similarly good at clarity but lit_informed is noticeably better at informativeness — consistent with literature on what judges reward.
+        - Outputs: `rewriters/results/rewrites_v1.csv`, `rewrite_judge_scores_v1.csv`, `combined_v1.csv`, `summary_v1.csv/json`.
+        - Total spend so far (judge+rewriters): ~$0.20 of $30 budget.

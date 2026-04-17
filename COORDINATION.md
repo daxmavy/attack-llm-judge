@@ -23,7 +23,7 @@ Conventions:
   - `plan.md` ACTIVE AGENTS section only
 - **Touching (read-only):** `paul_data/`, `background_docs/`, `agreement_model/`
 - **Not touching:** `agreement_model/` (owned by other agent training DeBERTa)
-- **Status:** in progress — judge smoke test passed; about to run eval sample.
-- **Notes:** Using the OpenRouter budget sparingly (~$0.30 cap for this run). Judge rubric + client are in place; sampling 300 docs stratified by paragraph_type × model_name.
+- **Status:** done for this session. Judge + baseline eval + both judge-free rewriters run.
+- **Notes:** OpenRouter spend this session ~$0.20 of $30. Rewriter is Qwen 2.5 72B (not in judge pool, not in paul_data original-author pool). See `plan.md` ACTIVE AGENTS entry for numbers.
 
 ---
