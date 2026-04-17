@@ -65,7 +65,7 @@ We are aware (see `EXPERIMENT_NOTES.md`) that clarity has a tighter dynamic rang
 
 ## 4. Method panel
 
-The evaluation suite scores **10 inference-only rewriter methods**, grouped by family. Two training-based methods (SFT, GRPO) are owned by the training agent and will be added to the same evaluation DB when their checkpoints are produced — see §6.2.
+The evaluation suite scores **6 inference-only rewriter methods**, grouped by family. Two training-based methods (SFT, GRPO) are owned by the training agent and will be added to the same evaluation DB when their checkpoints are produced — see §6.2.
 
 All inference-only methods share the same rewriter model (Qwen-2.5-72B-Instruct via OpenRouter), the same stance-preservation constraint, and a one-shot length retry targeting ±10% of the source word count. Prompts and orchestrators live in `rewriters/rewrite_prompts.py` and `rewriters/orchestrators.py`; full specs with prompts in `background_docs/methods_5_10_design.md`. Registered in the DB's `methods` table.
 
@@ -74,13 +74,9 @@ All inference-only methods share the same rewriter model (Qwen-2.5-72B-Instruct 
 | Slug | Family | Rationale | Cost-per-paragraph |
 |---|---|---|---|
 | `naive` | Floor baseline | Unguided paraphrase. Measures the free uplift from "a capable LLM rewrites it" with no further steering. | ~1.3 calls |
-| `lit_informed` | Prompt heuristics | 5 principles from the rewriter-vs-judge literature (GEO, Prometheus, G-Eval): concrete specifics, visible reasoning, authoritative neutral register, main-claim-first, fix flow. Loose length control. | ~1.3 calls |
-| `naive_tight` | Length-controlled variant | `naive` plus strict min/max word bounds in the prompt, no headings/bullets. Isolates the contribution of length control. | ~1.3 calls |
-| `lit_informed_tight` | Length-controlled variant | `lit_informed` plus the tight-bound framing. Current strongest non-judge-feedback prompt method on clarity+length fidelity. | ~1.3 calls |
-| `rules_explicit` | AutoGEO-style rules | 8 hand-extracted rules intersected from the literature and the actual clarity rubric (main-claim-first, 2–3 specifics, connectives, short sentences, neutral register, no invented facts, reinforcing closer, single paragraph). | ~1.3 calls |
+| `lit_informed_tight` | Prompt heuristics + strict length | 5 principles from the rewriter-vs-judge literature (GEO, Prometheus, G-Eval): concrete specifics, visible reasoning, authoritative neutral register, main-claim-first, fix flow. Enforces ±10% word bounds, no headings/bullets. Current strongest non-judge-feedback prompt method on clarity+length fidelity. | ~1.3 calls |
 | `rubric_aware` | Judge-prompt-known oracle | Rewriter is given the **literal clarity rubric** and asked to target the 81–100 anchor band. Oracle upper bound for "attacker knows the judge's rubric." Expected large gap between proxy judges (share the rubric) and a held-out judge with a paraphrased rubric. | ~1.3 calls |
-| `injection_leadin` | Declared "obvious hack" | Rotates 3 authoritative lead-ins (`"Expert analysis: "`, etc.) across documents. Direct test of the "One Token to Fool LLM-as-a-Judge" (arXiv:2507.08794) vulnerability; measures naive detectability of surface-level attacks on small vs. frontier judges. | ~1.3 calls |
-| `scaffolded_cot_distill` | Hidden chain-of-thought | One call returning JSON `{plan, draft, critique, final}`. Only `final` is surfaced to downstream judges; CoT is the rewriter's scratch, not a judge-visible attack. Robustness reference for "quality uplift without judge-facing manipulation". | ~1.3 calls |
+| `injection_leadin` | Declared "obvious hack" | Rotates 3 authoritative lead-ins (`"Expert analysis: "`, etc.) across documents. Direct test of the "One Token to Fool LLM-as-a-Judge" (arXiv:2507.08794) vulnerability; measures detectability of surface-level attacks on small vs. frontier judges. | ~1.3 calls |
 
 ### 4.b Judge-feedback (inference-time search)
 
@@ -100,12 +96,14 @@ When the training agent produces checkpoints, their rewrites get the same treatm
 
 ### Why this panel
 
-The 10 inference-only methods span three axes:
-- **Length/format control** (comparing `naive` ↔ `naive_tight` and `lit_informed` ↔ `lit_informed_tight` isolates it).
-- **Judge-facing vs. content-facing attacks** (`injection_leadin` and `rubric_aware` are judge-facing by design; `rules_explicit`, `lit_informed_tight`, and `scaffolded_cot_distill` improve the content itself).
-- **Cost-accuracy of inference-time search** (single-call methods vs. `icir_single` (≈15 calls/doc) vs. `bon_panel` (≈10 rewriter + 16 judge calls/doc)).
+The 6 inference-only methods span three axes:
+- **Judge-facing vs. content-facing attacks** — `injection_leadin` and `rubric_aware` are judge-facing by design; `naive` and `lit_informed_tight` improve the content itself.
+- **Inference-time search cost vs. quality** — single-call prompt methods vs. `icir_single` (≈15 calls/doc, iterative feedback) vs. `bon_panel` (≈10 rewriter + 16 judge calls/doc, parallel-with-selection).
+- **Declared-hack vs. earnest-quality floor** — `injection_leadin` is the labelled obvious hack; the others sit in various shades of "improving the content for real" vs. "learning the rubric's surface cues."
 
-Expected unknown-judge transfer (worst-to-best, from `background_docs/methods_5_10_design.md`): `bon_panel` → `icir_single` → `injection_leadin` → `rubric_aware` → `rules_explicit` → `scaffolded_cot_distill` / `lit_informed_tight`. The `bon_panel` − `rules_explicit` gap on held-out judges is the cleanest single-number summary of the unknown-judge penalty this panel can produce.
+Expected unknown-judge transfer (worst-to-best, from `background_docs/methods_5_10_design.md`): `bon_panel` → `icir_single` → `injection_leadin` → `rubric_aware` → `lit_informed_tight`. The `bon_panel` − `lit_informed_tight` gap on held-out judges is the cleanest single-number summary of the unknown-judge penalty this panel can produce.
+
+**Pruned from the active set (2026-04-17):** `lit_informed`, `naive_tight`, `rules_explicit`, `scaffolded_cot_distill`. These were implemented and scored during pilot runs; rewrites still sit in the `paragraphs` table but are excluded from the active runner and the headline analysis. If we want them back for an appendix comparison it's a one-line runner change — the data is there.
 
 Methods explicitly out of scope across the whole project: suffix-injection attacks on the *judge prompt* (different threat model — adversary controls a suffix, not the content), white-box gradient attacks on the judge, and reward-model distillation (the training agent uses online judge calls instead; cut-RM rationale in `EXPERIMENT_NOTES.md`).
 
@@ -272,4 +270,4 @@ The four-quadrant decomposition chart in §5 is built from the `by_method_headli
 - Whether to re-centre the paper title on "political-opinion + stance-preservation under unknown LLM judges" (sharper framing) or keep the generic "unknown-judge robustness" framing (broader but more crowded prior art).
 - Primary effectiveness metric: raw uplift on held-out judge, transfer efficiency (held-out / proxy uplift), or drift-penalised uplift. Recommend transfer efficiency.
 - Pre-analysis plan committing primary vs. exploratory hypotheses before running training. Cheap insurance against forking-paths under the 6-day deadline.
-- Whether the pruned-from-minimum-active-set methods (`lit_informed`, `naive_tight`, `rules_explicit`, `scaffolded_cot_distill`) enter the headline paper panel or stay as an appendix comparison — they are all fully scored in the DB so this is a presentation decision, not a re-run decision.
+- Whether the four pruned methods (`lit_informed`, `naive_tight`, `rules_explicit`, `scaffolded_cot_distill`) come back for an appendix comparison — rewrites are still in the DB, so it's a one-line runner change and an analyser re-run, no re-generation needed.
