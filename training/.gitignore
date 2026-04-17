@@ -1,0 +1,4 @@
+# Run artefacts (can be huge — model checkpoints, wandb traces, progress logs)
+run_artefacts/
+logs/
+*.log
