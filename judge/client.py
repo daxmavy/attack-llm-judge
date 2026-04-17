@@ -135,6 +135,12 @@ def call_judge(
                 continue
             resp.raise_for_status()
             data = resp.json()
+            # OpenRouter sometimes returns 200 with an `error` object and no
+            # `choices` under provider quota blips; treat as transient.
+            if "choices" not in data or not data["choices"]:
+                last_err = f"no choices in response: {str(data)[:300]}"
+                time.sleep(2 ** attempt)
+                continue
             raw = data["choices"][0]["message"].get("content") or ""
             usage = data.get("usage", {}) or {}
             parsed = _extract_json(raw)
@@ -166,5 +172,8 @@ def call_judge(
             )
         except requests.RequestException as e:
             last_err = str(e)
+            time.sleep(2 ** attempt)
+        except (KeyError, TypeError, IndexError) as e:
+            last_err = f"bad response shape: {e}"
             time.sleep(2 ** attempt)
     return CallResult(False, None, None, "", last_err or "unknown error")

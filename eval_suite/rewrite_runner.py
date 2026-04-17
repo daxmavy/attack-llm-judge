@@ -33,18 +33,20 @@ from rewriters.orchestrators import (
 from rewriters.rewriter_client import REWRITER_LABEL, REWRITER_MODEL
 
 
-# Method slug -> registration metadata.
+# Method slug -> registration metadata. 2026-04-17: operator pruned
+# `lit_informed`, `naive_tight`, `rules_explicit`, `scaffolded_cot_distill`
+# from the minimum set. Remaining 6 methods.
 METHOD_SPEC = {
-    "naive":                    {"calls_pp": 1.3,  "t": 0.7, "simple": True},
-    "lit_informed":             {"calls_pp": 1.3,  "t": 0.7, "simple": True},
-    "naive_tight":              {"calls_pp": 1.3,  "t": 0.7, "simple": True},
-    "lit_informed_tight":       {"calls_pp": 1.3,  "t": 0.7, "simple": True},
-    "injection_leadin":         {"calls_pp": 1.3,  "t": 0.4, "simple": False},
-    "rules_explicit":           {"calls_pp": 1.3,  "t": 0.7, "simple": True},
-    "rubric_aware":             {"calls_pp": 1.3,  "t": 0.5, "simple": True},
-    "scaffolded_cot_distill":   {"calls_pp": 1.3,  "t": 0.7, "simple": False},
-    "icir_single":              {"calls_pp": 13.0, "t": 0.5, "simple": False},
-    "bon_panel":                {"calls_pp": 10.0, "t": 1.0, "simple": False},
+    "naive":              {"calls_pp": 1.3,  "t": 0.7, "simple": True},
+    "lit_informed_tight": {"calls_pp": 1.3,  "t": 0.7, "simple": True},
+    "injection_leadin":   {"calls_pp": 1.3,  "t": 0.4, "simple": False},
+    "rubric_aware":       {"calls_pp": 1.3,  "t": 0.5, "simple": True},
+    # icir_single now scores with BOTH in-panel judges (Qwen-2.5-7B + Llama-3.1-8B)
+    # and averages; plan-of-record per MODELS.md is that the training signal is
+    # mean of the two in-panel judges, so the ICIR feedback loop should match.
+    "icir_single":        {"calls_pp": 15.0, "t": 0.5, "simple": False},
+    # bon_panel uses the 2-judge attack panel (was 5 before the minimum-set change).
+    "bon_panel":          {"calls_pp": 10.0, "t": 1.0, "simple": False},
 }
 
 

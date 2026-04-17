@@ -27,19 +27,17 @@ class JudgeConfig:
 
 # Prices are OpenRouter list prices (Mar-Apr 2026). If the real cost comes
 # back different on the smoke test we update these once, not per-call.
-# Slugs below have been verified live against OpenRouter's model list
-# (Apr 2026). Some models the operator originally named are no longer
-# hosted; substitutions noted inline.
+# Minimum-run design (MODELS.md, 2026-04-17): 2 in-panel judges used for both
+# training signal (GRPO reward = mean of the two) and evaluation, plus 1
+# held-out judge never seen during training. Same identities regardless of
+# whether served via OpenRouter or locally via HF transformers.
 ATTACK_PANEL = [
-    JudgeConfig("llama-3.1-8b",    "meta-llama/llama-3.1-8b-instruct",  "attack", 0.02, 0.05),
-    JudgeConfig("qwen-2.5-7b",     "qwen/qwen-2.5-7b-instruct",          "attack", 0.04, 0.10),
-    # Ministral 8B 2512 replaces retired mistral-7b-instruct (current Mistral-family small-judge).
-    JudgeConfig("ministral-8b",    "mistralai/ministral-8b-2512",        "attack", 0.15, 0.15),
-    # Gemma 3 4B replaces retired gemma-2-9b-it (current Gemma-family small-judge on OpenRouter).
-    JudgeConfig("gemma-3-4b",      "google/gemma-3-4b-it",               "attack", 0.04, 0.08),
-    # Microsoft Phi series no longer on OpenRouter, and NVIDIA Nemotron returns empty content
-    # under response_format=json_object. Grok-3-mini is the cleanest 5th-family small judge.
-    JudgeConfig("grok-3-mini",      "x-ai/grok-3-mini",                   "attack", 0.30, 0.50),
+    JudgeConfig("judge_qwen7b",  "qwen/qwen-2.5-7b-instruct",          "attack", 0.04, 0.10),
+    JudgeConfig("judge_llama8b", "meta-llama/llama-3.1-8b-instruct",   "attack", 0.02, 0.05),
+]
+
+HELD_OUT_PANEL = [
+    JudgeConfig("judge_gemma9b", "google/gemma-2-9b-it",               "held_out", 0.06, 0.06),
 ]
 
 GOLD_PANEL = [
@@ -54,7 +52,7 @@ GOLD_PANEL = [
 ]
 
 
-ALL_JUDGES = ATTACK_PANEL + GOLD_PANEL
+ALL_JUDGES = ATTACK_PANEL + HELD_OUT_PANEL + GOLD_PANEL
 
 
 def by_slug(slug: str) -> JudgeConfig:
@@ -69,6 +67,8 @@ def panel(name: str) -> list[JudgeConfig]:
         return list(ATTACK_PANEL)
     if name == "gold":
         return list(GOLD_PANEL)
+    if name == "held_out":
+        return list(HELD_OUT_PANEL)
     if name == "all":
         return list(ALL_JUDGES)
     raise ValueError(name)
