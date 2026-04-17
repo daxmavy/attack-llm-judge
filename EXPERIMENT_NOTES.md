@@ -190,3 +190,22 @@ Successful GRPO runs earlier in the day showed +5–8 reward Δ on training judg
 
 ### D-14. Proven-path strategy for tonight
 Use `run_min_vllm.py` pattern (vLLM for judges only, HF rewriter via TRL's default `model.generate`). Add length penalty. Run 5-step smoke → 15-step pilot → full run. Full run scope determined by time budget (target: finish before 09:00 UTC).
+
+### Pilot #1 — 2026-04-17 23:27 UTC — SUCCESS
+- **Config:** G=4, bsz=8, grad_accum=4, lr=5e-6, β=0.01, T=1.0, α=25 (length), tol=0.10, 25 steps, top-decile 200 train / 50 eval.
+- **Trajectory:**
+  - Step 1: ej=74.7, pen=7.23, final=67.5, ratio=0.65 (undershoots target)
+  - Step 5: ej=77.1, pen=10.47, final=66.7, ratio=1.45 (overshoots target — length-gaming signal kicks in)
+  - Step 11: ej=81.1, pen=3.55, final=77.6, ratio=1.09 (penalty pulls it back)
+  - Step 18: ej=84.9, pen=1.28, final=83.6, ratio=0.97 (converged to in-band)
+  - Step 25: ej=80.7, pen=2.44, final=78.2, ratio=0.96
+- **Pre/post on 2 in-panel judges (50-prompt disjoint eval set):**
+  - Qwen-7B: 81.80 → 85.24, **Δ +3.44**
+  - Llama-8B: 79.86 → 86.22, **Δ +6.36**
+- **Wall-clock:** 6.8 min training, 16.0 min total (12 min vLLM setup + pre/post eval).
+- **Interpretation.** Length penalty at α=25 successfully kept `length_ratio` in the 0.83-0.99 band for last 10 steps despite initial overshoot to 1.54. Reward climbed +10 on the final (penalised) scale; +5 on raw judges. This is mission (b) achieved.
+- **Wandb run:** `grpo-pilot1-<timestamp>` under group `mission_20260418`.
+- **Artifacts:** `/workspace/grpo_run/final_pilot1/` (model), `training/pilot1_eval_summary.json` (full pre/post scores + rewrites), `training/pilot1_manifest.json` (config).
+
+### Mission full run — 2026-04-17 23:35 UTC → TBD
+Launched with identical config to pilot #1. Scope up: `--max-steps 500 --n-train 452 --n-eval 50`. ETA ~2.1 h training + ~20 min startup/eval; finish projected ~02:00 UTC. Pre/post eval on all 3 judges will follow via `finish_eval.py` pattern + HF push.
