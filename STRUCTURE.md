@@ -240,19 +240,99 @@ The four-quadrant decomposition chart in §5 is built from the `by_method_headli
 
 ### 6.2 Training pipeline — owned by **training** agent
 
-**Inputs:** paragraphs from `data/paragraphs.db`, the 2 proxy judges (online via OpenRouter or HF transformers per `MODELS.md`), training prompt set.
+**Inputs:** paragraphs from `data/paragraphs.db`, the 2 proxy judges (local via vLLM or HF transformers per `MODELS.md`), training prompt set.
 **Outputs:** trained rewriter checkpoints for the SFT and GRPO arms; rollout / rollout-eval logs sufficient to reproduce the training curves; rewrites scored by the held-out judge and gold panel for the eval set.
 
-**[FILL IN — training agent]**
-- Current SFT recipe (data construction from BoN, loss, LR, batch, epochs, where the checkpoint lands).
-- Current GRPO recipe (G, KL coefficient, learning rate, reward aggregation across the 2 proxy judges, rollout temperature, how many epochs / training prompts, how online judge calls are batched).
-- How the 2-proxy ensemble is aggregated into a scalar reward.
-- Rollout infrastructure choice: OpenRouter API vs. local vLLM/HF for the judges, with the per-step throughput you actually see.
-- Train/eval split for training prompts (e.g. disjoint 200/50 from top-decile writers, per `MODELS.md`).
-- Diagnostics tracked per step: proxy reward, rollout perplexity, KL to reference, length distribution, plus the held-out-judge eval cadence (e.g. every N steps on the eval set).
-- Reward-hacking tripwires (e.g. rising proxy reward with rising drift / Binoculars-style detector / hallucinated specifics).
-- Known failure modes (link to `EXPERIMENT_NOTES.md`).
-- Cost: API spend on online-judge calls + GPU-hours used.
+All training artefacts live under `/workspace/grpo_run/` (outside the project git repo — pod-local `/workspace` persists on RunPod volume). Reproducibility manifest (`run_manifest.py`) captured per run; wandb project is `attack-llm-judge`, entity `daxmavy-university-of-oxford`.
+
+#### SFT recipe — *not yet implemented*
+
+Planned: pairs constructed from `bon_panel`-selected rollouts (best of 8 under mean-of-proxy-judges). SFT loss, token-level cross-entropy, LR ~5e-6, 1–2 epochs over the pair corpus. Checkpoint slug `sft_bon` per §4.c. Training agent will populate once the GRPO path is confirmed stable.
+
+#### GRPO recipe (current, verified reproducible)
+
+**Reward signal.** Scalar reward per rollout = `(judge_qwen7b_score + judge_llama8b_score) / 2`, each judge returning an integer in [0, 100] under the clarity rubric copied verbatim from `judge/rubrics.py`. JSON output (reasoning + score) parsed with regex fallback; unparseable → 50.0. **No length penalty in the reward as of 2026-04-17** — length-gaming is a documented failure mode being tracked but not yet suppressed; design for a tolerance-band additive penalty (α=25, tol=0.10 on `word_count / original_word_count`) is in `EXPERIMENT_NOTES.md` awaiting a decision to wire it in.
+
+**Rewriter base.** `Qwen/Qwen2.5-1.5B-Instruct`, full fine-tuning (bf16 weights + fp32 AdamW optimiser state + fp32 grads). Fits with 2 proxy-judge vLLM engines + 1 rewriter-vLLM engine on a single A100-80GB.
+
+**TRL GRPOConfig for the last known-good run (`grpo-min-20260417-144201`):**
+
+| Knob | Value | Notes |
+|---|---|---|
+| `num_generations` (G) | 4 | Group size. Known-good at 4; G=8 attempted post-hoc, needs `per_device=8 + grad_accum=4` to avoid OOM at full vLLM-colocate. |
+| `per_device_train_batch_size` | 8 | = 2 unique prompts × G rollouts. |
+| `gradient_accumulation_steps` | 4 | → 32 rollouts (8 unique prompts) per optimizer step. |
+| `max_completion_length` | 260 | Paragraphs target ~100–150 tokens; 260 allows growth and truncation detection. |
+| `learning_rate` | 5e-6 | Linear schedule; 25-step run reaches end-of-schedule at 0. |
+| `beta` (KL) | 0.01 | KL to reference policy (initial weights). 0.01 reaches KL ≈ 0.27 by step 25 on this setup; for longer runs (≥200 steps) expect to tune up or enable `loss_type="dr_grpo"` + `scale_rewards="none"` to address low-variance collapse on high-baseline data. |
+| `max_steps` | 25 | Minimum-time run. Full-scale target: ~1,125 (2 epochs over 4,500 prompts). |
+| `temperature` | 1.0 | Rollout sampling. T=1.2 tested to widen within-group reward std; no consistent improvement yet observed. |
+| `top_p` | 1.0 | |
+| `loss_type` | `"dapo"` (TRL default) | Fixes loss-level length bias already — distinct from reward-level length gaming. |
+| `scale_rewards` | `"group"` (TRL default) | Within-group std normalisation. Dr-GRPO (`"none"`) tested post-hoc; see `EXPERIMENT_NOTES.md`. |
+| `bf16` | True | |
+| `seed` | 42 | |
+
+**Train / eval split.** Rows `origin_kind='original_writer' AND writer_is_top_decile=1`, ordered by `(proposition_id, document_id)`:
+
+| Slice | Rows | Use |
+|---|---|---|
+| Train | 0–199 (200) | GRPO rollouts |
+| Eval (disjoint) | 200–249 (50) | Pre/post scoring on all 3 judges (2 proxy + 1 held-out) |
+
+Top-decile is deliberate: attacker has least honest-improvement headroom, so reward gain is biased toward judge-gaming — the thing the paper is designed to detect.
+
+#### Rollout infrastructure — two paths
+
+The 2 proxy judges can run either on HF transformers or on vLLM. Rewriter rollouts can run either on HF `model.generate()` (TRL default) or on a TRL-internal vLLM engine (`use_vllm=True, vllm_mode="colocate"`). Four combinations observed:
+
+| Path | Judges | Rewriter gen | Judge score/sec | Per-optim-step wall-clock (32 rollouts × 2 judges) | Status |
+|---|---|---|---|---|---|
+| HF / HF | HF transformers bs=16 | HF `generate()` | ~4 | **~32 s** | **Known-good.** Reproduces learning: `grpo-min-20260417-144201` showed reward 74 → 85 on proxy judges over 25 steps. |
+| vLLM / HF | vLLM colocate | HF `generate()` | ~25 | ~22 s | Faster per step, but adds 2 × ~6 min engine spawn at startup. Reproduces learning. |
+| HF / TRL-vLLM | HF transformers | TRL `use_vllm=True` | ~4 | — | Not tested (strictly worse than HF/HF). |
+| vLLM / TRL-vLLM | vLLM colocate | TRL `use_vllm=True` | ~25 | projected **~16 s** | Full-scale target. Smoke-tested (3 steps, reward comparable to HF/HF). Reproduction on full 25-step run ongoing 2026-04-17 evening. |
+
+**vLLM settings when used (both for judges and rewriter copy):** `dtype="bfloat16"`, `enforce_eager=True` (skips torch_compile, saves ~1 min startup; negligible per-step cost impact at this scale). **Per-engine VRAM budget:** 0.22 for Qwen-7B judge, 0.25 for Llama-8B judge, 0.12 for the rewriter's vLLM copy. `vllm_enable_sleep_mode=True` on the rewriter copy to offload it during the optimizer step (recovered ~9 GB peak). `vllm_importance_sampling_correction=True` (TRL default, cap 3.0) corrects for vLLM-sampler-vs-HF-trainer logprob drift — measured IS ratios typically 0.7–1.2, cap rarely triggered.
+
+**Pinned package versions (current):** `trl==1.2.0`, `vllm==0.18.1` (downgraded from 0.19.0 to sit inside TRL's "supported vLLM" band 0.11–0.18), `torch==2.10.0+cu128`, `transformers==4.57.6`.
+
+#### Diagnostics tracked per step (wandb)
+
+Reward-side (in-house, logged from `reward_fn`):
+- `reward/judge_qwen7b_mean`, `reward/judge_llama8b_mean`, `reward/ensemble_mean`, `reward/ensemble_std`
+- `gen/mean_len_chars`, `timing/score_seconds`
+
+TRL built-ins (auto per optim step):
+- `loss`, `grad_norm`, `kl`, `entropy`, `learning_rate`
+- `completions/mean_length`, `min_length`, `max_length`, `clipped_ratio`, `mean_terminated_length`
+- `rewards/reward_fn/mean`, `rewards/reward_fn/std`
+- `frac_reward_zero_std` — fraction of groups with std=0. Proxy for low-variance collapse on saturated data. In the successful 25-step run drifts from 0 → 0.25 by step 16.
+- `sampling/sampling_logp_difference`, `sampling/importance_sampling_ratio{min,mean,max}` — only populated in TRL-vLLM rewriter paths. Drift indicator for vLLM↔HF kernel mismatch.
+
+Held-out-judge eval cadence: **pre-training + post-training only** in the current minimum run. Extension to periodic in-training eval (every N steps on a small held-out slice) is trivial and is the right move before committing to a 1,125-step full run, so the unknown-judge curve can be tracked live rather than reconstructed post-hoc.
+
+#### Reward-hacking tripwires
+
+Each trained rewriter's outputs are run through the same drift pipeline the inference-only methods use (§5), and all metrics land in `evaluations` next to the inference-only rows so the comparison is apples-to-apples:
+- **Length gaming** — rise in `completions/mean_length` or in post-training `word_count` delta without a matching held-out-judge rise. Observed at strength in the known-good run: +40% completion length, +2.10 held-out vs. +6.93 mean proxy (Δ of ~5 between what the proxies see and what the held-out sees).
+- **Stance drift** — DeBERTa agreement-score regressor prediction on original vs. rewrite.
+- **Hallucinated specifics** — regex + spaCy NER counts of new named entities / percentages that weren't in the original.
+- **AI-detectability** — supervised TF-IDF classifier (AUROC 0.989 on `paul_data`). If the rewriter drifts toward "more AI-sounding" while reward climbs, something surface-level is being gamed.
+
+#### Known failure modes (full write-ups in `EXPERIMENT_NOTES.md`)
+
+- **Length gaming is the main unresolved failure.** The +6.93 / +2.10 gap between mean-proxy and held-out deltas in the known-good 25-step run is consistent with roughly two-thirds of the proxy gain being length-bias. Design for a length-penalty-in-reward (Option 1: additive tolerance-band, α=25, tol=0.10) is documented; wiring it in is the next scheduled change for the training arm. The cheaper alternative of length-controlled re-scoring for post-hoc validation is also available.
+- **TRL 1.2 vs. vLLM 0.19 compatibility warning.** TRL 1.2 supports vLLM ≤ 0.18; vLLM 0.19 emits warnings and has subtle weight-sync edge cases under `use_vllm=True`. Downgraded to vLLM 0.18.1.
+- **OOM at `per_device_train_batch_size=16`** with 3 vLLM engines co-resident on 80 GB. Reduced to 8 + `gradient_accumulation_steps=4` (same effective batch), plus `PYTORCH_ALLOC_CONF=expandable_segments:True` to reduce fragmentation. Same total rollouts per optimizer step, smaller forward-pass activation peak.
+- **Gemma-2-9B chat template doesn't accept `system` role.** Held-out-judge prompts merge the system prompt into the first user turn (parity check: produces identical scoring vs. the canonical system+user formatting on the other two judges).
+- **Orphaned vLLM EngineCore subprocesses after kill.** Parent Python's `kill` doesn't always reap the EngineCore workers (they spawn in a separate PID namespace on RunPod). Manual `kill -9 <multiprocessing-spawn-pid>` after each aborted run; VRAM check via `nvidia-smi --query-compute-apps` is part of the post-abort checklist.
+- **Metadata gap in early runs.** Runs prior to 2026-04-17 evening lacked manifests; reconstruction was via in-session conversation + source-file mtimes. `run_manifest.py` (per-run JSON: GRPOConfig, package versions, git SHA, script SHA-256, GPU info, free-form `extra`) is now wired into `pilot_run.py` and `run_min_repro*.py`. Also mirrored to wandb `config.manifest`.
+
+#### Cost
+
+- **API spend:** \$0 on training. All judges run locally (HF or vLLM); the held-out Gemma-9B is also local. The gold-panel decomposition is the eval-suite agent's OpenRouter spend, tracked in §6.1.
+- **GPU-hours:** known-good 25-step HF/HF run ~30 min A100 wall-clock (13 min training + 11 min HF judge loading + 2 min pre-eval + 4 min post-eval including held-out). vLLM/vLLM path projected 22–25 min for the same 25 steps. Full-scale 1,125-step run projected ~9 h vLLM-everywhere, ~30 h HF-only.
 
 ### 6.3 Shared infrastructure (not owned by either agent in particular)
 
