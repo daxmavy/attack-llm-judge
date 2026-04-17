@@ -1,0 +1,17 @@
+method,judge,paragraph_type,n,orig_clarity,rewrite_clarity,delta_clarity,orig_informativeness,rewrite_informativeness,delta_informativeness
+lit_informed_tight,gemini-2.0-flash,ALL,100,77.18,84.32,7.14,56.6,63.15,6.55
+lit_informed_tight,gemini-2.0-flash,edited,20,80.8,85.75,4.95,55.0,58.0,3.0
+lit_informed_tight,gemini-2.0-flash,model,60,81.38333333333334,84.08333333333333,2.7,59.0,65.0,6.0
+lit_informed_tight,gemini-2.0-flash,writer,20,60.95,83.6,22.65,51.0,62.75,11.75
+lit_informed_tight,llama-3.3-70b,ALL,100,84.81818181818181,91.64,6.838383838383838,62.22,71.95,9.73
+lit_informed_tight,llama-3.3-70b,edited,20,88.25,92.75,4.5,58.85,63.3,4.45
+lit_informed_tight,llama-3.3-70b,model,60,89.9,91.51666666666667,1.6166666666666667,66.38333333333334,74.86666666666666,8.483333333333333
+lit_informed_tight,llama-3.3-70b,writer,20,65.15789473684211,90.9,25.789473684210527,53.1,71.85,18.75
+naive_tight,gemini-2.0-flash,ALL,100,77.18,82.99,5.81,56.6,60.9,4.3
+naive_tight,gemini-2.0-flash,edited,20,80.8,86.0,5.2,55.0,58.25,3.25
+naive_tight,gemini-2.0-flash,model,60,81.38333333333334,82.48333333333333,1.1,59.0,61.583333333333336,2.5833333333333335
+naive_tight,gemini-2.0-flash,writer,20,60.95,81.5,20.55,51.0,61.5,10.5
+naive_tight,llama-3.3-70b,ALL,100,84.81818181818181,91.17,6.363636363636363,62.22,66.26,4.04
+naive_tight,llama-3.3-70b,edited,20,88.25,89.75,1.5,58.85,62.35,3.5
+naive_tight,llama-3.3-70b,model,60,89.9,91.78333333333333,1.8833333333333333,66.38333333333334,67.81666666666666,1.4333333333333333
+naive_tight,llama-3.3-70b,writer,20,65.15789473684211,90.75,25.63157894736842,53.1,65.5,12.4

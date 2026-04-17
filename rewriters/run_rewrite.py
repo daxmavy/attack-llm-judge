@@ -18,7 +18,12 @@ import pandas as pd
 
 from judge.client import JUDGE_MODELS, call_judge, load_api_key
 from judge.rubrics import SYSTEM_PROMPT as JUDGE_SYSTEM, build_prompt
-from rewriters.rewrite_prompts import SYSTEM_PROMPT as REWRITER_SYSTEM, build_rewrite_prompt
+from rewriters.rewrite_prompts import (
+    SYSTEM_PROMPT as REWRITER_SYSTEM,
+    build_rewrite_prompt,
+    build_retry_prompt,
+    length_bounds,
+)
 from rewriters.rewriter_client import REWRITER_LABEL, REWRITER_MODEL, call_rewriter
 
 
@@ -58,19 +63,43 @@ def load_sample(n: int, seed: int) -> pd.DataFrame:
     return out
 
 
-def do_rewrites(sample: pd.DataFrame, api_key: str, max_workers: int) -> pd.DataFrame:
+TIGHT_METHODS = {"naive_tight", "lit_informed_tight"}
+
+
+def do_rewrites(sample: pd.DataFrame, api_key: str, max_workers: int,
+                methods: tuple[str, ...] = ("naive", "lit_informed"),
+                tight_tolerance: float = 0.10) -> pd.DataFrame:
     tasks = []
     for _, row in sample.iterrows():
-        for method in ("naive", "lit_informed"):
+        for method in methods:
             user = build_rewrite_prompt(method, row["proposition"], row["document_text"])
-            tasks.append((row["document_id"], method, REWRITER_SYSTEM, user))
+            tasks.append((row["document_id"], method, row["proposition"], row["document_text"],
+                          REWRITER_SYSTEM, user))
 
     results = []
     t0 = time.time()
 
     def _go(t):
-        doc_id, method, sysp, userp = t
+        doc_id, method, prop, orig_text, sysp, userp = t
         r = call_rewriter(sysp, userp, api_key, model_id=REWRITER_MODEL, max_tokens=400, temperature=0.7)
+        retried = False
+        if r.ok and r.text and method in TIGHT_METHODS:
+            _, lo, hi = length_bounds(orig_text, tolerance=tight_tolerance)
+            actual = len(r.text.split())
+            if actual < lo or actual > hi:
+                retry_user = build_retry_prompt(method, prop, orig_text, r.text)
+                r2 = call_rewriter(sysp, retry_user, api_key, model_id=REWRITER_MODEL,
+                                   max_tokens=400, temperature=0.5)
+                if r2.ok and r2.text:
+                    # Keep whichever is closer to the target range.
+                    a2 = len(r2.text.split())
+                    def miss(x, l, h):
+                        if x < l: return l - x
+                        if x > h: return x - h
+                        return 0
+                    if miss(a2, lo, hi) <= miss(actual, lo, hi):
+                        r = r2
+                    retried = True
         return {
             "document_id": doc_id,
             "method": method,
@@ -79,6 +108,7 @@ def do_rewrites(sample: pd.DataFrame, api_key: str, max_workers: int) -> pd.Data
             "rewrite_error": r.error,
             "rewrite_prompt_tokens": r.prompt_tokens,
             "rewrite_completion_tokens": r.completion_tokens,
+            "rewrite_retried": retried,
         }
 
     with cf.ThreadPoolExecutor(max_workers=max_workers) as ex:
@@ -130,13 +160,13 @@ def do_judging(rewrites: pd.DataFrame, sample: pd.DataFrame, api_key: str, max_w
     return pd.DataFrame(results)
 
 
-def run(n: int, seed: int, max_workers: int, tag: str) -> None:
+def run(n: int, seed: int, max_workers: int, tag: str, methods: tuple[str, ...]) -> None:
     api_key = load_api_key()
     sample = load_sample(n, seed)
     print(f"Sampled {len(sample)} source documents:")
     print(sample.groupby(["paragraph_type", "model_name"], dropna=False).size())
 
-    rewrites = do_rewrites(sample, api_key, max_workers)
+    rewrites = do_rewrites(sample, api_key, max_workers, methods=methods)
     rewrites = rewrites.merge(sample[["document_id", "proposition", "document_text", "paragraph_type", "model_name"]],
                               on="document_id", how="left")
     rewrites["orig_words"] = rewrites["document_text"].str.split().str.len()
@@ -245,5 +275,8 @@ if __name__ == "__main__":
     p.add_argument("--seed", type=int, default=17)
     p.add_argument("--max-workers", type=int, default=8)
     p.add_argument("--tag", default="v1")
+    p.add_argument("--methods", default="naive,lit_informed",
+                   help="comma-separated rewriter methods")
     args = p.parse_args()
-    run(args.n, args.seed, args.max_workers, args.tag)
+    methods = tuple(m.strip() for m in args.methods.split(",") if m.strip())
+    run(args.n, args.seed, args.max_workers, args.tag, methods)

@@ -55,3 +55,8 @@ Known problems:
         - Suggests the two prompts are similarly good at clarity but lit_informed is noticeably better at informativeness — consistent with literature on what judges reward.
         - Outputs: `rewriters/results/rewrites_v1.csv`, `rewrite_judge_scores_v1.csv`, `combined_v1.csv`, `summary_v1.csv/json`.
         - Total spend so far (judge+rewriters): ~$0.20 of $30 budget.
+    - UPDATE 2026-04-17 (length-controlled variants): Word-count fidelity of v1 was weak — naive hit 56% within ±10% (mean pct_err 11%); lit_informed only 28% within ±10% (mean pct_err 15.5%), with 25% of outputs <0.80× original. Added two length-controlled variants that keep the originals' prompts intact (`naive_tight`, `lit_informed_tight` in `rewriters/rewrite_prompts.py`) plus a one-shot length retry in `run_rewrite.py`: if the first draft is outside ±10%, re-prompt once with the actual count and the required range. Tight prompts use explicit min/max, explicit "paragraph is X words" anchor, and forbid headings/bullets. Re-ran on the same 100-doc sample (tag `v2_tight`). New fidelity (`rewriters/results/wordcount_fidelity.csv`):
+        - naive → naive_tight: pct_err 11.0% → 5.2%; within ±10% 56% → 90%; within ±20% 86% → 100%; under 0.80× 14% → 0%.
+        - lit_informed → lit_informed_tight: pct_err 15.5% → 7.0%; within ±10% 28% → 76%; within ±20% 74% → 99%; under 0.80× 25% → 1%.
+        - Judge deltas held up or improved slightly: lit_informed_tight vs lit_informed Llama informativeness delta +9.7 vs +6.9, clarity about the same; same on Gemini. Length control did not cost quality.
+        - Old v1 methods kept in place. Total rewriter+judge spend incl. v2: ~$0.30.
