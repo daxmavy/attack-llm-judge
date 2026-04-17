@@ -35,11 +35,13 @@ def _in_range(text: str, lo: int, hi: int) -> bool:
 
 
 def _one_shot_with_retry(method: str, proposition: str, paragraph: str, api_key: str,
-                         temperature: float, **kwargs) -> tuple:
+                         temperature: float, timeout: int = 45, retries: int = 2,
+                         **kwargs) -> tuple:
     """Runs one rewrite + at most one length-retry. Returns (final RewriteResult, retry_flag)."""
     user = build_rewrite_prompt(method, proposition, paragraph, **kwargs)
     r = call_rewriter(REWRITER_SYSTEM, user, api_key, model_id=REWRITER_MODEL,
-                      max_tokens=400, temperature=temperature)
+                      max_tokens=400, temperature=temperature,
+                      timeout=timeout, retries=retries)
     if not r.ok or not r.text:
         return r, False
     _, lo, hi = length_bounds(paragraph, TIGHT_TOL)
@@ -113,7 +115,10 @@ def run_scaffolded(proposition: str, paragraph: str, api_key: str) -> dict:
 def run_icir_single(proposition: str, paragraph: str, api_key: str,
                      feedback_judge_slug: str = "qwen-2.5-7b",
                      n_max: int = 4, improve_threshold: float = 2.0,
-                     stop_score: float = 90.0) -> dict:
+                     stop_score: float = 90.0,
+                     deadline_seconds: float = 120.0) -> dict:
+    import time as _time
+    deadline = _time.time() + deadline_seconds
     """
     Iteration 0: seed via lit_informed_tight.
     Iterations 1..n_max: query the feedback judge (clarity only for now),
@@ -144,10 +149,13 @@ def run_icir_single(proposition: str, paragraph: str, api_key: str,
     best_score = -1.0
 
     for t in range(n_max + 1):  # +1 so we also score the last rewrite
+        if _time.time() > deadline:
+            break
         # Score current rewrite
         prompt = build_prompt("clarity", proposition, rewrites[-1])
         jr = call_judge(judge.model_id, JUDGE_SYSTEM, prompt, api_key,
-                        max_tokens=250, temperature=0.0)
+                        max_tokens=250, temperature=0.0,
+                        timeout=30, retries=1)
         calls += 1
         total_p += jr.prompt_tokens or 0
         total_c += jr.completion_tokens or 0

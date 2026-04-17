@@ -1,0 +1,83 @@
+{
+  "val": {
+    "eval_loss": 0.010702542960643768,
+    "eval_mae": 0.0752332960371976,
+    "eval_rmse": 0.10345309314135152,
+    "eval_pearson": 0.7697247645156609,
+    "eval_spearman": 0.784935413957092,
+    "eval_runtime": 3.8408,
+    "eval_samples_per_second": 260.101,
+    "eval_steps_per_second": 4.166,
+    "epoch": 4.0
+  },
+  "test": {
+    "overall": {
+      "mae": 0.07225204755862553,
+      "rmse": 0.09814353203651022,
+      "pearson": 0.758295215839462,
+      "spearman": 0.7253972757315417,
+      "n": 1002
+    },
+    "by_paragraph_type": {
+      "edited": {
+        "n": 104,
+        "mae": 0.070040556960381,
+        "pearson": 0.7582057496261285,
+        "spearman": 0.676484081751825
+      },
+      "model": {
+        "n": 449,
+        "mae": 0.06176654075195635,
+        "pearson": 0.7416912038656222,
+        "spearman": 0.6173864859957492
+      },
+      "writer": {
+        "n": 449,
+        "mae": 0.08324979272212642,
+        "pearson": 0.6781028725011188,
+        "spearman": 0.6357769074225146
+      }
+    },
+    "by_model_name": {
+      "anthropic/claude-sonnet-4": {
+        "n": 189,
+        "mae": 0.06481942865583631,
+        "pearson": 0.8077465337262885,
+        "spearman": 0.6855533697124694
+      },
+      "deepseek/deepseek-chat-v3-0324": {
+        "n": 179,
+        "mae": 0.060318320157141656,
+        "pearson": 0.7179484428404234,
+        "spearman": 0.5784869594814945
+      },
+      "openai/chatgpt-4o-latest": {
+        "n": 185,
+        "mae": 0.06470023458068436,
+        "pearson": 0.6743750986969005,
+        "spearman": 0.6157603304198737
+      },
+      "nan": {
+        "n": 449,
+        "mae": 0.08324979272212642,
+        "pearson": 0.6781028725011188,
+        "spearman": 0.6357769074225146
+      }
+    }
+  },
+  "args": {
+    "model": "microsoft/deberta-v3-base",
+    "output_dir": "/home/max/attack-llm-judge/criterion_model/clarity",
+    "epochs": 4.0,
+    "batch_size": 32,
+    "eval_batch_size": 64,
+    "lr": 1e-05,
+    "max_length": 256,
+    "seed": 42,
+    "weight_decay": 0.01,
+    "warmup_ratio": 0.06,
+    "fp16": false,
+    "bf16": false
+  },
+  "target": "mean_human_clarity / 100"
+}

@@ -27,20 +27,29 @@ class JudgeConfig:
 
 # Prices are OpenRouter list prices (Mar-Apr 2026). If the real cost comes
 # back different on the smoke test we update these once, not per-call.
+# Slugs below have been verified live against OpenRouter's model list
+# (Apr 2026). Some models the operator originally named are no longer
+# hosted; substitutions noted inline.
 ATTACK_PANEL = [
-    JudgeConfig("llama-3.1-8b",    "meta-llama/llama-3.1-8b-instruct", "attack",  0.05, 0.08),
-    JudgeConfig("qwen-2.5-7b",     "qwen/qwen-2.5-7b-instruct",        "attack",  0.04, 0.10),
-    JudgeConfig("mistral-7b",      "mistralai/mistral-7b-instruct",    "attack",  0.055, 0.055),
-    JudgeConfig("gemma-2-9b",      "google/gemma-2-9b-it",             "attack",  0.06, 0.06),
-    JudgeConfig("phi-3.5-mini",    "microsoft/phi-3.5-mini-128k-instruct", "attack", 0.04, 0.04),
+    JudgeConfig("llama-3.1-8b",    "meta-llama/llama-3.1-8b-instruct",  "attack", 0.02, 0.05),
+    JudgeConfig("qwen-2.5-7b",     "qwen/qwen-2.5-7b-instruct",          "attack", 0.04, 0.10),
+    # Ministral 8B 2512 replaces retired mistral-7b-instruct (current Mistral-family small-judge).
+    JudgeConfig("ministral-8b",    "mistralai/ministral-8b-2512",        "attack", 0.15, 0.15),
+    # Gemma 3 4B replaces retired gemma-2-9b-it (current Gemma-family small-judge on OpenRouter).
+    JudgeConfig("gemma-3-4b",      "google/gemma-3-4b-it",               "attack", 0.04, 0.08),
+    # Microsoft Phi series no longer on OpenRouter, and NVIDIA Nemotron returns empty content
+    # under response_format=json_object. Grok-3-mini is the cleanest 5th-family small judge.
+    JudgeConfig("grok-3-mini",      "x-ai/grok-3-mini",                   "attack", 0.30, 0.50),
 ]
 
 GOLD_PANEL = [
-    JudgeConfig("claude-sonnet-4.6", "anthropic/claude-sonnet-4.5",    "gold", 3.00, 15.00),
-    JudgeConfig("gemini-2.5-pro",    "google/gemini-2.5-pro",          "gold", 1.25, 10.00),
-    JudgeConfig("gpt-5-mini",        "openai/gpt-5-mini",              "gold", 0.25, 2.00),
-    JudgeConfig("deepseek-v3",       "deepseek/deepseek-chat",         "gold", 0.27, 1.10),
-    JudgeConfig("llama-3.1-405b",    "meta-llama/llama-3.1-405b-instruct", "gold", 0.80, 0.80),
+    JudgeConfig("claude-sonnet-4.6", "anthropic/claude-sonnet-4.6",            "gold", 3.00, 15.00),
+    JudgeConfig("gemini-2.5-pro",    "google/gemini-2.5-pro",                   "gold", 1.25, 10.00),
+    JudgeConfig("gpt-5-mini",        "openai/gpt-5-mini",                       "gold", 0.25,  2.00),
+    # DeepSeek V3.2 is the current stable V3 series on OpenRouter.
+    JudgeConfig("deepseek-v3.2",     "deepseek/deepseek-v3.2",                  "gold", 0.27,  1.10),
+    # Llama 3.1-405B is not on OpenRouter; Llama-4-Maverick is the closest frontier Meta model.
+    JudgeConfig("llama-4-maverick",  "meta-llama/llama-4-maverick",             "gold", 0.15,  0.60),
 ]
 
 

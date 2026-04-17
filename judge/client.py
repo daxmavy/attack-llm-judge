@@ -56,6 +56,8 @@ _JSON_OBJ_RE = re.compile(r"\{.*?\}", re.DOTALL)
 
 def _extract_json(text: str) -> Optional[dict]:
     """Pull the first JSON object out of a model response."""
+    if not text or not isinstance(text, str):
+        return None
     try:
         return json.loads(text)
     except Exception:
@@ -74,12 +76,28 @@ def _extract_json(text: str) -> Optional[dict]:
     return None
 
 
+# Some models (Gemini 2.5 Pro, GPT-5 family) are reasoning models and
+# emit hidden reasoning tokens before the answer. If max_tokens is too
+# small the judge's actual JSON reply gets truncated to "Here is the JSON
+# requested" style garbage. For these we ask for low reasoning effort and
+# bump max_tokens so the answer fits.
+REASONING_MODELS = {
+    "google/gemini-2.5-pro",
+    "openai/gpt-5-mini",
+    "openai/gpt-5",
+    "openai/gpt-5-pro",
+    "anthropic/claude-opus-4.7",  # thinking-enabled by default on some routings
+    "deepseek/deepseek-r1",
+    "deepseek/deepseek-r1-0528",
+}
+
+
 def call_judge(
     model_id: str,
     system_prompt: str,
     user_prompt: str,
     api_key: str,
-    max_tokens: int = 300,
+    max_tokens: int = 500,
     temperature: float = 0.0,
     retries: int = 3,
     timeout: int = 60,
@@ -99,6 +117,9 @@ def call_judge(
         "max_tokens": max_tokens,
         "response_format": {"type": "json_object"},
     }
+    if model_id in REASONING_MODELS:
+        payload["reasoning"] = {"effort": "low"}
+        payload["max_tokens"] = max(payload["max_tokens"], 500)
     last_err = None
     for attempt in range(retries):
         try:
@@ -107,9 +128,14 @@ def call_judge(
                 last_err = f"HTTP {resp.status_code}: {resp.text[:200]}"
                 time.sleep(2 ** attempt)
                 continue
+            # Some providers reject response_format; retry once without it.
+            if resp.status_code == 400 and "response_format" in payload:
+                payload.pop("response_format", None)
+                time.sleep(0.5)
+                continue
             resp.raise_for_status()
             data = resp.json()
-            raw = data["choices"][0]["message"]["content"]
+            raw = data["choices"][0]["message"].get("content") or ""
             usage = data.get("usage", {}) or {}
             parsed = _extract_json(raw)
             if parsed is None or "score" not in parsed:

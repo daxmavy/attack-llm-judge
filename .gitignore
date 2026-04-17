@@ -2,3 +2,11 @@
 __pycache__/
 *.pyc
 agreement_model/runs/
+criterion_model/*/checkpoint-*/
+criterion_model/*/final/
+criterion_model/*/train.log
+criterion_model/*/train.pid
+data/smoke_e2e.log
+data/smoke_e2e.pid
+data/smoke_summary.json
+*.safetensors
