@@ -43,12 +43,13 @@ ATTACK_PANEL = [
 ]
 
 GOLD_PANEL = [
-    JudgeConfig("claude-sonnet-4.6", "anthropic/claude-sonnet-4.6",            "gold", 3.00, 15.00),
-    JudgeConfig("gemini-2.5-pro",    "google/gemini-2.5-pro",                   "gold", 1.25, 10.00),
+    # Per operator (2026-04-17): swap sonnet-4.6 -> haiku-4.5 and gemini-2.5-pro ->
+    # gemini-2.5-flash to fit the $100 budget. Gold evaluation is also restricted
+    # to a stratified subsample of human-written paragraphs (+ their rewrites).
+    JudgeConfig("claude-haiku-4.5",  "anthropic/claude-haiku-4.5",              "gold", 0.80,  4.00),
+    JudgeConfig("gemini-2.5-flash",  "google/gemini-2.5-flash",                 "gold", 0.15,  0.60),
     JudgeConfig("gpt-5-mini",        "openai/gpt-5-mini",                       "gold", 0.25,  2.00),
-    # DeepSeek V3.2 is the current stable V3 series on OpenRouter.
     JudgeConfig("deepseek-v3.2",     "deepseek/deepseek-v3.2",                  "gold", 0.27,  1.10),
-    # Llama 3.1-405B is not on OpenRouter; Llama-4-Maverick is the closest frontier Meta model.
     JudgeConfig("llama-4-maverick",  "meta-llama/llama-4-maverick",             "gold", 0.15,  0.60),
 ]
 

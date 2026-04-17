@@ -90,13 +90,22 @@ INSERT OR REPLACE INTO paragraphs(
 
 def load_source_paragraphs(con: sqlite3.Connection, origin_kind: str = "original_writer",
                             limit: int | None = None,
-                            only_top_decile: bool = False) -> pd.DataFrame:
-    sql = f"SELECT document_id, proposition_id, proposition, text FROM paragraphs WHERE origin_kind='{origin_kind}'"
+                            only_top_decile: bool = False,
+                            sample_tag: str | None = None) -> pd.DataFrame:
+    if sample_tag:
+        sql = f"""SELECT p.document_id, p.proposition_id, p.proposition, p.text
+                   FROM paragraphs p
+                   JOIN sampled_writers s ON s.document_id = p.document_id
+                   WHERE s.tag = ? AND p.origin_kind = ?"""
+        params = (sample_tag, origin_kind)
+    else:
+        sql = f"SELECT document_id, proposition_id, proposition, text FROM paragraphs WHERE origin_kind=?"
+        params = (origin_kind,)
     if only_top_decile and origin_kind == "original_writer":
-        sql += " AND writer_is_top_decile=1"
+        sql += " AND p.writer_is_top_decile=1" if sample_tag else " AND writer_is_top_decile=1"
     if limit:
         sql += f" LIMIT {int(limit)}"
-    return pd.read_sql_query(sql, con)
+    return pd.read_sql_query(sql, con, params=params)
 
 
 def existing_rewrite_ids(con: sqlite3.Connection, method: str, base_ids: list[str]) -> set:
@@ -134,13 +143,15 @@ def run_method(method: str,
                max_workers: int = 4,
                force: bool = False,
                only_top_decile: bool = False,
+               sample_tag: str | None = None,
                db_path: Path = DEFAULT_DB_PATH) -> dict:
     api_key = load_api_key()
     con = connect(db_path)
     try:
         register_method(con, method)
         src = load_source_paragraphs(con, origin_kind=origin_kind, limit=limit,
-                                      only_top_decile=only_top_decile)
+                                      only_top_decile=only_top_decile,
+                                      sample_tag=sample_tag)
         if not force:
             existing = existing_rewrite_ids(con, method, src["document_id"].tolist())
             src = src[~src["document_id"].isin(existing)].reset_index(drop=True)
@@ -203,5 +214,6 @@ if __name__ == "__main__":
     p.add_argument("--max-workers", type=int, default=4)
     p.add_argument("--force", action="store_true")
     p.add_argument("--only-top-decile", action="store_true")
+    p.add_argument("--sample-tag", default=None)
     args = p.parse_args()
     print(json.dumps(run_method(**vars(args)), indent=2))
