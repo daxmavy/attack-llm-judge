@@ -207,5 +207,29 @@ Use `run_min_vllm.py` pattern (vLLM for judges only, HF rewriter via TRL's defau
 - **Wandb run:** `grpo-pilot1-<timestamp>` under group `mission_20260418`.
 - **Artifacts:** `/workspace/grpo_run/final_pilot1/` (model), `training/pilot1_eval_summary.json` (full pre/post scores + rewrites), `training/pilot1_manifest.json` (config).
 
-### Mission full run — 2026-04-17 23:35 UTC → TBD
-Launched with identical config to pilot #1. Scope up: `--max-steps 500 --n-train 452 --n-eval 50`. ETA ~2.1 h training + ~20 min startup/eval; finish projected ~02:00 UTC. Pre/post eval on all 3 judges will follow via `finish_eval.py` pattern + HF push.
+### Mission full run — 2026-04-17 23:35 UTC → KILLED
+Launched with pilot-#1 config + 500 steps + 452 train. Killed before training started in response to user clarification: "goal is no change in length, not just making it shorter". Pilot #1 ended with mean ratio 0.94 (6% shorter than target) — not "no change".
+
+### Pilot #2 (additive tol=0) — KILLED
+Briefly tried `tol=0` (penalty active even inside ±10%). User then clarified: "anything within 10% shouldn't be punished severely, maybe just nudge it a little towards 0 change in length". Killed before training; switched to quadratic penalty.
+
+### Pilot #2 (quadratic) — 2026-04-17 23:54 UTC — SUCCESS, lower-magnitude
+Quadratic penalty: `α·(r−1)²`. Default α=100. Gentle in-band (r=0.95 → 0.25; r=0.9 → 1.0), steep outside (r=1.5 → 25). Pre/post on 200 train / 50 eval top-decile:
+- Qwen-7B: 81.80 → 83.30 (Δ +1.50)
+- Llama-8B: 80.92 → 82.68 (Δ +1.76)
+- Length ratio at convergence: 0.86–1.05, mean ~0.91. Trade-off vs additive: smaller reward gain, tighter length.
+
+### 3-fold mission run — 2026-04-18 starting 00:09 UTC
+3 leave-one-out folds rotating which judge is held-out, 33 propositions each (1/3 of 100), 130 train / 35 eval, 200 GRPO steps, α=100 quadratic, all other knobs same as pilot #1.
+
+#### Fold 1: train qwen7b+llama8b, held-out gemma9b — DONE 01:05 UTC
+- Qwen-7B (in-panel): 80.09 → 85.83 (Δ +5.74)
+- Llama-8B (in-panel): 80.49 → 90.69 (Δ +10.20)
+- Gemma-9B (held-out): pending heldout_only_eval.py pass
+- **length/mean_ratio: 1.01** (essentially no change — quadratic penalty worked at scale!)
+- length/frac_outside_tol: 0.125 (only 12.5% of rollouts outside ±10%)
+- Train wall-clock: ~48 min
+- Wandb: `grpo-fold1_heldout_gemma-20260418-001738`
+
+#### Fold 2: train qwen7b+gemma9b, held-out llama8b — RUNNING (started 01:05 UTC)
+#### Fold 3: train llama8b+gemma9b, held-out qwen7b — queued
