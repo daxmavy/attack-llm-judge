@@ -459,10 +459,39 @@ def main():
         })
         print(f"  {jn}: pre={pm:.2f}  post={qm:.2f}  delta={qm-pm:+.2f}", flush=True)
 
+    # Held-out judge eval (if defined) — unload in-panel judges first to free VRAM
+    heldout_pre_scores = heldout_post_scores = None
+    if heldout_judge is not None:
+        print(f"[{time.strftime('%H:%M:%S')}] unloading in-panel judges, loading held-out {heldout_judge[0]}...", flush=True)
+        for j in judges:
+            try: j.unload()
+            except Exception: pass
+        del judges
+        del trainer  # free the trained policy too (rewrites already captured in post_rewrites)
+        del trained_model
+        gc.collect()
+        torch.cuda.empty_cache()
+
+        held = JudgeVLLM(*heldout_judge)
+        heldout_pre_scores = held.score(props_eval, pre_rewrites)
+        heldout_post_scores = held.score(props_eval, post_rewrites)
+        hm_pre = sum(heldout_pre_scores) / len(heldout_pre_scores)
+        hm_post = sum(heldout_post_scores) / len(heldout_post_scores)
+        summary[heldout_judge[0]] = {"pre_mean": hm_pre, "post_mean": hm_post,
+                                       "delta": hm_post - hm_pre, "role": "held_out"}
+        wandb.log({
+            f"eval/{heldout_judge[0]}_pre_mean": hm_pre,
+            f"eval/{heldout_judge[0]}_post_mean": hm_post,
+            f"eval/{heldout_judge[0]}_delta": hm_post - hm_pre,
+        })
+        print(f"  [HELD-OUT] {heldout_judge[0]}: pre={hm_pre:.2f}  post={hm_post:.2f}  delta={hm_post-hm_pre:+.2f}", flush=True)
+
     (OUT_DIR / f"pilot_{args.name_suffix}" / "eval_summary.json").write_text(json.dumps({
         "summary": summary,
         "pre_rewrites": pre_rewrites,
         "post_rewrites": post_rewrites,
+        "heldout_pre_scores": heldout_pre_scores,
+        "heldout_post_scores": heldout_post_scores,
         "timing": {
             "total_elapsed_s": time.time() - t_start,
             "train_elapsed_s": train_elapsed,
