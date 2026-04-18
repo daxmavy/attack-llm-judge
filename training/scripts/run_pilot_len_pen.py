@@ -226,6 +226,8 @@ def main():
     ap.add_argument("--train-judges", type=str, default="qwen7b,llama8b",
                     help="comma-separated slugs from JUDGE_REGISTRY (qwen7b, llama8b, gemma9b). "
                          "The one not named is the held-out judge.")
+    ap.add_argument("--per-device-batch", type=int, default=None,
+                    help="override per_device_train_batch_size (defaults to num_generations*2)")
     ap.add_argument("--n-propositions", type=int, default=None,
                     help="if set, subsample to the first N distinct propositions "
                          "(used for 3-fold cross-judge mission)")
@@ -355,8 +357,9 @@ def main():
     cfg = GRPOConfig(
         output_dir=str(OUT_DIR / f"ckpt_{args.name_suffix}"),
         num_generations=args.num_generations,
-        per_device_train_batch_size=args.num_generations * 2,  # 2 unique prompts × G
-        gradient_accumulation_steps=4,                          # → 8 unique prompts / optim step
+        per_device_train_batch_size=args.per_device_batch if args.per_device_batch else args.num_generations * 2,
+        gradient_accumulation_steps=4 if not args.per_device_batch else
+            (args.num_generations * 2 * 4) // args.per_device_batch,  # preserve effective batch (32 gens / step)
         max_completion_length=260,
         learning_rate=args.lr,
         beta=args.beta,
