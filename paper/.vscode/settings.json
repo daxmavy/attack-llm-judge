@@ -210,6 +210,56 @@
       }
     ]
   },
+  "latex-workshop.latex.tools": [
+    {
+      "name": "latexmk",
+      "command": "latexmk",
+      "args": ["-synctex=1", "-interaction=nonstopmode", "-file-line-error", "-pdf", "-outdir=%OUTDIR%", "%DOC%"],
+      "env": {"PATH": "/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+    },
+    {
+      "name": "lualatexmk",
+      "command": "latexmk",
+      "args": ["-synctex=1", "-interaction=nonstopmode", "-file-line-error", "-lualatex", "-outdir=%OUTDIR%", "%DOC%"],
+      "env": {"PATH": "/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+    },
+    {
+      "name": "xelatexmk",
+      "command": "latexmk",
+      "args": ["-synctex=1", "-interaction=nonstopmode", "-file-line-error", "-xelatex", "-outdir=%OUTDIR%", "%DOC%"],
+      "env": {"PATH": "/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+    },
+    {
+      "name": "latexmk_rconly",
+      "command": "latexmk",
+      "args": ["%DOC%"],
+      "env": {"PATH": "/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+    },
+    {
+      "name": "pdflatex",
+      "command": "pdflatex",
+      "args": ["-synctex=1", "-interaction=nonstopmode", "-file-line-error", "-output-directory=%OUTDIR%", "%DOC%"],
+      "env": {"PATH": "/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+    },
+    {
+      "name": "bibtex",
+      "command": "bibtex",
+      "args": ["%DOCFILE%"],
+      "env": {"PATH": "/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+    },
+    {
+      "name": "biber",
+      "command": "biber",
+      "args": ["%DOCFILE%"],
+      "env": {"PATH": "/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+    },
+    {
+      "name": "makeindex",
+      "command": "makeindex",
+      "args": ["%DOCFILE%"],
+      "env": {"PATH": "/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+    }
+  ],
   "editor.wordWrap": "on",
   "editor.wrappingIndent": "indent",
   "cSpell.customDictionaries": {
