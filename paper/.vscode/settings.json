@@ -1,0 +1,231 @@
+{
+  "files.defaultLanguage": "latex",
+  "files.associations": {
+    "*.sty": "latex",
+    "*.cls": "latex"
+  },
+  "files.exclude": {
+    "**/*.4ct": true,
+    "**/*.4tc": true,
+    "**/*.fdb_latexmk": true,
+    "**/*.idv": true,
+    "**/*.lg": true,
+    "**/*.lof": true,
+    "**/*.synctex.gz": true,
+    "**/*.synctex(busy)": true,
+    "**/*.tmp": true,
+    "**/*.xref": true,
+    "**/*.fls": true,
+    "**/*.loc": true,
+    "**/*.run.xml": true,
+    "**/*.soc": true,
+    "**/*.snm": true,
+    "**/*.blg": true,
+    "**/*-SAVE-ERROR": true
+  },
+  "latex-workshop.latex.autoBuild.cleanAndRetry.enabled": false,
+  "files.autoSave": "onFocusChange",
+  "latex-workshop.latex.outDir": "%DIR%/out_dir",
+  "latex-workshop.latex.clean.subfolder.enabled": true,
+  "latex-workshop.view.pdf.viewer": "tab",
+  "latex-workshop.view.pdf.internal.synctex.keybinding": "double-click",
+  "latex-workshop.view.pdf.color.dark.backgroundColor": "#809080",
+  "latex-workshop.view.pdf.color.light.backgroundColor": "#809080",
+  "latex-workshop.view.pdf.color.dark.pageBorderColor": "#809080",
+  "latex-workshop.view.pdf.color.light.pageBorderColor": "#809080",
+  "latex-workshop.intellisense.package.dirs": [
+    "packages",
+    "%WORKSPACE_FOLDER%/packages"
+  ],
+  "latex-workshop.intellisense.package.extra": [
+    "examplepackage1",
+    "examplepackage2"
+  ],
+  "latex-workshop.intellisense.update.aggressive.enabled": true,
+  "latex-workshop.hover.preview.cursor.enabled": false,
+  "latex-workshop.hover.preview.enabled": false,
+  "ltex.additionalRules.enablePickyRules": true,
+  "ltex.diagnosticSeverity": {
+    "default": "information",
+    "MORFOLOGIK_RULE_EN_US": "warning",
+    "PASSIVE_VOICE": "hint",
+    "ENGLISH_WORD_REPEAT_BEGINNING_RULE": "hint",
+    "TOO_LONG_SENTENCE": "hint"
+  },
+  "ltex.latex.commands": {
+    "\\tableofcontents[]": "ignore",
+    "\\@ifclassloaded{}{}{}": "ignore",
+    "\\includeonly{}": "ignore",
+    "\\texttt{}": "dummy",
+    "\\newbool{}": "ignore",
+    "\\setbool{}": "ignore",
+    "\\setbool{}{}": "ignore",
+    "\\newcommand{}{}": "ignore",
+    "\\renewcommand{}{}": "ignore",
+    "\\newenvironment{}[][]{}{}": "ignore",
+    "\\newenvironment{}[]{}{}": "ignore",
+    "\\newenvironment{}": "ignore",
+    "\\NewDocumentCommand{}{}{}": "ignore",
+    "\\NewEnviron{}[]{}": "ignore",
+    "\\newtheoremstyle{}{}{}{}{}{}{}{}{}": "ignore",
+    "\\DeclarePairedDelimiterX{}[]{}{}": "ignore",
+    "\\DeclarePairedDelimiter{}{}{}": "ignore",
+    "\\setbeamertemplate{}[]{}": "ignore",
+    "\\setbeamercolor{}{}": "ignore",
+    "\\setbeamerfont{}{}": "ignore",
+    "\\usebeamercolor[]{}": "ignore",
+    "\\usebeamertemplate{}[]": "ignore",
+    "\\setbeamertemplate{}{}": "ignore",
+    "\\setbeamertemplate{}[]": "ignore",
+    "\\usebeamertemplate{}[]{}": "ignore",
+    "\\setbeamerfont{}": "ignore",
+    "\\addtolength{}{}": "ignore",
+    "\\movie{}{}": "ignore",
+    "\\movie[]{}{}": "ignore",
+    "\\cite{}": "dummy",
+    "\\nocite{}": "ignore",
+    "\\cref[]{}": "dummy",
+    "\\crefformat{}{}": "ignore",
+    "\\Crefformat{}{}": "ignore",
+    "\\crefmultiformat{}{}{}{}{}": "ignore",
+    "\\Crefmultiformat{}{}{}{}{}": "ignore",
+    "\\crtcrefreference{}": "dummy",
+    "\\deleted{}": "ignore",
+    "\\todo{}": "ignore",
+    "\\todo[]{}": "ignore",
+    "\\ltexignore{}": "ignore",
+    "\\ltexdummy{}": "dummy",
+    "\\ltexvoweldummy{}": "vowelDummy"
+  },
+  "ltex.bibtex.fields": {
+    "abstract": false
+  },
+  "pasteImage.path": "${currentFileDir}/pasted-images",
+  "pasteImage.insertPattern": "\\begin{center}\n\t\t\\includegraphics[width=\\linewidth]{pasted-images/${imageFileName}}\n\t\\end{center}",
+  "pasteImage.showFilePathConfirmInputBox": true,
+  "pasteImage.filePathConfirmInputBoxMode": "onlyName",
+  "pasteImage.defaultName": "${currentFileNameWithoutExt}-HH-mm-ss",
+  "pasteImage.encodePath": "none",
+  "pasteImage.basePath": "${currentFileDir}",
+  "dryer-lint": {
+    "language": "latex",
+    "rules": [
+      {
+        "name": "Empty Reference or Citation",
+        "message": "Missing argument to \\cref, \\cite, \\ref, or \\eqref.",
+        "pattern": "\\\\(cref|eqref|ref|cite)\\{\\s*\\}",
+        "severity": "Error"
+      },
+      {
+        "name": "Reference has a space after the comma",
+        "message": "The argument to \\cref or \\cite has a comma followed by a space.",
+        "pattern": "(\\\\(?:cref|cite)\\{[^\\}]*)\\,\\ ",
+        "severity": "Warning"
+      },
+      {
+        "name": "Illegal Character in \\label{}",
+        "message": "\\label{...} must not contain \",\" or \"\\\".",
+        "pattern": "\\\\label\\{[^\\}]*[\\\\,][^\\}]*\\}",
+        "severity": "Error"
+      },
+      {
+        "name": "Inline equation with empty contents: \"$$\".",
+        "pattern": "\\$\\$",
+        "severity": "Error",
+        "fix": "$ $",
+        "message": "\"$$\" should not be used. To insert a display equation, use \"\\[...\\]\"."
+      },
+      {
+        "name": "Inline equation with empty contents: \"$ $\".",
+        "pattern": "\\$[ ]+\\$",
+        "severity": "Warning",
+        "message": "Inline equation with empty contents: \"$ $\"."
+      },
+      {
+        "name": "Itemize must start with an item",
+        "pattern": "\\\\begin\\{(?:itemize|enumerate|description)\\}(?:[ \\t]*(?:%[^\\n]*)?\\r?\\n)*[ \\t]*(\\S(?<!%|\\\\).*|\\\\(?!item).*)",
+        "message": "List environments must start with \\item.",
+        "severity": "Error",
+        "maxLines": 5
+      },
+      {
+        "name": "Missing non-breaking space before \\cite",
+        "message": "Use \"~\" (non-breaking space) before `\\cite` to prevent awkward line breaks.",
+        "pattern": "[ ]\\\\cite\\{",
+        "severity": "Information",
+        "fix": "~\\cite\\{"
+      },
+      {
+        "name": "Missing non-breaking space before cleveref equation reference",
+        "message": "Use \"~\" (non-breaking space) before referencing an equation to prevent awkward line breaks.",
+        "pattern": "[ ]\\\\cref\\{eq:",
+        "severity": "Information",
+        "fix": "~\\cref{eq:"
+      },
+      {
+        "name": "Missing non-breaking space before references",
+        "message": "Use \"~\" before \"\\eqref{}\" and \"\\ref{}\" to prevent awkward line breaks.",
+        "pattern": "[ ]\\\\(eqref|ref)\\{",
+        "severity": "Information",
+        "fix": "~\\$1{:"
+      },
+      {
+        "name": "Punctuation outside Display Equation",
+        "pattern": "\\\\][.,;]",
+        "severity": "Warning",
+        "message": "Place punctuation inside display equation, before \"\\]\"."
+      },
+      {
+        "name": "Multiline equation environment has extra line at end",
+        "pattern": "(?:\\\\){2}[ \\t]*\\r?\\n[ \\t]*\\\\end{(?:align[*]?|aligned|cases)}",
+        "severity": "Warning",
+        "message": "Extra line break at the end of environment.",
+        "maxLines": 2
+      },
+      {
+        "name": "Display equation starts on new line unless preceding line is short",
+        "message": "Display equations should start on a new line unless preceding text is shorter.",
+        "pattern": "^([ \\t]*)([^ \\t%].{14,}) \\\\\\[",
+        "fix": "$1$2\n$1\\[",
+        "severity": "Information"
+      },
+      {
+        "name": "Display equations should be followed by a new line",
+        "message": "Display equations should be followed by a new line.",
+        "pattern": "\\\\\\][ \\t]*(\\S)",
+        "severity": "Information"
+      },
+      {
+        "name": "Use spaces for indentation",
+        "pattern": "^[ ]*[\\t][\\t ]*",
+        "severity": "Information",
+        "message": "Use spaces for indentation instead of tabs."
+      },
+      {
+        "name": "Start each sentence on a new line",
+        "message": "Code style: Start each sentence on a new line.",
+        "pattern": "^([ \\t]*)((?:[^%]|(?<=\\\\)%)*(?<!\\\\big|\\\\Big)\\.)[ ]+(\\w)",
+        "severity": "Information",
+        "fix": "$1$2\n$1$3"
+      }
+    ]
+  },
+  "editor.wordWrap": "on",
+  "editor.wrappingIndent": "indent",
+  "cSpell.customDictionaries": {
+    "latex": {
+      "addWords": true,
+      "name": "latex",
+      "path": "${workspaceFolder}/.vscode/latex-dict.txt",
+      "scope": "workspace"
+    },
+    "custom": true
+  },
+  "cSpell.languageSettings": [
+    {
+      "dictionaries": ["latex"],
+      "languageId": ["tex", "latex-expl3"]
+    }
+  ],
+  "cSpell.userWords": ["Wintz"]
+}

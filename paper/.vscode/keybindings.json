@@ -1,0 +1,11 @@
+// VS Code keybindings must live in the user-level keybindings.json
+// (Command Palette: "Preferences: Open Keyboard Shortcuts (JSON)").
+// This file is a reference copy — merge the entries below into your
+// user keybindings.json; VS Code does not auto-load workspace keybindings.
+[
+  {
+    "key": "ctrl+enter",
+    "command": "latex-workshop.build",
+    "when": "editorLangId =~ /latex/"
+  }
+]

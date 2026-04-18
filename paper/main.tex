@@ -1,0 +1,987 @@
+\documentclass{article}
+
+\usepackage[preprint]{neurips_2026}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[british]{babel}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{xspace}
+\usepackage{csquotes}
+\usepackage[capitalise,noabbrev]{cleveref}
+
+\graphicspath{{figures/}}
+
+\newcommand{\gap}{\textsc{Transfer-Gap}\xspace}
+\newcommand{\paulcorpus}{\texttt{paul\_data}\xspace}
+
+% LTeX helper macros — tell the prose checker which arguments to ignore / treat as dummy text.
+\newcommand{\ltexignore}[1]{#1}
+\newcommand{\ltexdummy}[1]{#1}
+\newcommand{\ltexvoweldummy}[1]{#1}
+\newcommand{\ltexhidden}[1]{}
+
+\title{A Transfer Gap, Not a Rank Reversal: \\ Rewriting Attacks on LLM Judges Survive a Robust Gold Panel But Manufacture Spurious Rank Differences from One}
+
+\author{%
+  Anonymous Authors \\
+}
+
+\begin{document}
+
+\maketitle
+
+% ============================================================================
+% ABSTRACT = X / Y / Z / verification.  One specific number.
+% ============================================================================
+\begin{abstract}
+% TL;DR: gap robust under trimmed mean; rank reversal on naive mean is one-judge artefact.
+Clarity ratings from large language models are now load-bearing in
+evaluation pipelines, and rewriting a paragraph to raise its score is
+a cheap attack. The natural defence is to change the model that serves
+as judge. We ask how much an attacker's score inflation survives that
+swap, and how much of the surviving gain reflects genuine quality
+improvement rather than gaming of the attacker's chosen proxy. Ten
+inference-only rewriters of UK political-opinion paragraphs attack a
+two-judge \emph{proxy} panel (Qwen-2.5-7B, Llama-3.1-8B). Each rewrite
+is then re-scored on a disjoint five-judge \emph{gold} panel (Haiku-4.5,
+Gemini-2.5-Flash, GPT-5-mini, DeepSeek-V3.2, Llama-4-Maverick) the
+attacker never sees. A DeBERTa stance regressor trained on the same
+corpus keeps the fidelity axis visible. Two findings fall out. First,
+the attack panel over-states gold-panel uplift by a robust margin:
+$6.1$--$7.4$ clarity points across three methods (paired,
+proposition-cluster bootstrap, $n \geq 481$) when the gold panel is
+aggregated by trimmed mean (drop the highest and lowest of five).
+Second, switching to an un-trimmed mean of the same five judges
+inflates one method's gap to $11.4$ points and flips the method
+ranking between the two panels. A single gold judge (DeepSeek-V3.2)
+scores that method $\sim 22$ points below its peers and carries the
+un-trimmed mean with it. The transfer gap is real and roughly uniform across methods;
+the rank reversal is a statistical artefact of a non-robust
+aggregator. Defenders who average a small gold panel should trim;
+attackers who optimise against a small proxy panel will over-state
+their reach.
+\end{abstract}
+
+% ============================================================================
+% INTRODUCTION = X / Y / Z / verification, + contribution bullets, + Fig 1.
+% ============================================================================
+\section{Introduction}
+\label{sec:intro}
+
+% TL;DR: LLM judges are everywhere; swapping the judge is the natural defence.
+Large language models increasingly stand in for human evaluators when
+judging text: AlpacaEval, MT-Bench, Arena-Hard, RewardBench, and
+rubric-based leaderboards all route decisions through an LLM's
+$0$--$100$ verdict \citep{liu2023geval,kim2024prometheus2,liu2025judgesverdict}.
+The rubric is usually public, the judge's weights are not, and a
+deployer can swap models at any time. An attacker who rewrites content
+to raise its score has, at best, query access to a judge the deployer
+is free to change.
+
+% TL;DR: proxy-vs-gold divergence is well-studied for RMs, not rewrite attacks.
+Two settings have looked at whether rewriting attacks transfer across
+judges. \citet{raina2024} learn universal adversarial suffixes that
+generalise across FlanT5, Llama, Mistral, and GPT-3.5. \citet{kaneko2026paa}
+iteratively paraphrase scientific abstracts and measure
+matched-to-mismatched score drop across three frontier LLM reviewers.
+Neither compares attacker uplift to a \emph{gold} reference panel
+outside the attacker's feedback loop. The closest precedent lives in
+the reward-model-overoptimisation literature
+\citep{gao2023,coste2024,eisenstein2023}: reinforcement learning
+against a proxy reward model deviates from a held-out gold reward
+model as optimisation proceeds. To our knowledge that setup has not
+been ported to rewriting attacks on LLM judges.
+
+% TL;DR: we run the joint experiment; stance preservation is the fidelity axis.
+We ran that experiment. The setting is clarity scoring of
+UK political-opinion paragraphs from the pre-registered
+\paulcorpus corpus \citep{pauldata2025}.
+Ten inference-only rewriter methods, all built on
+Qwen-2.5-72B-Instruct, attack a two-judge proxy panel whose models the
+attacker is permitted to query during optimisation. Each rewrite is
+then re-scored on a disjoint five-judge gold panel whose models the
+attacker never sees. Stance preservation, measured with a
+DeBERTa-v3-base regressor trained on the same corpus
+(Pearson $0.94$; \cref{sec:method}), supplies a domain-specific
+fidelity axis that none of the prior rewriting-attack papers used.
+
+% TL;DR: central finding + Fig 1 forward pointer.
+\Cref{fig:transfer} is the paper in one image. Red circles mark each
+method's uplift when the gold panel is aggregated by mean of all five
+judges; blue squares mark the same method under trimmed mean
+(drop the highest and lowest of the five). Under the naive mean, one
+method's gap (\texttt{lit\_inf\_t}, a literature-informed prompt
+aggregating best practice from GEO
+\citep{aggarwal2024geo}, Prometheus \citep{kim2024prometheus2}, and
+G-Eval \citep{liu2023geval}) stretches
+to $11.4$ clarity points---enough to reverse the method ranking
+between the two panels. Under the trimmed mean the same method's gap
+shrinks to $7.4$, within a point of every other method's gap
+($6.1$ and $7.1$), and the rank reversal disappears.
+\Cref{fig:perjudge} explains the asymmetry: a single gold judge
+(DeepSeek-V3.2) scores \texttt{lit\_inf\_t} $\sim 22$ points below
+every other method while agreeing with its peers on the other
+rewriters. The un-trimmed mean inherits that outlier; the trimmed
+mean does not.
+
+% TL;DR: Fig 1 placement for the reader.
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.82\linewidth]{fig1_transfer_gap.pdf}
+\caption{\textbf{The attack-to-gold gap is real; the rank reversal is a one-judge artefact.}
+For each of three rewriter methods with complete gold coverage,
+$x$ is attack-panel paired uplift vs.\ source, $y$ is gold-panel
+paired uplift. Red circles: gold panel = mean of all five judges.
+Blue squares: gold panel = trimmed mean (drop top and bottom).
+Grey ticks on the $x$-axis mark attack uplift for the seven methods
+whose gold re-score is still running. All markers are several CIs
+below the diagonal, i.e.\ the proxy panel over-states gold uplift.
+Switching from red to blue closes almost all of
+\texttt{lit\_inf\_t}'s extra gap and eliminates its rank reversal;
+naive mean aggregation absorbs the DeepSeek-V3.2 outlier shown in
+\cref{fig:perjudge}.}
+\label{fig:transfer}
+\end{figure}
+
+% TL;DR: bullet contributions (canonical per Brendan / how-to-ML).
+\paragraph{Contributions.}
+\begin{itemize}
+  \setlength{\itemsep}{1pt}
+  \item For inference-only rewriting attacks on LLM judges, we
+  measure a paired \gap\ against a disjoint five-model gold
+  panel. Under trimmed-mean aggregation the gap is $6.1$, $7.1$, and
+  $7.4$ clarity points across three methods ($95\%$ CIs
+  $[5.2, 6.8]$, $[6.0, 8.2]$, $[6.1, 8.6]$)---real, large, and
+  roughly uniform.
+  \item We show an apparent rank reversal between the proxy and
+  gold panels under naive mean-of-five gold aggregation
+  (Spearman $\rho = -1$ across the three complete methods). That
+  reversal is driven by a single gold judge, DeepSeek-V3.2, which
+  scores one method $22$ points below its peers. Trimmed-mean
+  aggregation removes the reversal while preserving the transfer
+  gap.
+  \item The methodological consequence is sharp: small gold panels
+  aggregated by non-robust statistics manufacture method-specific
+  differences that do not survive a single-outlier-resistant
+  estimator. We recommend trimmed mean (or median) for any gold
+  panel smaller than ten judges.
+  \item We release an append-only evaluation suite
+  (SQLite schema, metric modules, bootstrap code), the judge rubric,
+  all rewriter prompts, the panel slugs, and the stance and clarity
+  regressors needed to reproduce the analysis.
+\end{itemize}
+
+% ============================================================================
+% RELATED WORK = academic siblings. Compare and contrast, not describe.
+% ============================================================================
+\section{Related work}
+\label{sec:related}
+
+% TL;DR: rewriting attacks with a transfer axis -- PAA and RobustJudge.
+\paragraph{Rewriting attacks with a cross-judge axis.}
+\citet{kaneko2026paa} run the closest-in-spirit experiment. Their
+\emph{Paraphrasing Adversarial Attack} iteratively rewrites ICLR
+abstracts under a BERTScore and perplexity drift constraint; the
+reviewers are GPT-4o, Gemini-2.5-Pro, and Sonnet-4. Their
+matched-reviewer mean score is $4.3$; mismatched drops to $3.5$;
+baseline is $2.7$. Half of the matched uplift survives the model swap.
+Two substantive differences. First, PAA has no gold reference outside
+the attack's optimisation loop; its mismatched reviewers are frontier
+LLMs judging a rubric they were never given. Our gold panel shares
+the rubric with the attack panel and sits above it in capability, so
+our gap measures over-optimisation rather than cross-model
+disagreement about what the rubric means. Second, PAA's fidelity axis
+(BERTScore $\geq 0.85$) ignores stance. A stance flip inside that
+threshold is invisible to PAA and visible to us. \citet{wu2025robustjudge} catalogue fifteen attacks and introduce
+\emph{iSDR}, which subtracts a task-specific quality metric
+(BLEURT for text, CodeBLEU for code) from the attack's raw score gain.
+iSDR is the closest published precedent for quality-adjusted uplift,
+but each task gets a single hand-picked quality metric; our
+five-judge gold panel is a higher-variance, lower-bias substitute.
+
+% TL;DR: non-rewriting attacks on LLM judges -- suffix and prompt injection.
+\paragraph{Non-rewriting attacks on LLM judges.}
+\citet{raina2024} learn a four-token suffix on FlanT5-3B that
+maximises scores on Llama-2-7B, Mistral-7B, and GPT-3.5, irrespective
+of the input content: the first large-scale demonstration that
+absolute-scoring judges are catastrophically vulnerable to transferable
+surface attacks. \citet{shi2024judgedeceiver} optimise an injected suffix inside one
+candidate response for a pairwise judge and get $99\%$ attack-success
+transfer from Llama-3-8B to Llama-2-13B. Both are the strongest prior
+evidence that transfer happens, but both attack surfaces are
+non-semantic suffixes. They do not speak to whether disciplined
+rewriting attacks transfer.
+
+% TL;DR: RM overoptimisation -- methodological lineage for gold panel.
+\paragraph{Reward-model overoptimisation.}
+The methodology we apply is adapted from the
+\mbox{proxy-vs-gold} reward-model literature.
+\citet{gao2023} establish the canonical curve: optimisation against a
+proxy reward model raises proxy-measured reward monotonically while
+gold-RM reward eventually reverses. \citet{coste2024} and
+\citet{eisenstein2023} show that ensembling proxy RMs blunts but does
+not eliminate the effect. \citet{eisenstein2023} also show that
+\emph{pretraining-seed} diversity matters more than fine-tuning-seed
+diversity, which is why our proxy panel pairs a Qwen model with a
+Llama model rather than two Qwen checkpoints. \citet{laidlaw2024correlated}
+formalise reward hacking as breakdown of proxy-gold correlation under
+optimisation. The limitation for our purposes is that the entire
+lineage studies reward models, not LLM judges, and defender-side, not
+attacker-side. We are porting its diagnostic across both axes.
+
+% TL;DR: reward hacking during iterative refinement -- ICRH.
+\paragraph{Reward hacking during iterative refinement.}
+\citet{pan2024icrh} document in-context reward hacking in iterative
+self-refinement of essays: the in-loop judge's score rises
+monotonically while a held-out judge and human raters diverge from it.
+Our \texttt{icir\_single} method is designed to stress this exact
+setting; unlike \citeauthor{pan2024icrh}, we put a full gold panel, not
+a single held-out judge, on the other side of the loop.
+
+% TL;DR: training-based rewriter attacks -- the training-agent's neighbourhood.
+\paragraph{Training-based rewriter attacks.}
+Three papers train rewriting policies against reward signals that are
+related to judges. \citet{ziegenbein2024argmt,ziegenbein2026grpo} train
+rewriters on argument appropriateness with classifier and GRPO
+rewards; neither paper includes a held-out judge or a gold panel.
+\citet{chen2025autogeo} train a Qwen3-1.7B rewriter with GRPO for
+generative-search-engine visibility, using a compound reward; rule
+overlap across extractor LLMs is $78$--$84\%$. These papers define
+the shelf our training-based arm (GRPO, with SFT on BoN-selected
+pairs, \cref{sec:training}) sits on. What they lack is the
+unknown-judge-and-gold-decomposition protocol.
+
+% TL;DR: format / length / single-token attacks -- peripheral but necessary.
+\paragraph{Format and length bias.}
+Length bias in LLM judges is documented by \citet{dubois2024alpacaeval}
+(regression-based debiasing for AlpacaEval), and format bias by
+\citet{zhang2024format}. \citet{zhao2025onetoken} report that single
+tokens (\texttt{``:''}, \texttt{``Thought process:''}) inflate
+generative-RM scores across many judges. Our \texttt{injection\_leadin} method calibrates how much of that
+surface failure mode reaches a rubric-scored clarity rating at the
+$8$B judge scale. \Cref{sec:results} shows it gains $7.5$ gold
+points over the source, close to \texttt{naive} paraphrase and
+within sampling noise of the $\pm 10\%$ length retry.
+
+% TL;DR: what exactly we are NOT claiming.
+\paragraph{What we do not claim.}
+We are not the first to measure cross-judge transfer
+(\citealp{raina2024,kaneko2026paa,wu2025robustjudge}). We are not the
+first to decompose attacker uplift against a quality reference
+(\citealp{wu2025robustjudge}'s iSDR, the RM lineage). Our contribution
+is the \emph{conjunction}: rewriting attacks, cross-judge transfer, a
+disjoint gold LLM panel, and stance preservation as the domain-specific
+fidelity axis. No single prior study spans those four axes, and the
+rank-reversal and single-judge-driver findings
+(\cref{sec:results}) are not predicted by any of them individually.
+
+% ============================================================================
+% BACKGROUND + PROBLEM SETTING
+% ============================================================================
+\section{Background and problem setting}
+\label{sec:problem}
+
+\subsection{LLM-as-judge, in formalism}
+% TL;DR: rubric-based scoring, one judge produces one score per paragraph.
+A \emph{rubric} $R$ is a natural-language scoring instruction with
+explicit anchors at $\{0, 20, 40, 60, 80, 100\}$ for a criterion $C$
+(here: clarity of expression). A \emph{judge} $J$ is an LLM that given
+$(R, x)$ produces an integer score $s(x) \in \{0, \ldots, 100\}$
+together with a short reasoning trace; we ignore the trace. A panel
+$\mathcal{P} = \{J_1, \ldots, J_k\}$ applied to paragraph $x$
+yields $s_{\mathcal{P}}(x) = \tfrac{1}{k}\sum_i s_{J_i}(x)$.
+
+\subsection{Threat model}
+% TL;DR: attacker = query N proxies, rewrite content, no gold access.
+An attacker holds a corpus $\mathcal{X}$ of source paragraphs and a
+rewriter policy $\pi$. During optimisation the attacker may query any
+judge in a \emph{proxy panel} $\mathcal{P}_\text{proxy}$ of their
+choosing (here $|\mathcal{P}_\text{proxy}| = 2$). The attacker picks
+that panel before any gold feedback. At evaluation time a
+\emph{gold panel} $\mathcal{P}_\text{gold}$
+(here $|\mathcal{P}_\text{gold}| = 5$) re-scores every
+rewrite; the attacker never sees these scores in training, selection,
+or reward. All judges share rubric $R$ and a
+fixed system prompt. On the defender side no filter, detector, or
+prompt randomisation is deployed; only the model choice. This is not
+the strongest attacker possible; a black-box setting where the rubric
+itself is hidden would be strictly harder and is out of scope.
+
+\subsection{The \gap and the aggregation choice}
+% TL;DR: gap definition with two aggregators; trimmed mean is robust against a single judge.
+For each rewrite $y = \pi(x)$ we define the paired \gap as
+\[
+  \gap(y) \;=\; \bigl[s_{\mathcal{P}_\text{proxy}}(y) - s_{\mathcal{P}_\text{proxy}}(x)\bigr]
+              - \bigl[A_{\mathcal{P}_\text{gold}}(y) - A_{\mathcal{P}_\text{gold}}(x)\bigr],
+\]
+where $A_{\mathcal{P}}$ is a panel aggregator. We report two:
+$A_\text{mean}(x) = \tfrac{1}{k} \sum_i s_{J_i}(x)$ (mean over the five
+gold judges) and $A_\text{trim}(x)$, the mean after dropping the
+highest and lowest of the five scores. For $k{=}5$ the trimmed mean
+is the least-influenced common estimator with breakdown point $1/k$.
+A positive \gap\ means the proxy panel perceives a bigger improvement
+than the gold panel does. Reporting both aggregators is deliberate:
+$A_\text{mean}$ is what a deployer reads off by default;
+$A_\text{trim}$ is the answer after one judge's
+outlier is put aside.
+
+\subsection{Stance preservation as a fidelity axis}
+% TL;DR: political-opinion domain requires stance regressor, not BERTScore.
+The paragraphs we rewrite express a political position. Semantic
+similarity alone does not detect a stance flip---a rewrite can
+paraphrase verbatim and reverse the author's conclusion. We use a
+DeBERTa-v3-base regressor trained on the \paulcorpus human-rated
+agreement scores (Pearson $0.94$, MAE $0.08$ on held-out AI model
+paragraphs) to estimate $\hat{\alpha}(y)$, the post-rewrite agreement
+score, and track $|\hat{\alpha}(y) - \hat{\alpha}(x)|$ as stance drift.
+
+% ============================================================================
+% METHOD
+% ============================================================================
+\section{Method}
+\label{sec:method}
+
+\subsection{Corpus and sampling}
+% TL;DR: paul_data, 100 propositions, stratified 20% subsample of 4503 writers.
+The \paulcorpus corpus contains $4{,}503$ human-written paragraphs
+(\emph{writers}) on $100$ UK political or policy propositions, rated
+for clarity, informativeness, and agreement score by $\sim 30$ human
+raters each. We evaluate on a $20\%$ stratified subsample
+(tag \texttt{main\_20pct}, $903$ writers): five per-proposition
+agreement-score quintiles crossed with a top-decile flag for the
+highest-clarity writer in each (proposition, quintile) cell.
+Proportional sampling preserves both the per-proposition stance
+distribution and the top-decile fraction.
+
+\subsection{Judge panels}
+% TL;DR: 2 proxies, 5 gold, cross-family, frontier tier for gold.
+\Cref{tab:panels} lists the live OpenRouter model slugs used for
+every judge call. The proxy panel pairs a Qwen and a Llama model at
+matched parameter tier; the gold panel takes one model from five
+different labs. All judges use the same rubric prompt. Models marked
+as reasoning models (GPT-5-mini, internally used Gemini-2.5-Pro during
+pilot) emit hidden reasoning tokens; the judge client sets
+\texttt{reasoning.effort=low} and raises \texttt{max\_tokens} to $500$
+so the visible answer fits.
+
+\begin{table}[h]
+\centering\small
+\caption{Judge panels (live OpenRouter slugs).
+Proxy panel is queryable by the attacker during optimisation; gold
+panel is not. All share rubric and system prompt.}
+\label{tab:panels}
+\begin{tabular}{llll}
+\toprule
+Role & Slug & Size & Family \\
+\midrule
+proxy & \texttt{qwen/qwen-2.5-7b-instruct}  & 7B  & Alibaba \\
+proxy & \texttt{meta-llama/llama-3.1-8b-instruct} & 8B & Meta \\
+\midrule
+gold & \texttt{anthropic/claude-haiku-4.5} & frontier & Anthropic \\
+gold & \texttt{google/gemini-2.5-flash}    & frontier & Google \\
+gold & \texttt{openai/gpt-5-mini}          & frontier & OpenAI \\
+gold & \texttt{deepseek/deepseek-v3.2}     & frontier & DeepSeek \\
+gold & \texttt{meta-llama/llama-4-maverick}& frontier & Meta \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Rewriter methods}
+% TL;DR: 10 methods, three families, all on Qwen-2.5-72B, shared constraints.
+All inference-only rewriters run Qwen-2.5-72B-Instruct via OpenRouter
+under a shared system prompt that requires stance preservation and a
+one-shot retry to land within $\pm 10\%$ of the source word count.
+We group the ten methods into three families
+(\cref{tab:methods}); full prompts live in the release.
+\Cref{sec:results} reports on all ten in the attack-panel analysis and
+on three in the gold-panel analysis; gold scoring for the remaining
+seven is in progress.
+
+\begin{table}[h]
+\centering\small
+\caption{Inference-only rewriter methods. Cost is in calls per source
+paragraph (rewriter $+$ judge), including the length retry.}
+\label{tab:methods}
+\begin{tabular}{llll}
+\toprule
+Family & Slug & Purpose & Cost \\
+\midrule
+prompt, single-call & \texttt{naive} & floor baseline, unguided paraphrase & $\sim$1.3 \\
+prompt, single-call & \texttt{naive\_tight} & \texttt{naive} + tight length & $\sim$1.3 \\
+prompt, single-call & \texttt{lit\_informed} & 5-principle prompt & $\sim$1.3 \\
+prompt, single-call & \texttt{lit\_informed\_tight} & lit-informed + tight length & $\sim$1.3 \\
+prompt, single-call & \texttt{rules\_explicit} & numbered rule list & $\sim$1.3 \\
+prompt, single-call & \texttt{scaffolded\_cot\_distill} & JSON plan/draft/critique/final & $\sim$1.3 \\
+prompt, single-call & \texttt{rubric\_aware} & rewriter sees the rubric & $\sim$1.3 \\
+prompt, single-call & \texttt{injection\_leadin} & 3 authoritative lead-ins & $\sim$1.3 \\
+judge-feedback & \texttt{icir\_single} & $\leq 4$ iterations, panel feedback & $\sim$15 \\
+judge-feedback & \texttt{bon\_panel} & $N{=}8$, panel-scored selection & $\sim$10 rewr. $+$ 16 judge \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training-based arm (ongoing)}
+\label{sec:training}
+% TL;DR: stub for training arm results.
+An accompanying GRPO run fine-tunes a Qwen-2.5-1.5B-Instruct rewriter
+against $r = \tfrac{1}{2}(s_\text{qwen7b} + s_\text{llama8b})$ on a
+disjoint $200$-prompt train / $50$-prompt eval split of top-decile
+writer paragraphs. \cref{app:grpo} documents the TRL configuration
+(group size $G{=}4$, effective batch $32$, learning rate
+$5{\times}10^{-6}$, KL coefficient $0.01$) and the vLLM-colocated
+rollout infrastructure. A single-fold $25$-step reference run raises
+the mean proxy reward from $74$ to $85$. A parallel SFT-on-BoN arm is
+planned. We report training-arm gold-panel scores in
+\cref{sec:training-results} once the runs complete; the eval-side
+infrastructure is already identical to the inference-only methods and
+the gold re-scoring will drop into the same tables without further
+code changes.
+
+\subsection{Drift and detection}
+% TL;DR: stance, length, detection, clarity regressor -- 5 axes.
+Every rewrite is scored on five non-judge axes. (i) \emph{Stance
+drift} $|\hat\alpha(y) - \hat\alpha(x)|$, regressor above.
+(ii) \emph{Length}, word-count ratio to source. (iii) \emph{Semantic
+similarity} via e5-large-v2 cosine to the source, populated for
+methods whose embedding pass has run.
+(iv) \emph{AI detectability}: a supervised TF-IDF $+$ logistic
+regression classifier trained on the \paulcorpus
+writer-vs-AI split, held-out AUROC $0.989$ with per-model AUROCs
+$0.996$ (Claude Sonnet 4), $0.993$ (DeepSeek V3), $0.978$ (GPT-4o);
+the classifier's output is an upper bound on stylistic machineness and
+a lower bound on detectability against the wild, because it has
+learnt three specific model signatures.
+(v) \emph{Domain-learnt clarity}: a second DeBERTa-v3-base regressor
+trained on mean human clarity (Pearson $0.76$, MAE $0.07$ held-out) as
+a judge-independent quality estimate.
+
+\subsection{Statistics}
+% TL;DR: paired deltas, cluster bootstrap over propositions, both aggregators.
+For each method and each panel we report the mean paired delta $\Delta$
+between rewrite score and source score, averaged across paragraphs.
+Gold-panel scores are aggregated two ways per \cref{sec:problem}:
+$A_\text{mean}$ and $A_\text{trim}$. $95\%$ CIs come from cluster
+bootstrap at the proposition level ($100$ clusters, $1000$
+replicates), because multiple paragraphs share a proposition and a
+human rater pool. \gap\ is computed paired per paragraph before
+averaging. Method ranking on each panel uses the mean $\Delta$; the
+paired comparison between rankings uses Spearman $\rho$ bootstrapped
+the same way. We pre-commit to reporting results under both
+aggregators for every method in every downstream table.
+
+% ============================================================================
+% EXPERIMENTAL SETUP
+% ============================================================================
+\section{Experimental setup}
+\label{sec:setup}
+
+% TL;DR: concrete instantiation. Scope, baselines, implementation knobs.
+The experiment has three concrete scopes.
+\textbf{(i) Attack-panel pass:} every source paragraph and every
+rewrite in the $20\%$ sample is scored by both proxy judges. Ten
+methods $\times$ $903$ paragraphs $\approx 18{,}000$ calls; all
+complete at submission. The source paragraph panel mean sets the
+baseline at which uplift is measured.
+\textbf{(ii) Gold-panel pass:} the same paragraphs are re-scored by
+all five gold judges. At submission three methods have
+complete gold coverage (\texttt{naive}, $n{=}903$;
+\texttt{injection\_leadin}, $n{=}695$;
+\texttt{lit\_informed\_tight}, $n{=}481$) and the remaining seven are
+being re-scored. OpenRouter provider errors during the
+first gold pass silently returned parseable envelopes with missing
+score fields, which the judge client currently records as
+\texttt{NULL}; the ongoing re-score inserts over the nulls.
+\textbf{(iii) Non-judge metrics:} stance regressor, length, clarity
+regressor, and AI detector run on all ten methods; embedding cosine
+and hallucinated-specifics run on subsets due to environment issues
+that are noted inline. All of (i)--(iii) write into a single
+append-only SQLite \texttt{evaluations} table keyed on (paragraph,
+metric, criterion, source).
+
+% ============================================================================
+% RESULTS
+% ============================================================================
+\section{Results}
+\label{sec:results}
+
+% TL;DR: forward to Fig 1 headline.
+\Cref{fig:transfer} is the headline. We break it into three claims:
+the gap is large under either aggregator; the method ranking reverses
+under naive mean-of-five; the reversal is a single-judge artefact
+that trimmed mean removes.
+
+\subsection{The \gap is large, paired, and roughly method-uniform under a robust aggregator}
+
+\begin{table}[h]
+\centering\small
+\caption{Paired uplift on each panel for the three methods with
+complete gold coverage. Gold panel aggregated two ways: (mean) the
+mean of all five judges, and (trim) the trimmed mean after dropping
+the highest and lowest score. Source baseline attack = $50.2$,
+gold-mean = $58.6$, gold-trim = $58.7$. $95\%$ CIs proposition-clustered.}
+\label{tab:gap}
+\begin{tabular}{lrrrrr}
+\toprule
+Method & $\Delta_\text{attack}$ & $\Delta_\text{mean}$ & $\Delta_\text{trim}$ & \gap\ (mean) & \gap\ (trim) \\
+\midrule
+\texttt{naive}                & 32.90 & 26.24 & 26.83 & $6.66$  $[5.80, 7.45]$ & $6.07$ $[5.22, 6.83]$ \\
+\texttt{injection\_leadin}    & 34.62 & 26.94 & 27.50 & $7.68$  $[6.52, 8.73]$ & $7.12$ $[5.97, 8.15]$ \\
+\texttt{lit\_informed\_tight} & 34.64 & 23.24 & 27.24 & $\mathbf{11.40}$ $[10.00, 12.73]$ & $7.40$ $[6.09, 8.62]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% TL;DR: gap is real both ways; trim makes it ~7 pts across methods.
+Every \gap\ CI in \cref{tab:gap} excludes zero by a wide margin under
+both aggregators. Under the trimmed mean the three methods cluster
+inside a $1.3$-point band ($6.07$, $7.12$, $7.40$). Under the naive
+mean \texttt{lit\_informed\_tight}'s gap balloons to $11.40$, and its
+CI no longer overlaps with \texttt{naive}'s CI. The attack panel
+therefore systematically over-states gold uplift by about seven
+clarity points independent of method; the additional four-point
+excess that appears for \texttt{lit\_informed\_tight} under the naive
+mean is aggregator-specific.
+
+\subsection{Apparent rank reversal is a one-judge artefact}
+
+% TL;DR: rank reversal on mean-of-5, disappears on trimmed mean.
+On the attack panel the three methods rank
+\texttt{lit\_informed\_tight}$>$\texttt{injection\_leadin}$>$\texttt{naive}
+($34.64 \approx 34.62 > 32.90$). On the gold panel the answer depends
+on aggregation. Under naive mean-of-five the ranking is
+\texttt{injection\_leadin}$>$\texttt{naive}$>$\texttt{lit\_informed\_tight}
+($26.94 > 26.24 > 23.24$): Spearman $\rho = -1$ against the attack
+ranking, a complete reversal. Under trimmed mean the ranking becomes
+\texttt{injection\_leadin}$>$\texttt{lit\_informed\_tight}$>$\texttt{naive}
+($27.50 > 27.24 > 26.83$), and Spearman $\rho$ against the attack
+ranking rises to $+0.5$. A defender choosing the ``riskiest rewriter
+to emulate'' from the un-trimmed gold panel picks the worst of the
+three; the same defender using trimmed gold picks the same method the
+attack panel picks, i.e.\ no reversal at all.
+Scoring behind the reversal: trimmed gold moves
+\texttt{lit\_informed\_tight} by $+4$ points relative to its raw mean;
+the same trim moves \texttt{naive} by only $+0.6$ and
+\texttt{injection\_leadin} by $+0.6$. The outlier is concentrated in
+one method.
+
+\subsection{The outlier is DeepSeek on \texttt{lit\_informed\_tight}}
+\label{sec:driver}
+
+% TL;DR: DeepSeek-V3.2 rates lit_informed_tight 22 pts below peers.
+\Cref{fig:perjudge} breaks the gold-panel mean into per-judge means.
+On four of the five gold judges the three rewriter methods finish
+within $2.0$ points of one another. On DeepSeek-V3.2
+\texttt{lit\_informed\_tight} scores $67.2$ while
+\texttt{naive} scores $88.5$ and \texttt{injection\_leadin} scores
+$89.4$: a $\sim 22$-point drop on one judge, not a uniform shift
+across gold. The trimmed-mean aggregator in \cref{tab:gap} is
+designed for exactly this shape. The un-trimmed mean inherits the
+outlier and reports a false rank reversal; the trimmed mean ignores
+the worst single judgement per paragraph and reports a gap that is
+consistent across methods. Reading the rewriter outputs, the
+literature-informed prompt asks for ``visible reasoning'' and
+``main claim first''; its rewrites are more scaffolded, with explicit
+\emph{because}-chains and topic sentences. That structure aligns with
+what the proxy-tier open judges reward and, on the evidence here,
+systematically mis-aligns with one gold judge's preferences. Whether
+the effect is DeepSeek-specific, structural-prose-specific, or
+latent in the training pipeline is the experiment the fuller gold
+pass (and a non-political replication) should answer.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\linewidth]{fig2_per_judge.pdf}
+\caption{\textbf{The rank reversal is a one-cell artefact.}
+Mean clarity per (method, gold judge) for the three methods with
+complete gold coverage. Dashed line: source-paragraph baseline per
+judge. Four of the five gold judges agree to within a point on the
+three methods. DeepSeek-V3.2 scores \texttt{lit\_inf\_t} $\sim 22$
+points below \texttt{naive} and \texttt{injection}; no other (judge,
+method) cell has a comparable deviation. This single cell drives the
+un-trimmed-mean rank reversal in \cref{fig:transfer}, and trimming
+removes it.}
+\label{fig:perjudge}
+\end{figure}
+
+\subsection{Attack-panel ranking (all methods)}
+
+% TL;DR: all 10 attack ranks, CIs overlap a lot.
+\Cref{fig:attack} shows the attack-panel $\Delta$ for all ten methods
+with bootstrap CIs. Spread from floor (\texttt{naive}, $32.90$) to
+ceiling (\texttt{rules\_explicit}, $36.99$) is $\sim 4$ points, and
+neighbouring methods' CIs overlap. The attack panel is a
+low-resolution instrument for ranking methods whose uplifts differ
+by $<1$ point---relevant when the training-based arm lands and its
+gold-panel improvement is what distinguishes it from inference.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.75\linewidth]{fig3_attack_uplift.pdf}
+\caption{\textbf{The attack panel cannot rank methods whose uplifts
+differ by under a point.}
+Mean paired $\Delta$ vs.\ source, $95\%$ proposition-clustered
+bootstrap CI across all ten inference-only methods. Red markers have
+complete gold coverage; blue markers are still being gold-scored.
+Nine of the ten methods' CIs overlap at least one neighbour. This
+figure is a visual argument for trusting the attack panel only at
+$\geq 1$-point resolution, and for letting the gold panel break
+small ties.}
+\label{fig:attack}
+\end{figure}
+
+\subsection{Drift, detection, and domain-learnt quality}
+
+% TL;DR: stance drift correlates with attack uplift; all rewrites detectable.
+\Cref{fig:drift} plots stance drift against attack-panel uplift.
+High-drift methods are also the high-uplift methods: the best-scoring
+rewriter on the proxy panel (\texttt{rules\_explicit}) has stance
+drift $0.199$, roughly four times \texttt{naive}'s $0.055$. On a
+rewriting task where stance preservation is the fidelity constraint,
+this is a trade-off, not a free lunch.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.55\linewidth]{fig4_drift.pdf}
+\caption{\textbf{Stance drift rises with attack-panel uplift.}
+$x$: attack-panel paired uplift. $y$: mean absolute change in the
+DeBERTa agreement-score regressor's prediction between rewrite and
+source. \texttt{rules} moves stance $\sim 4\times$ more than
+\texttt{naive} while gaining $\sim 4$ clarity points---a fidelity cost
+the proxy panel cannot see.}
+\label{fig:drift}
+\end{figure}
+
+% TL;DR: all rewriters are trivially detectable.
+The supervised AI detector places rewrites from all three methods
+with detector coverage at
+$p(\text{machine}) \approx 0.80$, against a source baseline of
+$0.36$: $+0.44$. The detector learnt the stylistic signatures of the
+three AI models represented in the \paulcorpus training corpus, so
+this is a lower bound on general detectability, not a report on it.
+Even so, no inference-only rewriter we tested passes for human at
+that bound.
+
+% TL;DR: domain clarity regressor sides with attack panel, not DeepSeek.
+The domain-learnt clarity regressor (trained on mean human clarity
+ratings) rates the three gold-complete methods
+\texttt{lit\_informed\_tight}$\approx$\texttt{naive}$\approx$\texttt{injection\_leadin}
+(predictions $0.866$, $0.846$, $0.822$). The regressor disagrees with
+DeepSeek-V3.2's reading of \texttt{lit\_informed\_tight}: on
+human-calibrated clarity the method is at the top of the pack. That
+does not refute DeepSeek; rubric compliance and human clarity are
+not the same construct. It does say that the rank reversal in
+\Cref{fig:transfer} is not visible to a human-calibrated scorer.
+
+\subsection{Stubs for the ongoing passes}
+\label{sec:training-results}
+
+% TL;DR: stubs written in target style; will be overwritten by data.
+\paragraph{Completing the gold panel.}
+When the re-score finishes for the remaining seven methods, the
+four-quadrant decomposition (\cref{fig:transfer}) expands from three
+points to ten. We expect the three prompt-only methods
+(\texttt{naive\_tight}, \texttt{rubric\_aware}, \texttt{rules\_explicit})
+to sit within a point of \texttt{naive}'s gold uplift, the
+judge-feedback methods (\texttt{bon\_panel}, \texttt{icir\_single}) to
+sit near \texttt{lit\_informed\_tight}'s, and
+\texttt{scaffolded\_cot\_distill} to follow \texttt{lit\_informed}.
+Whether \texttt{rules\_explicit} produces the largest \gap\ (it ranks
+first on attack) or merely the largest stance drift (\cref{fig:drift})
+is the specific open question.
+
+\paragraph{Training-based arm (SFT, GRPO).}
+Both training-based methods score against the same two proxy judges
+in \cref{tab:panels}, and the evaluation protocol extends the same
+gold panel with a held-out Gemma-2-9B-Instruct judge (not in either
+panel). A successful training-based attack raises mean proxy reward
+while leaving gold-panel reward flat or falling: the \citet{gao2023}
+signature, translated to LLM-judge land. The $25$-step reference GRPO
+run already shows $+6.93$ on mean proxy score and $+2.10$ on the
+held-out Gemma judge---the characteristic gap that makes the full
+training-based test interesting.
+
+\paragraph{Fidelity-controlled comparison.}
+Rerunning the \gap\ with outcomes length-controlled (regressing out
+word-count ratio) and stance-controlled (regressing out stance drift)
+isolates the judge-specific component of uplift from the drift-driven
+one. We commit to reporting the length-controlled \gap\ for all ten
+methods in the camera-ready.
+
+% ============================================================================
+% DISCUSSION / CONCLUSION (not abstract-in-past-tense; break 4th wall)
+% ============================================================================
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Trim the gold mean}
+% TL;DR: practical: small gold panels need robust aggregators.
+A five-judge gold panel is small. Small samples of noisy estimators
+have a known failure mode: the sample mean is sensitive to a single
+outlier, and the worst-case single judgement per paragraph is what
+the attack panel was trained against. Trimmed mean restores the
+finding that matters---the $\sim 7$-point transfer
+gap---while eliminating a method-specific spike that would have been
+reported as an attacker signature. Any evaluator operating with a
+small gold panel should either report the per-judge breakdown, use a
+trimmed mean, or both. Reporting only the gold-mean, as is common in
+the RM-overoptimisation lineage
+\citep{gao2023,coste2024,eisenstein2023}, risks this exact
+confusion.
+
+\subsection{What the literature-informed prompt actually teaches}
+% TL;DR: the specific result about prompt-engineering-for-judges.
+The prompt that distils five years of GEO, Prometheus, and G-Eval
+advice into five principles scores highest on the proxy panel.
+Under the trimmed-mean gold it sits at the top of the gold panel
+too. Under naive gold it collapses to last place because one
+gold judge (DeepSeek-V3.2) disagrees. That is a genuine single-judge
+failure mode, not evidence that the prompt games the proxy panel.
+Whether the DeepSeek-V3.2 effect generalises beyond political
+content is outside this paper's scope, but it is testable with the
+release: every (paragraph, judge) score is in the SQLite dump.
+
+\subsection{Limitations}
+\label{sec:limits}
+% TL;DR: honest about what we can't say.
+Single criterion (clarity), single domain (UK political opinion),
+single held-out model in the training arm, a single fold.
+Non-frontier proxies and cost-downgraded gold panel
+(\cref{tab:panels}; no Sonnet, no Gemini Pro, no Opus). The
+bootstrap's effective degrees of freedom is $\sim 100$ clusters.
+The AI detector encodes corpus-specific signatures; we read it as a
+lower bound, not an upper one. Gold-panel coverage is partial at
+submission---three of ten methods complete, one at $n{=}44$, the rest
+being re-scored. The seven missing methods' \gap\ values could
+change the picture: if all seven sit near the trimmed $\sim 7$-point
+band the method-uniform gap hardens; if any one of them has a
+per-judge outlier of DeepSeek's size, a second rank reversal under
+naive mean is possible. The trimmed-mean curve is harder to move.
+The trimmed-mean estimator itself has a breakdown point of
+$1/5$; two outliers of the same size on a paragraph would still
+slip through.
+
+\subsection{Ethics}
+\label{sec:ethics}
+% TL;DR: dual-use paper; detection axes are the mitigation.
+The paper describes inference-only rewriters that raise an LLM
+judge's clarity score on politically charged text without changing
+the source's stance. This is a dual-use result, standard in the
+rewriting-attack lineage
+(\citealp{raina2024,kaneko2026paa,zou2023gcg}). Our detection and
+drift axes---stance regressor, AI detector, domain clarity
+regressor---are specifically designed to raise the defender's signal
+on the attack; we publish them together, and commit to releasing
+the regressors' weights.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+% TL;DR: the so-what, break the fourth wall.
+% (Carlini: conclusions are not abstract-in-past-tense.)
+We set out to measure how much of an attacker's uplift on an LLM
+judge survives a change of judge. Read through the
+reward-model-overoptimisation literature, the expected answer was a
+single number: an uplift haircut, roughly the same across methods.
+It almost is. Under a robust aggregator (trimmed mean over a
+five-judge gold panel) the three methods we could fully score sit
+inside a $1.3$-point band: attacker uplift over-states gold uplift
+by about seven clarity points, method-independent. Under the naive
+mean-of-five the same three methods diverge and the ranking
+reverses. The lesson is about the aggregator, not the attacker.
+
+% TL;DR: what to work on next.
+The open work is concrete. Finish the gold re-score on the seven
+methods still pending and upgrade the rank-reversal claim from three
+points to ten. Run the training-based arm and confirm the
+\citet{gao2023} signature on LLM judges. Extend to a second
+criterion (the informativeness regressor is already trained). Swap
+the proxy pair for three proxies and test whether a DeepSeek-shaped
+single-judge failure still appears one-judge-wide or averages out.
+Report both mean-of-$k$ and trimmed-mean gold in every downstream
+evaluation; the scripts and seeds ship with the paper.
+
+% ============================================================================
+% REPRODUCIBILITY
+% ============================================================================
+\section*{Reproducibility statement}
+\addcontentsline{toc}{section}{Reproducibility statement}
+
+The release ships: (i) the attack and gold panel slugs verbatim,
+(ii) every rewriter prompt and orchestrator, (iii) the judge rubric
+and scoring prompt, (iv) the SQLite schema and ingestion pipeline for
+\paulcorpus, (v) the TF-IDF AI detector and both DeBERTa regressors
+(agreement, clarity) with training scripts, (vi) the $\texttt{run\_all}$
+driver and \texttt{analyse} CLI, (vii) per-run manifests with
+GRPOConfig, package pins, and git SHAs for every training run.
+Every (paragraph, metric, criterion, source) tuple is an idempotent
+upsert; re-runs skip existing rows. Bootstrap CIs use a documented
+seed ($17$).
+
+% ============================================================================
+% BIBLIOGRAPHY
+% ============================================================================
+\bibliographystyle{plainnat}
+\begin{thebibliography}{99}
+
+\bibitem[Aggarwal et al.(2024)]{aggarwal2024geo}
+Aggarwal, P., Murahari, V., Rajpurohit, T., Kalyan, A., Narasimhan, K.,
+Deshpande, A. (2024).
+\enquote{GEO: Generative Engine Optimization}. arXiv:2311.09735.
+
+\bibitem[Chen et al.(2025)]{chen2025autogeo}
+Chen, T., Zhong, S., Kim, J., Xiong, C. (2025).
+\enquote{AutoGEO: Learning to Optimize Content for Generative Engines}.
+arXiv:2510.11438.
+
+\bibitem[Coste et al.(2024)]{coste2024}
+Coste, T., Anwar, U., Kirk, R., Krueger, D. (2024).
+\enquote{Reward Model Ensembles Help Mitigate Overoptimization}.
+arXiv:2310.02743.
+
+\bibitem[Dubois et al.(2024)]{dubois2024alpacaeval}
+Dubois, Y., Galambosi, B., Liang, P., Hashimoto, T. (2024).
+\enquote{Length-Controlled AlpacaEval}. arXiv:2404.04475.
+
+\bibitem[Eisenstein et al.(2023)]{eisenstein2023}
+Eisenstein, J., et al. (2023).
+\enquote{Helping or Herding? Reward Model Ensembles Mitigate but do
+not Eliminate Reward Hacking}. arXiv:2312.09244.
+
+\bibitem[Gao et al.(2023)]{gao2023}
+Gao, L., Schulman, J., Hilton, J. (2023).
+\enquote{Scaling Laws for Reward Model Overoptimization}.
+arXiv:2210.10760.
+
+\bibitem[Kaneko(2026)]{kaneko2026paa}
+Kaneko, M. (2026). \enquote{Paraphrasing Adversarial Attack on
+LLM-as-a-Reviewer}. arXiv:2601.06884.
+
+\bibitem[Kim et al.(2024)]{kim2024prometheus2}
+Kim, S., et al. (2024). \enquote{Prometheus 2: An Open Source Language
+Model Specialized in Evaluating Other Language Models}.
+arXiv:2405.01535.
+
+\bibitem[Laidlaw et al.(2024)]{laidlaw2024correlated}
+Laidlaw, C., Singhal, S., Dragan, A. (2024). \enquote{Correlated
+Proxies: A New Definition and Improved Mitigation for Reward
+Hacking}. arXiv:2403.03185.
+
+\bibitem[Liu et al.(2023)]{liu2023geval}
+Liu, Y., Iter, D., Xu, Y., Wang, S., Xu, R., Zhu, C. (2023).
+\enquote{G-Eval: NLG Evaluation using GPT-4 with Better Human
+Alignment}. arXiv:2303.16634.
+
+\bibitem[Liu et al.(2025)]{liu2025judgesverdict}
+Liu, Y., et al. (2025). \enquote{Judge's Verdict: A New Weighted
+Metric and Benchmark for 54 LLM Judges}. arXiv:2510.09738.
+
+\bibitem[Pan et al.(2024)]{pan2024icrh}
+Pan, A., Chen, J.X., Zou, J. (2024).
+\enquote{Spontaneous Reward Hacking in Iterative Self-Refinement}.
+arXiv:2407.04549.
+
+\bibitem[\paulcorpus(2025)]{pauldata2025}
+\enquote{The LLM Distortion Study: Pre-Registered Writer--Model--Edit
+Corpus on UK Political Opinion}. Pre-registration, 2025.
+
+\bibitem[Raina et al.(2024)]{raina2024}
+Raina, V., Liusie, A., Gales, M. (2024).
+\enquote{Is LLM-as-a-Judge Robust? Investigating Universal
+Adversarial Attacks on Zero-shot LLM Assessment}. EMNLP 2024 /
+arXiv:2402.14016.
+
+\bibitem[Shi et al.(2024)]{shi2024judgedeceiver}
+Shi, J., et al. (2024).
+\enquote{Optimization-based Prompt Injection Attack to
+LLM-as-a-Judge}. CCS 2024 / arXiv:2403.17710.
+
+\bibitem[Wu et al.(2025)]{wu2025robustjudge}
+Wu, C., et al. (2025). \enquote{Can LLMs Reliably Judge?
+RobustJudge: Adversarial Robustness Benchmark for LLM Judges}.
+arXiv:2506.09443.
+
+\bibitem[Zhang et al.(2024)]{zhang2024format}
+Zhang, X., et al. (2024). \enquote{From Lists to Emojis: How Format
+Bias Affects Model Alignment}. arXiv:2409.11704.
+
+\bibitem[Zhao et al.(2025)]{zhao2025onetoken}
+Zhao, Y., et al. (2025).
+\enquote{One Token to Fool LLM-as-a-Judge}. arXiv:2507.08794.
+
+\bibitem[Ziegenbein et al.(2024)]{ziegenbein2024argmt}
+Ziegenbein, T., et al. (2024).
+\enquote{LLM-based Rewriting of Inappropriate Argumentation using RL
+from Machine Feedback}. arXiv:2406.03363.
+
+\bibitem[Ziegenbein et al.(2026)]{ziegenbein2026grpo}
+Ziegenbein, T., et al. (2026). \enquote{Teaching LLMs Human-Like
+Editing of Inappropriate Argumentation via RL}. arXiv:2604.12770.
+
+\bibitem[Zou et al.(2023)]{zou2023gcg}
+Zou, A., Wang, Z., Kolter, J.Z., Fredrikson, M. (2023).
+\enquote{Universal and Transferable Adversarial Attacks on Aligned
+Language Models}. arXiv:2307.15043.
+
+\end{thebibliography}
+
+% ============================================================================
+% APPENDIX
+% ============================================================================
+\appendix
+
+\section{GRPO configuration}
+\label{app:grpo}
+
+Rewriter: \texttt{Qwen/Qwen2.5-1.5B-Instruct} (full fine-tune, bf16 weights,
+fp32 AdamW). Group size $G{=}4$; per-device batch $8$; gradient
+accumulation $4$ (effective batch $32$ rollouts, $8$ unique prompts);
+max completion length $260$; learning rate $5{\times}10^{-6}$; KL
+coefficient $\beta{=}0.01$; temperature $1.0$; top-$p$ $1.0$;
+\texttt{loss\_type="dapo"}; \texttt{scale\_rewards="group"};
+\texttt{vllm\_importance\_sampling\_correction=True}. Pinned packages:
+\texttt{trl==1.2.0}, \texttt{vllm==0.18.1}, \texttt{torch==2.10.0+cu128},
+\texttt{transformers==4.57.6}. Seed $42$.
+
+Per-step diagnostics (wandb): per-judge reward mean, ensemble std,
+completion length min/mean/max, $\texttt{frac\_reward\_zero\_std}$,
+vLLM-vs-HF importance-sampling ratio, KL to reference, entropy,
+gradient norm. Held-out Gemma-2-9B-Instruct judge evaluated
+pre- and post-training on a $50$-paragraph disjoint slice of
+top-decile writers.
+
+\section{Additional inference-only methods}
+\label{app:extras}
+
+\Cref{tab:methods} lists all ten inference-only methods; the active
+paper panel (those for which gold-panel coverage is complete or in
+late-stage re-score) is a subset of six. The four excluded methods
+are \texttt{lit\_informed}, \texttt{naive\_tight}, \texttt{rules\_explicit},
+and \texttt{scaffolded\_cot\_distill}. Their attack-panel uplifts are
+in \cref{fig:attack}; the re-score populates their gold-panel
+uplifts without further code changes. The prompts and orchestrators are in
+\texttt{rewriters/rewrite\_prompts.py} and
+\texttt{rewriters/orchestrators.py} in the release.
+
+\section{Analysis hygiene}
+\label{app:analysis}
+
+The analysis driver (\texttt{eval\_suite/analyse.py}) aggregates the
+\texttt{evaluations} table by (method, metric, criterion, panel,
+source). In the partial-gold state at submission, rows with
+\texttt{value IS NULL} pass the default groupby filter and cause the
+mean to be computed over a reduced sample; a subsequent bugfix (not
+yet merged at the time of this draft) filters NULLs explicitly before
+aggregation and yields the numbers reported in \cref{sec:results}.
+All numbers in the paper are computed in a separate script that hits
+SQLite directly with a \texttt{value IS NOT NULL} guard, to avoid
+dependence on the driver's intermediate state.
+
+\end{document}
