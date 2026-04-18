@@ -231,6 +231,9 @@ def main():
     ap.add_argument("--n-propositions", type=int, default=None,
                     help="if set, subsample to the first N distinct propositions "
                          "(used for 3-fold cross-judge mission)")
+    ap.add_argument("--dataset-json", type=str, default=None,
+                    help="if set, load paragraphs from this JSON (produced by build_controversial_subset.py); "
+                         "overrides --n-propositions and top-decile filter")
     args = ap.parse_args()
 
     train_judge_keys = [s.strip() for s in args.train_judges.split(",")]
@@ -242,25 +245,35 @@ def main():
     t_start = time.time()
     print(f"[{time.strftime('%H:%M:%S')}] start (pilot-len-pen, args={vars(args)})", flush=True)
 
-    rows = load_data()
-    print(f"top-decile writer rows: {len(rows)}", flush=True)
-    if args.n_propositions is not None:
-        # Subsample to first N distinct propositions (deterministic by proposition_id order)
-        # rows already ordered by proposition_id, document_id
-        seen = []
-        filtered = []
-        for r in rows:
-            # r = (document_id, proposition, text, word_count, human_mean_clarity)
-            # proposition text identifies the proposition group
-            if r[1] not in seen:
-                if len(seen) >= args.n_propositions:
-                    continue
-                seen.append(r[1])
-            filtered.append(r)
-        rows = [r for r in filtered if r[1] in seen]
-        print(f"filtered to {args.n_propositions} propositions → {len(rows)} paragraphs", flush=True)
-    train_rows = rows[:args.n_train]
-    eval_rows = rows[args.n_train:args.n_train + args.n_eval]
+    if args.dataset_json:
+        # Load from precomputed JSON (e.g. build_controversial_subset.py output)
+        payload = json.loads(Path(args.dataset_json).read_text())
+        rows = [(r["document_id"], r["proposition"], r["text"], int(r["word_count"]),
+                 r.get("human_mean_clarity"))
+                for r in payload["rows"]]
+        train_n = payload.get("n_train", args.n_train)
+        eval_n = payload.get("n_eval", args.n_eval)
+        train_rows = rows[:train_n]
+        eval_rows = rows[train_n:train_n + eval_n]
+        print(f"loaded {len(rows)} paragraphs from {args.dataset_json} "
+              f"({len(train_rows)} train / {len(eval_rows)} eval)", flush=True)
+    else:
+        rows = load_data()
+        print(f"top-decile writer rows: {len(rows)}", flush=True)
+        if args.n_propositions is not None:
+            # Subsample to first N distinct propositions (deterministic by proposition_id order)
+            seen = []
+            filtered = []
+            for r in rows:
+                if r[1] not in seen:
+                    if len(seen) >= args.n_propositions:
+                        continue
+                    seen.append(r[1])
+                filtered.append(r)
+            rows = [r for r in filtered if r[1] in seen]
+            print(f"filtered to {args.n_propositions} propositions → {len(rows)} paragraphs", flush=True)
+        train_rows = rows[:args.n_train]
+        eval_rows = rows[args.n_train:args.n_train + args.n_eval]
 
     train_data = [
         {"prompt": make_rewrite_prompt(r[1], r[2], int(r[3])),
@@ -332,9 +345,10 @@ def main():
         m_tgt_wc = sum(target_wcs) / len(target_wcs)
         std = (sum((x - m_reward) ** 2 for x in penalised) / len(penalised)) ** 0.5
         frac_out = sum(1 for lr in len_ratios if abs(lr - 1) > args.tol) / len(len_ratios)
-        wandb.log({
-            "reward/judge_qwen7b_mean": m1,
-            "reward/judge_llama8b_mean": m2,
+        # Dynamic per-judge wandb keys — respects actual ensemble composition (fixes hardcoded-name bug)
+        log_payload = {
+            f"reward/{judges[0].name}_mean": m1,
+            f"reward/{judges[1].name}_mean": m2,
             "reward/ensemble_judge_mean": m_ej,
             "reward/penalty_mean": m_pen,
             "reward/final_mean": m_reward,
@@ -345,11 +359,37 @@ def main():
             "length/frac_outside_tol": frac_out,
             "timing/score_seconds": t_score,
             "reward_fn_step": step_counter["n"],
-        })
+        }
+        wandb.log(log_payload)
         print(f"[{time.strftime('%H:%M:%S')}] reward_fn #{step_counter['n']}  "
               f"j1={m1:.1f}  j2={m2:.1f}  ej={m_ej:.1f}  pen={m_pen:.2f}  "
               f"final={m_reward:.1f}  ratio={m_ratio:.2f}  %out={frac_out:.2f}  "
               f"wc={m_gen_wc:.0f}/{m_tgt_wc:.0f}  score_s={t_score:.1f}", flush=True)
+
+        # Periodic per-rollout save (every N_SAVE=50 steps, K=8 samples max) — best-effort, no exception propagation
+        N_SAVE = 50
+        K_SAMPLES = 8
+        if step_counter["n"] % N_SAVE == 1:
+            try:
+                rollouts_path = OUT_DIR / f"pilot_{args.name_suffix}" / "rollouts.jsonl"
+                rollouts_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(rollouts_path, "a") as f:
+                    for i in range(min(K_SAMPLES, len(rewrites))):
+                        f.write(json.dumps({
+                            "step": step_counter["n"],
+                            "rollout_idx": i,
+                            "proposition": props[i],
+                            "rewrite": rewrites[i],
+                            "judge1_score": j1[i],
+                            "judge2_score": j2[i],
+                            "ensemble_judge": ensemble_judge[i],
+                            "length_ratio": len_ratios[i],
+                            "length_penalty": penalties[i],
+                            "final_reward": penalised[i],
+                        }) + "\n")
+            except Exception as e:
+                print(f"  [rollout_save WARN] {e}", flush=True)
+
         return penalised
 
     from trl import GRPOConfig, GRPOTrainer
@@ -505,6 +545,10 @@ def main():
         "post_rewrites": post_rewrites,
         "heldout_pre_scores": heldout_pre_scores,
         "heldout_post_scores": heldout_post_scores,
+        "eval_document_ids": [r[0] for r in eval_rows],
+        "eval_originals": [r[2] for r in eval_rows],
+        "eval_propositions": [r[1] for r in eval_rows],
+        "eval_word_counts": [int(r[3]) for r in eval_rows],
         "timing": {
             "total_elapsed_s": time.time() - t_start,
             "train_elapsed_s": train_elapsed,

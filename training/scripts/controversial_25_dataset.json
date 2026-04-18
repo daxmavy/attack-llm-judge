@@ -1,0 +1,1841 @@
+{
+  "n_propositions": 25,
+  "n_train": 130,
+  "n_eval": 35,
+  "seed": 17,
+  "clarity_quintile_cuts": [
+    60.666666666666664,
+    70.36363636363636,
+    77.44444444444444,
+    83.4
+  ],
+  "propositions": [
+    {
+      "pid": 339,
+      "proposition": "The UK should increase military support to Ukraine in response to the 2022 Russian invasion.",
+      "stdev_agreement": 0.32889503227364814,
+      "mean_agreement": 0.5366400272566939,
+      "n_writers": 45
+    },
+    {
+      "pid": 122,
+      "proposition": "The UK should teach children about the LGBTQ+ community in primary school.",
+      "stdev_agreement": 0.32767644256990935,
+      "mean_agreement": 0.5535064235281627,
+      "n_writers": 46
+    },
+    {
+      "pid": 303,
+      "proposition": "The UK should abolish the monarchy.",
+      "stdev_agreement": 0.3245736718550112,
+      "mean_agreement": 0.478109315375982,
+      "n_writers": 45
+    },
+    {
+      "pid": 37,
+      "proposition": "The UK should legalise marijuana for recreational use.",
+      "stdev_agreement": 0.322391012359465,
+      "mean_agreement": 0.5078894673228006,
+      "n_writers": 45
+    },
+    {
+      "pid": 201,
+      "proposition": "The UK should significantly increase its military spending.",
+      "stdev_agreement": 0.31535019012555787,
+      "mean_agreement": 0.575293265993266,
+      "n_writers": 45
+    },
+    {
+      "pid": 129,
+      "proposition": "The UK should legally recognize and protect all forms of transgender identity.",
+      "stdev_agreement": 0.3140873210975665,
+      "mean_agreement": 0.5151945437278771,
+      "n_writers": 45
+    },
+    {
+      "pid": 61,
+      "proposition": "The UK should reintroduce the death penalty.",
+      "stdev_agreement": 0.31237322044170424,
+      "mean_agreement": 0.35099974963308295,
+      "n_writers": 45
+    },
+    {
+      "pid": 51,
+      "proposition": "The UK should increase taxes on sugary drinks.",
+      "stdev_agreement": 0.30952620491539307,
+      "mean_agreement": 0.4610353103686437,
+      "n_writers": 45
+    },
+    {
+      "pid": 114,
+      "proposition": "The UK should mandate the inclusion of feminist perspectives in the national literature curriculum.",
+      "stdev_agreement": 0.3087492849511329,
+      "mean_agreement": 0.4953360540693874,
+      "n_writers": 45
+    },
+    {
+      "pid": 368,
+      "proposition": "The UK should implement a 4-day workweek for all full-time employees.",
+      "stdev_agreement": 0.30792392399648266,
+      "mean_agreement": 0.6587683629776021,
+      "n_writers": 46
+    },
+    {
+      "pid": 25,
+      "proposition": "The UK should seek to rejoin the European Union.",
+      "stdev_agreement": 0.3041995672919331,
+      "mean_agreement": 0.6188038867697958,
+      "n_writers": 44
+    },
+    {
+      "pid": 22,
+      "proposition": "The UK should ban internet use for under-14-year-olds.",
+      "stdev_agreement": 0.3030185245457928,
+      "mean_agreement": 0.39506285072951736,
+      "n_writers": 45
+    },
+    {
+      "pid": 242,
+      "proposition": "The UK should implement policies to ensure the protection and promotion of religious freedoms for Muslim communities.",
+      "stdev_agreement": 0.30100584478472675,
+      "mean_agreement": 0.5015700183654729,
+      "n_writers": 44
+    },
+    {
+      "pid": 54,
+      "proposition": "The UK should implement stricter regulations on the sale of violent video games to minors.",
+      "stdev_agreement": 0.2997020456966661,
+      "mean_agreement": 0.6009855983522651,
+      "n_writers": 45
+    },
+    {
+      "pid": 40,
+      "proposition": "The UK should legalise euthanasia.",
+      "stdev_agreement": 0.2987469127673985,
+      "mean_agreement": 0.6320263504611331,
+      "n_writers": 46
+    },
+    {
+      "pid": 343,
+      "proposition": "The UK should defund the BBC.",
+      "stdev_agreement": 0.29830870230186735,
+      "mean_agreement": 0.5024472071138738,
+      "n_writers": 45
+    },
+    {
+      "pid": 85,
+      "proposition": "The UK should significantly reduce immigration levels.",
+      "stdev_agreement": 0.29825355734909925,
+      "mean_agreement": 0.46947532590865926,
+      "n_writers": 45
+    },
+    {
+      "pid": 308,
+      "proposition": "The UK should implement mandatory voting in all major elections.",
+      "stdev_agreement": 0.2976334129824299,
+      "mean_agreement": 0.43296139169472503,
+      "n_writers": 45
+    },
+    {
+      "pid": 249,
+      "proposition": "The UK should formally apologize and provide reparations for the impacts of colonisation.",
+      "stdev_agreement": 0.29567344986695876,
+      "mean_agreement": 0.4686350168350168,
+      "n_writers": 45
+    },
+    {
+      "pid": 333,
+      "proposition": "The UK should strengthen the rights and powers of labour unions.",
+      "stdev_agreement": 0.29492084713615274,
+      "mean_agreement": 0.5710796889348025,
+      "n_writers": 44
+    },
+    {
+      "pid": 20,
+      "proposition": "The UK should mandate COVID-19 vaccinations for all eligible citizens.",
+      "stdev_agreement": 0.29372772950309234,
+      "mean_agreement": 0.3937099974099974,
+      "n_writers": 45
+    },
+    {
+      "pid": 176,
+      "proposition": "The UK should increase its military spending to strengthen its role within NATO.",
+      "stdev_agreement": 0.291970577907706,
+      "mean_agreement": 0.5779950617283951,
+      "n_writers": 45
+    },
+    {
+      "pid": 369,
+      "proposition": "The UK should implement a universal basic income for all citizens.",
+      "stdev_agreement": 0.29152614138142835,
+      "mean_agreement": 0.5026359244620114,
+      "n_writers": 46
+    },
+    {
+      "pid": 264,
+      "proposition": "The UK should sever all formal ties with the Catholic Church.",
+      "stdev_agreement": 0.29110163654168186,
+      "mean_agreement": 0.40087418630751964,
+      "n_writers": 45
+    },
+    {
+      "pid": 89,
+      "proposition": "The UK should implement policies to incentivise higher birth rates.",
+      "stdev_agreement": 0.2879198360151452,
+      "mean_agreement": 0.36931907968574634,
+      "n_writers": 45
+    }
+  ],
+  "rows": [
+    {
+      "document_id": "3a5d86967a3e74a8",
+      "proposition_id": 20,
+      "proposition": "The UK should mandate COVID-19 vaccinations for all eligible citizens.",
+      "text": "Catching COVID can be an unpleasant experience for most people who catch it and can be deadly or leave people with long term conditions that are life limiting.  The cost both to to the country and the individual of COVID can be extremely high compared to the low cost of vaccination. Even if the vaccine does not stop infection it can reduce the severity.\r\n\r\nHerd immunity is conferred on those who cannot be vaccinated and it is selfish to expose others to avoidable risks for no benefit to yourself.  There are no significant risks behind vaccines  and conspiracy theories are damaging national and global health.",
+      "word_count": 105,
+      "human_mean_clarity": 50.0,
+      "human_agreement_score": 0.727,
+      "split": "train"
+    },
+    {
+      "document_id": "4efdcd1adb548cc6",
+      "proposition_id": 20,
+      "proposition": "The UK should mandate COVID-19 vaccinations for all eligible citizens.",
+      "text": "I can see why such is policy is something that people would be interested in. Mandating covid vaccines could save many lives, ease the burden on the NHS and social care having to support people with long covid. However, such a policy would be totally unprecedented - no other vaccine is mandatory, and it would be hard to justify why just the covid one should be. Such a policy wouldn't pass a vote in either houses of government, and would be against public opinion. Even if it did pass it would probably be repealed by the next government, defeating the point of the policy. Finally, there are more constructive nudges the government could make, such as requiring it for travel abroad. ",
+      "word_count": 121,
+      "human_mean_clarity": 69.3,
+      "human_agreement_score": 0.273,
+      "split": "train"
+    },
+    {
+      "document_id": "5072e9c7ea448848",
+      "proposition_id": 20,
+      "proposition": "The UK should mandate COVID-19 vaccinations for all eligible citizens.",
+      "text": "I'm divided on this issue. On the one hand, it makes sense to mandate vaccinations for all eligible citizens but on the other hand, I'm not sure that this is the best approach from the government. Certainly, it would make our country safer but we would still be at risk from others who are carrying the virus. I imagine there would be less chance of a major outbreak and having to quarantine and lock down again. I don't think it should be a government mandated scheme as people need to be able to make their own choices and not forced to do something that might be against their will.",
+      "word_count": 109,
+      "human_mean_clarity": 52.72727272727273,
+      "human_agreement_score": 0.3809090909090909,
+      "split": "train"
+    },
+    {
+      "document_id": "5732df75f35581bf",
+      "proposition_id": 20,
+      "proposition": "The UK should mandate COVID-19 vaccinations for all eligible citizens.",
+      "text": "We saw so much delay during Covid and who knows how many lives were lost due to indecision, conspiracies and so on. I remember a fitness instructor who didn't want the vaccine because he had believed some false information about the vaccine and he subsequently died. He almost certainly would have lived if he had had the vaccine. There is a responsibility on ourselves to act in the best interests of the whole public, and we saw too many people acting selfishly. Therefore let's take away the indecision and move more quickly by making it mandatory to be vaccinated. It would save lives.",
+      "word_count": 103,
+      "human_mean_clarity": 83.44444444444444,
+      "human_agreement_score": 0.8944444444444444,
+      "split": "train"
+    },
+    {
+      "document_id": "b0c7e170992e1865",
+      "proposition_id": 20,
+      "proposition": "The UK should mandate COVID-19 vaccinations for all eligible citizens.",
+      "text": "I am pro vaccines but with the Covid vaccine I do feel that individuals should be able to make an informed decision, weighing up the benefits of receiving it.  I think the threat of Covid is still very present and it does make people very unwell, but I am not convinced that mandating vaccines is necessarily ethical for it.  The vast majority of people recover, and this is a huge cost to the government.  I think people also do have concerns regarding how quickly it was developed (whether or not it was created using existing vaccine methods), and some people have become unwell from having it.  It would be a difficult initiative to enforce and would probably lead to tensions.  ",
+      "word_count": 120,
+      "human_mean_clarity": 66.5,
+      "human_agreement_score": 0.142,
+      "split": "train"
+    },
+    {
+      "document_id": "be6e108f07985be9",
+      "proposition_id": 20,
+      "proposition": "The UK should mandate COVID-19 vaccinations for all eligible citizens.",
+      "text": "1. There were many reports of myocarditis and other heart conditions cases after vaccination. Me  personally know people , friends who were absolutely healthy but after few vaccines they suffer from heart conditions that became as a chronic condition\r\n2. In the beginnig on the news it was announced mrna vaccines are approved by some health agencies and said they are safe.  Now it has been revealed that is not the truth.\r\n3. So many side effects. From miscarriages , heart attacks, even cancer and many others. I know people who were absolutely healthy and died after takin covid19 vaccines.  many people lost trust in Health institutions\r\n4. The way vaccines were mandated created so much pressure .  Every body is unique and handle the vaccines differently. This wasnt taken into consideration. There were restrictions that in my opinion were cruel and not human. Losing jobs, no fllights, no eating out , no gym and on and on",
+      "word_count": 158,
+      "human_mean_clarity": 83.33333333333333,
+      "human_agreement_score": 0.0611111111111111,
+      "split": "train"
+    },
+    {
+      "document_id": "352942372d3736c7",
+      "proposition_id": 22,
+      "proposition": "The UK should ban internet use for under-14-year-olds.",
+      "text": "I feel that a ban on internet for kids under the age of 14 will have fundamentally positive impacts on their childhood with very little downside. Firstly, without social media, kids will be forced to use other avenues to socialise with their peers, reducing their reliance on instagram, and other social media platforms that allow them to skirt away from face to face interactions. In the digital age, and the rise in social media usage by the younger generations, has started having an impact on their social skills when face to face, and this is most likley in part due to their over reliance to use text based, emoji based communications rather than speak face to face or even via voice calls. reducing text based messaging and 'tiktok/reel' based communication could have a positive impact on their ability to express themselves and carry themselves in social situations. \r\n\r\nSecondly, removing socialmedia will prevent addiction cycles of doom scrolling and endless dopamine releases from just watching reels continuously. Which will be good for their brains and development. \r\nLastly, no social internet access will prevent them from having exposure to harmful and radicalising websites and influencers, for exaple 4 chan, certain reddit threads, twitter and the sort. Or even bad infleuncing youtubers/streamers. This could allow the kids to grow up without a significant amount of influence which we now have today.",
+      "word_count": 228,
+      "human_mean_clarity": 75.9090909090909,
+      "human_agreement_score": 0.8754545454545455,
+      "split": "train"
+    },
+    {
+      "document_id": "585d2ba95490f43d",
+      "proposition_id": 22,
+      "proposition": "The UK should ban internet use for under-14-year-olds.",
+      "text": "i don't think the Uk should ban the internet use for under 14s. the internet is really important for learning and keeping in touch with friends and families. banning it completely feels too harsh and could stop kids from gaining useful digital skills early on. Instead, it's better to teach kids how to use the internet safeky and responsibly. Many children under 14 can use the internet well and they can hvae guidance from parents at home, or teachers at school. with the right support and controls i believe kids can get the benefits of the internet without too many risks. so i believee teaching and supervising is better than just banning.",
+      "word_count": 112,
+      "human_mean_clarity": 67.1,
+      "human_agreement_score": 0.074,
+      "split": "train"
+    },
+    {
+      "document_id": "76e527ef02ea6c9a",
+      "proposition_id": 22,
+      "proposition": "The UK should ban internet use for under-14-year-olds.",
+      "text": "Banning children from internet usage could help to protect them from dangers that are present online, like cyberbullying and predators making their online usage safer. It could also encourage the children to spend more time outside playing and connecting face to face with other children, which can be important in developing social and emotional developement. But such a ban could also limit theiraccess to useful resources, information and learning opportunities, and the ability to gain useful knowledge o digital skils which they may need in the future. Keeping them safe is one thing completely restricting the internet can hamper their development and learning opportunites.",
+      "word_count": 104,
+      "human_mean_clarity": 68.5,
+      "human_agreement_score": 0.436,
+      "split": "train"
+    },
+    {
+      "document_id": "8868bb1ec66d9818",
+      "proposition_id": 22,
+      "proposition": "The UK should ban internet use for under-14-year-olds.",
+      "text": "It is quite a blanket and firm statement to make, regarding the banning of access to the Internet, for under 14 year-olds. The Internet is an important resource and medium for people of all age groups, and nobody should be limited from accessing it. Though there should absolutely be some pressure placed on parents to monitor, control and restrict Internet use if needs be. The burden ultimately, should be placed on the parents and not the government. While Government should offer strong and clear advice to parents, it is up to the parent to act and protect their children, while they use the Internet.",
+      "word_count": 104,
+      "human_mean_clarity": 82.33333333333333,
+      "human_agreement_score": 0.1622222222222222,
+      "split": "train"
+    },
+    {
+      "document_id": "91cf024be26ae3f1",
+      "proposition_id": 22,
+      "proposition": "The UK should ban internet use for under-14-year-olds.",
+      "text": "Today s children are obsessed with net and children playing in the fields have been disappeared, there is something in the net that is like the drug.  Also the net is full of dangers, violence, adult contents that are extremely harmful for the young minds. They can be victims of scammers, bad people who mislead children navigating them into wrong directions. Children have to play and socialize stay outside in the open air , move , jump, run, stay active it makes them occupied, result in healthier lifestyle, better appetite, happier childhood with the company of their friends that creates bond \r\n\r\n",
+      "word_count": 101,
+      "human_mean_clarity": 59.3,
+      "human_agreement_score": 0.914,
+      "split": "train"
+    },
+    {
+      "document_id": "c630aa08c01a2298",
+      "proposition_id": 22,
+      "proposition": "The UK should ban internet use for under-14-year-olds.",
+      "text": "My first reason is that the internet is a key part of everyday life and has become the norm even for young children, whilst there may be some advantages to restricting it's use it is too late it is everywhere and it permeates every part of daily human life.  Further there are lots of benefits from children using the internet not least as an education and a communication tools, young people are far better informed these days because of the internet.   Finally I think even if there were convincing arguments to introducing a ban it would be near impossible to effectively enforce given the variety of devices that can  be used to access the internet and how  widespread the use is.",
+      "word_count": 121,
+      "human_mean_clarity": 76.6,
+      "human_agreement_score": 0.257,
+      "split": "train"
+    },
+    {
+      "document_id": "cfe064e5824b94de",
+      "proposition_id": 22,
+      "proposition": "The UK should ban internet use for under-14-year-olds.",
+      "text": "I strongly disagree with the banning of internet use for children under 14.  The internet is an essential part of modern education and development, offering access to learning tools. creative platforms and opportunities for communication.  While online risks are real banning access completely would hinder digital literacy and isolate children from a key part of today's world.  A more balanced approach involves educating children about online safety, encouraging parental supervision, and using content filters to create age appropriate experiences.  Rather than implementing a blanket ban, we should aim to teach responsible and safe internet use from an early age to prepare children for the digital world they're growing up in.",
+      "word_count": 110,
+      "human_mean_clarity": 91.0,
+      "human_agreement_score": 0.129,
+      "split": "train"
+    },
+    {
+      "document_id": "0cafc4ceffa4c0ef",
+      "proposition_id": 25,
+      "proposition": "The UK should seek to rejoin the European Union.",
+      "text": "We should definitely re join the European Union. We would have better trade with Europe, making our food and other products cheaper and we would all be able to support one another. The EU has always been a major trading partner and it would be smoother and more economically viable if we were a part of the EU again.\r\n\r\nWe would be more secure and safe if we were part of the EU again. We are stronger together. We have a stronger voice if we act as one. The government should do another referendum with the correct information this time.",
+      "word_count": 100,
+      "human_mean_clarity": 85.0,
+      "human_agreement_score": 0.9722222222222224,
+      "split": "train"
+    },
+    {
+      "document_id": "5a9806029ff9efc4",
+      "proposition_id": 25,
+      "proposition": "The UK should seek to rejoin the European Union.",
+      "text": "I think the the uk should seek to rejoin the European Union for a variety of reasons and benefits these would probably include improving the uk's economy making things easier for businesses making it cheaper to import and export goods this may then lower prices for the everyday consumer lowering prices on goods that we buy, also help the uk's government on things such as security of our country and migration other benefits such as allowing people to work and study in other countries helping other people but I thin rejoining the European unions would have a lot of negations.",
+      "word_count": 100,
+      "human_mean_clarity": 65.77777777777777,
+      "human_agreement_score": 0.8233333333333333,
+      "split": "train"
+    },
+    {
+      "document_id": "5b6059164b97d231",
+      "proposition_id": 25,
+      "proposition": "The UK should seek to rejoin the European Union.",
+      "text": "If the UK rejoined the European Union, the previous benefits of an easier trading base for all our industries and companies will quickly become apparent, in areas such as fairer competition, cheaper production costs, increased investment, easier exportation to a large market, all of which will help the United Kingdom's position in the wider world, and will provide strength and support for collaborative issues. Additionally, there would be more freedom for United Kingdom citizens and employees to travel and work across the European Union. Whilst there will be various hurdles to overcome to enable the UK to rejoin, and a high amount of legal processes involved, the overall benefit to the country outweighs the downsides",
+      "word_count": 115,
+      "human_mean_clarity": 73.11111111111111,
+      "human_agreement_score": 0.8955555555555555,
+      "split": "train"
+    },
+    {
+      "document_id": "69a56bdbed4c3556",
+      "proposition_id": 25,
+      "proposition": "The UK should seek to rejoin the European Union.",
+      "text": "I think we gained both from our ability to travel for work and we gained from those who travelled from Europe to work here. They often worked in areas of employment, such as agriculture, care and hospitality which are currently very understaffed and widened our appreciation of other cultures.  We all benefit from widening our horizons when we meet people of different cultures from ourselves. Within the Union we had a voice but now we don't and we have isolated ourselves. We are stronger against our enemies if we are together in a common cause and can support each other. ",
+      "word_count": 100,
+      "human_mean_clarity": 58.09090909090909,
+      "human_agreement_score": 0.7772727272727273,
+      "split": "train"
+    },
+    {
+      "document_id": "72161a13789bc875",
+      "proposition_id": 25,
+      "proposition": "The UK should seek to rejoin the European Union.",
+      "text": "Brexit has shown that even outside of the EU the UK is beholden to it's guidelines. Global trade and economic activity requires cooperation on on regulations and customs. This is the same for major EU trade partner, not just the UK. Being outside of the EU means we have to follow these rules without any ability to change or influence them. Furthermore, re-joining the EU would remove tariffs and other trade barrier, encouraging economic growth and international organisation to build their UK presence. Being one of the biggest and more influential countries in the EU would also benefits the UK's power projection and ability to influence other EU nations. ",
+      "word_count": 109,
+      "human_mean_clarity": 81.77777777777777,
+      "human_agreement_score": 0.8866666666666667,
+      "split": "train"
+    },
+    {
+      "document_id": "ad80859e1d730700",
+      "proposition_id": 25,
+      "proposition": "The UK should seek to rejoin the European Union.",
+      "text": "The UK government thought they could manage their own country, make their own rules but in reality they are an island that needs others to assist. The British public were not given enough information on the pros and cons at the time they were asked to make a decision and the outcome was not totally overwhelmingly for any side. The pros and cons of staying and leaving can be easily argued by any politician who is used to convincing others of whatever he thinks is right today. Tomorrow he may have a different agenda. Most politicians lie any, so they say enough to be sensationalist.",
+      "word_count": 105,
+      "human_mean_clarity": 62.4,
+      "human_agreement_score": 0.625,
+      "split": "train"
+    },
+    {
+      "document_id": "c23fe1794e8f9ef3",
+      "proposition_id": 25,
+      "proposition": "The UK should seek to rejoin the European Union.",
+      "text": "If you want something done do not form a committee, that is what I was told many years ago. One single country can hold all the other members to ransom by refusing to cooperate with the vast majority. To protect our resilient in troubled times we need to be as self sufficient as possible, what would happen in a future crisis where we could not trade with others? millions could suffer. Plus it seems funny how nobody seems to see anything wrong in importing products and food we could have supplied in our own country. The environment is being destroyed by this ridiculous system. ",
+      "word_count": 104,
+      "human_mean_clarity": 40.55555555555556,
+      "human_agreement_score": 0.1488888888888889,
+      "split": "train"
+    },
+    {
+      "document_id": "091fa5e858387a50",
+      "proposition_id": 37,
+      "proposition": "The UK should legalise marijuana for recreational use.",
+      "text": "Simply legalising marijuana would potentially open up a can of worms. Without control over the production and distribution of the drug there would potentially be a free for all. How would the strength be controlled and who would be responsible for and bad batches. Would it be sold in shops alongside cigarettes and if so would the state be collecting ting the tax and become the new drug dealer. There is a great deal of research showing the damage smoking marijuana can have on the cognitive development of young teenagers brains leading to developing serious mental health problems in adulthood. ",
+      "word_count": 100,
+      "human_mean_clarity": 80.88888888888889,
+      "human_agreement_score": 0.14,
+      "split": "train"
+    },
+    {
+      "document_id": "1c6ecd5cc6ad0bdf",
+      "proposition_id": 37,
+      "proposition": "The UK should legalise marijuana for recreational use.",
+      "text": "People use Marujana as a gateway drug, often trying it on the weekend initially and then ending up trying harder elicit substances as a result. I think it would be bad for society to legalise marujana as we are trying to encourage people not to smoke but in the same breadth saying its ok to smoke marujana. \r\n\r\nI also think that there is an increasing strain on the nhs and the increased usage of the nhs by people who then smoke marujana would just add further to this strain. \r\n\r\nDrug induced psychosis from Marujana is a proven side effect in some of those that smoke it, so I'm not sure why we would want to promote something as \"safe\" to use if it really isn't.",
+      "word_count": 125,
+      "human_mean_clarity": 66.7,
+      "human_agreement_score": 0.176,
+      "split": "train"
+    },
+    {
+      "document_id": "4b5ea6f9d97954f6",
+      "proposition_id": 37,
+      "proposition": "The UK should legalise marijuana for recreational use.",
+      "text": "I think there is a feeling that weed is a soft drug that just makes people feel happy and relaxed. in my experience with addicts so many of them start on weed then when this no longer gives them the high they need they progress on to harder drugs. so many people experience mental health problems when they smoke weed long term. this is a terrible strain on mental health resources. if weed was made legal even more people might be tempted to try it and so even more would be on the journey of addiction and mental health problems",
+      "word_count": 100,
+      "human_mean_clarity": 69.33333333333333,
+      "human_agreement_score": 0.1166666666666666,
+      "split": "train"
+    },
+    {
+      "document_id": "7608ca9db72cbcb1",
+      "proposition_id": 37,
+      "proposition": "The UK should legalise marijuana for recreational use.",
+      "text": "If its legalized, it allows companies to grow it to a high standard and be able to explain to people what each different type does. Similar to Amsterdam, there you can leisurely go into a bar or coffee shop and have a menu explaining exactly what it does. whilst its illegal and being sold of the streets consumers have no idea whats in it\r\n\r\nCanabis is far less dangerous than both alcohol and tobacco. So the argument to keep it illegal fopr health reasons no longer stands striong enough, when we are now aware that alcohol is one of the most addictive and deadly substances ",
+      "word_count": 105,
+      "human_mean_clarity": 70.44444444444444,
+      "human_agreement_score": 0.8277777777777777,
+      "split": "train"
+    },
+    {
+      "document_id": "92aeb178528eedb9",
+      "proposition_id": 37,
+      "proposition": "The UK should legalise marijuana for recreational use.",
+      "text": "Although I do not use marijuana in any form I can several benefits of legalising it for recreational use. Firstly, it would mean that taxes could be raised on the sale of marijuana rather than the financial benefits going to criminals who currently sell it. The legalisation of marijuana could also mean that the authorities could focus on other illegal drugs and this would make sense from a law and order point of view. It would also acknowledge what many people already do. The current legislation does not dissuade people from using marijuana so it makes sense to remove it. It would also mean that the courts could free up more time for more serious issues when people currently are taken to court for possession.",
+      "word_count": 125,
+      "human_mean_clarity": 53.55555555555556,
+      "human_agreement_score": 0.7711111111111112,
+      "split": "train"
+    },
+    {
+      "document_id": "9845e7fae599121c",
+      "proposition_id": 37,
+      "proposition": "The UK should legalise marijuana for recreational use.",
+      "text": "Yes, I strongly agree that the UK should legalise marijuana for recreational use as it has been proven to have significant health benefits and a potential in managing chronic pain, i have read a handful of studies and spoken to people who have it medically prescribed and it has aided greatly on their pain reduction. it is becoming legalised in a majority of states within the US the UK could legalise here and tax it as they do with tobacco. additionally it may lead to a reduction in crime as a regulated market could undermine the illegal cannabis trade, in turn reducing crime rates associated with drug trafficking and violence",
+      "word_count": 110,
+      "human_mean_clarity": 84.7,
+      "human_agreement_score": 0.935,
+      "split": "train"
+    },
+    {
+      "document_id": "b40a980d4ad01eb1",
+      "proposition_id": 37,
+      "proposition": "The UK should legalise marijuana for recreational use.",
+      "text": "In the US it has been legalised across many states for medical use, and perscribed by doctors to aid with many conditions. There are studies showing the health benefit it can bring. However, there is also a risk that someone could become dependent on it despite the benefits it may bring to them while in need of it, or attempt to seek its use after their perscription is no longer approved. If they did so they could get into a bad legal situation if seeking it in the after market from unnofficial sources due to their desire to still consume it.",
+      "word_count": 101,
+      "human_mean_clarity": 51.5,
+      "human_agreement_score": 0.617,
+      "split": "train"
+    },
+    {
+      "document_id": "13dd160976d921fb",
+      "proposition_id": 40,
+      "proposition": "The UK should legalise euthanasia.",
+      "text": "-People should be able to chose how to end their own lives for valid reason of course, instead to have to suffer months of pain, uncertainty and fear. IF there is no hope where is the point of carry on living. Of course this is a personal choice and we must be sure that the patient knows exactly what they want and are not influenced by someone near them.\r\n- Why die slowly and lose our self esteem when we could go earlier, voluntarily, without destroying the ones near us? \r\nAs long as it is our decision what right has a government to decide when we go? After all suicide it is not a crime so no one should have the right to stop us choosing",
+      "word_count": 126,
+      "human_mean_clarity": 64.4,
+      "human_agreement_score": 0.83,
+      "split": "train"
+    },
+    {
+      "document_id": "37db3c5826b894a8",
+      "proposition_id": 40,
+      "proposition": "The UK should legalise euthanasia.",
+      "text": "I am in the middle when it comes to euthanasia as I feel like it isnt my place to say whether or not it should be legalised. There are people in the country that feel like they have lost all hope when it comes to life mostly when it comes to a medical condition. Having that option available to them and not have it be so taboo - it could be a good thing and open up conversation with people. Someone really wanting this option can just travel to another country anyways. On the other hand, this could provide some downfalls when people abuse the systems and controls put in place.",
+      "word_count": 111,
+      "human_mean_clarity": 61.45454545454545,
+      "human_agreement_score": 0.4927272727272727,
+      "split": "train"
+    },
+    {
+      "document_id": "af863b1787642701",
+      "proposition_id": 40,
+      "proposition": "The UK should legalise euthanasia.",
+      "text": "I believe euthanasia should be legalised because it gives people the choice to end their suffering in a peaceful and dignified way when they are facing serious pain or a terminal illness. Sometimes, no matter what doctors do, the pain and distress can be too much and people should have the option to decide when enough is enough. Legalising euthanasia also respects personal freedom and lets individuals have control over their own bodies and their own lives, including how and when they want to die. While its a difficult and sensitive issue, allowing euthanasia can provide comfort and relief to those who are suffering rather than forcing them to continie living in unbearable conditions.",
+      "word_count": 114,
+      "human_mean_clarity": 81.93333333333334,
+      "human_agreement_score": 0.8833333333333333,
+      "split": "train"
+    },
+    {
+      "document_id": "cc17a06f4eb689f5",
+      "proposition_id": 40,
+      "proposition": "The UK should legalise euthanasia.",
+      "text": "I feel extremely strongly about this. If you want to end your life you should 100% be able to choose to. I know this is primarily aimed at people who have terminal illness and for those who are suffering. If I could sign something right now and agree to be euthanised if I had a terminal illness or something where I wasnt able to communicate, I would do it. People suffer everyday with conditions such as depression etc, they should be allowed to kill themselves. We need more control over our lives. It is surely better for people to choose whether they suffer or not.",
+      "word_count": 105,
+      "human_mean_clarity": 91.1,
+      "human_agreement_score": 0.952,
+      "split": "train"
+    },
+    {
+      "document_id": "edc6eb5d308abca4",
+      "proposition_id": 40,
+      "proposition": "The UK should legalise euthanasia.",
+      "text": "i am a bit confused if this is right or not as i know it can bring comfort to people with a limited way of life and also termally ill people who are looking at a painful death or other reasons. but also i can understand how it could be hard for familes who have to see someone the love choose this. it would have to be for very important reasons and not just giving as an option to anyone. i think it would bring comfort to people who are dying or not living a life in a nice way if they could choose thid though",
+      "word_count": 106,
+      "human_mean_clarity": 54.22222222222222,
+      "human_agreement_score": 0.5844444444444444,
+      "split": "train"
+    },
+    {
+      "document_id": "1d853ebd8ea1eb58",
+      "proposition_id": 51,
+      "proposition": "The UK should increase taxes on sugary drinks.",
+      "text": "I am torn on this statement since I can see the health benefits of such a tax increase - both in combatting obesity, diabetes, dental problems and other issues. My instinct is to say that we should educate our way out of the problem rather than just increase taxes but - frankly - that has been tried and had little effect so it may be that a substantial price increase might help. One problem with this approach is that poor people will find their budgets even more stretched while rich people will be able to absorb a price increase without a problem. It will also hit hard those people who like to make their own wine or jam. I would prefer to see action taken on the sugar that is put in so many foodstuffs - often savoury ones - which are 'hidden' - people often consume a lot of sugar that way and their tastes are conditioned to expect foods to be sweeter than they are",
+      "word_count": 167,
+      "human_mean_clarity": 67.54545454545455,
+      "human_agreement_score": 0.5290909090909091,
+      "split": "train"
+    },
+    {
+      "document_id": "6138541d27cf65ca",
+      "proposition_id": 51,
+      "proposition": "The UK should increase taxes on sugary drinks.",
+      "text": "It's all very well to say ' put a tax on it, it will stop people buying it' but that is not always the case.  Sometimes cheaper brands of drink contain larger amounts of sugar but this might be the only one that some families are able to afford.\r\n\r\nI do not think that the government should be taxing it as a way to bring in extra revenue \r\n\r\nThere are high energy drinks that contain very large amounts of sugar or other sweeteners and maybe this should be something that is looked at first rather than just putting a tax on whatever drinks they want.  \r\n\r\nPreviously when sugar alternatives have been taxed it also seemed that the 'diet'  or 'no added sugar' varieties were still the same price, so a tax had been applied to them also.",
+      "word_count": 137,
+      "human_mean_clarity": 63.22222222222222,
+      "human_agreement_score": 0.1422222222222222,
+      "split": "train"
+    },
+    {
+      "document_id": "a41b10260f34695a",
+      "proposition_id": 51,
+      "proposition": "The UK should increase taxes on sugary drinks.",
+      "text": "I gave my rating as I believe that simply taxing people more for unhealthy food is unlikely to make a significant impact. I am concerned that the tax is likely to hit low-income families hardest, as they tend to spend more on such products. Additionally, healthier food options are often more expensive than their lower nutritional alternatives, and I feel that's something which needs to be addressed. Furthermore, I feel there could be a growth in the black market for such products. I can see that the intention is well-meaning, but I'm not sure it will work in practical terms.",
+      "word_count": 100,
+      "human_mean_clarity": 74.0,
+      "human_agreement_score": 0.1377777777777777,
+      "split": "train"
+    },
+    {
+      "document_id": "a7367a11bb8f60da",
+      "proposition_id": 51,
+      "proposition": "The UK should increase taxes on sugary drinks.",
+      "text": "I can understand why this is important because of how much access we have to these drinks. They have very negative health effects and they are addictive. So it is important to try to protect the health of the UK public so if taxing sugary drinks will put people off buying them, then fine.\r\n\r\nHowever, I also see it as unnecessary because if people want to buy and enjoy these drinks they will, regardless of the cost so I feel increasing taxes on other things is more important.\r\n\r\nI have mixed views on this statement. I am not someone who drinks a lot of sugary drinks as I am able to control my intake, but if I want to enjoy one I will and don't want to pay more for a sugary drink over a non one.",
+      "word_count": 137,
+      "human_mean_clarity": 57.0,
+      "human_agreement_score": 0.544,
+      "split": "train"
+    },
+    {
+      "document_id": "a88a848de500c3b4",
+      "proposition_id": 51,
+      "proposition": "The UK should increase taxes on sugary drinks.",
+      "text": "Increased taxes on sugary drinks will entice manufacturers to reduce sugar content in their products. At present they deliberately include sugar at high levels to enhance taste and make the products themselves more addictive. A reduction will have an immediate positive impact on the general health of consumers. Obesity levels, particularly among children, have increased over the years. A reduction in sugar consumption will lead to a reduction in obesity levels. Improved health will lead naturally to an easing of pressure on NHS services. and should free up NHS resources accordingly. Additionally there will be financial benefits due to reduced health spending on sugar/obesity related health issues.",
+      "word_count": 107,
+      "human_mean_clarity": 92.3,
+      "human_agreement_score": 0.922,
+      "split": "train"
+    },
+    {
+      "document_id": "aa9186bcfc0e25c2",
+      "proposition_id": 51,
+      "proposition": "The UK should increase taxes on sugary drinks.",
+      "text": "Increasing the tax on sugary drinks would help in reducing mass consumption and over drinking.  Many wont stop until prices go up and to aid this a sugar tax may help in some ways.  If we can lower sugar consumption we can help battle obesity and large scale issues such as diabetes which is costing the NHS millions of pounds.  If we can reduce people partaking in some of these drinks it would prevent early onset heart disease also.\r\nOn top of this another large issue is dental health which is also another seriously stressed NHS service sugary drinks create dental staining and also bad dental health it has been proven reducing these drinks makes a huge difference.  A tax is needed to make these drinks less accessible.",
+      "word_count": 128,
+      "human_mean_clarity": 78.4,
+      "human_agreement_score": 0.868,
+      "split": "train"
+    },
+    {
+      "document_id": "e9b203c01b707cae",
+      "proposition_id": 51,
+      "proposition": "The UK should increase taxes on sugary drinks.",
+      "text": "Sugar, although it is not good for you, especially processed added sugar, I don't believe that only focusing on it alone is going to help the UK people, when all these companies do is turn to an equally bad alternative. The food industry in this country is a joke. We make healthy foods expensive and poor nutrition food dirt cheap, imo this has got to be the other way around, help food companies with producing nutritious foods, lower the taxes of food companies who produce quality whole foods to encourage them, and punish the companies who make ultra-processed foods. For me, this is simply the only way forward; however, nothing will change with the current government's focus on globalisation. ",
+      "word_count": 119,
+      "human_mean_clarity": 42.111111111111114,
+      "human_agreement_score": 0.32,
+      "split": "train"
+    },
+    {
+      "document_id": "2bc256eb2db48714",
+      "proposition_id": 54,
+      "proposition": "The UK should implement stricter regulations on the sale of violent video games to minors.",
+      "text": "of course minors shouldn't see/play games that are over 18 but that not the issue is everything else we live in a world where just taking a step outside your room you will get robbed or hurt because its so easy to get a weapon online or drugs are so easy to get online/streets or the way kids are raised up from baby to adult take makes they go down that path we need to look at the bigger picture and start there because stoping sales of 18+ games they will just look on YouTube or even go on the dark web to buy the game illegally so it defeats the point in the first place ",
+      "word_count": 116,
+      "human_mean_clarity": 43.2,
+      "human_agreement_score": 0.418,
+      "split": "train"
+    },
+    {
+      "document_id": "67a022cf2aee3ff5",
+      "proposition_id": 54,
+      "proposition": "The UK should implement stricter regulations on the sale of violent video games to minors.",
+      "text": "The content in video games can be unsuitable for minors. Like films, video games do have ratings applied but this does not seem to be effective in preventing minors from playing these video games. Whilst I do agree with the statement given, I have not strongly agreed because it will be difficult to monitor the effectiveness of the regulation and it probably would not have the desired impact with the amount of violent content that minors can find online. There needs to be a greater cultural shift in the collective responsibility of what minors content minors can access and how they interact with it.",
+      "word_count": 104,
+      "human_mean_clarity": 67.2,
+      "human_agreement_score": 0.474,
+      "split": "train"
+    },
+    {
+      "document_id": "e7b88bd359094062",
+      "proposition_id": 54,
+      "proposition": "The UK should implement stricter regulations on the sale of violent video games to minors.",
+      "text": "Some of these games should be raised to over 21 year old to purchase . Anyone wishing to purchase must show photo id at point of sake . If anyone is caught buying for a minor it should be a criminal offence . I do not believe that there is enough checks to see if the sales are going to the correct age group . Sellers should be held responsible for age checks and if they sell to underage buyers the should be fined as a result . It time to stop minors getting these games and time for the authorities to step up.",
+      "word_count": 104,
+      "human_mean_clarity": 85.55555555555556,
+      "human_agreement_score": 0.8388888888888889,
+      "split": "train"
+    },
+    {
+      "document_id": "fdf947349650e135",
+      "proposition_id": 54,
+      "proposition": "The UK should implement stricter regulations on the sale of violent video games to minors.",
+      "text": "Children can be very easily influenced in their younger years watching anything that is explicit can affect young minds these children some will want to try whatever they have watched making them more vulnerable or susceptible to commit sexual crimes with friends i believe it also affects their moods those easily influenced many would become very antisocial rude and wanting to try what they have seen out children should not be given access to such material they should be learning and playing not watching any explicit material on video games we do need to put a stop to it as quickly as we can ",
+      "word_count": 104,
+      "human_mean_clarity": 68.9,
+      "human_agreement_score": 0.8440000000000001,
+      "split": "train"
+    },
+    {
+      "document_id": "2154d5210e3571ac",
+      "proposition_id": 61,
+      "proposition": "The UK should reintroduce the death penalty.",
+      "text": "I disagree that the UK should reintroduce the death penalty. There is always a risk that the wrong person is convicted, and that an innocent person may be sentenced to death for no reason. In countries that have the death penalty (such as the USA), people sentenced to death may be on death row waiting for the punishment for years, which can be an expensive and costly process. Finally, the fact that death is an irreversible punishment needs to be considered - there can be no reversal ad brining back to life. If there were new evidence found etc, then nothing could be changed.",
+      "word_count": 104,
+      "human_mean_clarity": 78.55555555555556,
+      "human_agreement_score": 0.07,
+      "split": "train"
+    },
+    {
+      "document_id": "a3542caed09d1ade",
+      "proposition_id": 61,
+      "proposition": "The UK should reintroduce the death penalty.",
+      "text": "I do not agree with bringing back the death penalty in the UK. One main reason is that courts can make mistakes, and if someone innocent is killed, we can never fix that. Life in prison is already a very serious punishment and keeps dangerous people away from the public. Also, research shows the death penalty does not always stop others from committing crimes, so it may not help lower crime rates. I believe the justice system should try to change people for the better and not just punish them in the harshest way. Killing someone as punishment can lead to more pain and does not always bring true justice.",
+      "word_count": 110,
+      "human_mean_clarity": 85.0,
+      "human_agreement_score": 0.054,
+      "split": "train"
+    },
+    {
+      "document_id": "a8ac4042dec45566",
+      "proposition_id": 61,
+      "proposition": "The UK should reintroduce the death penalty.",
+      "text": "- cost saving - rather than pay to keep people in prison for a long time then if they were given the death penalty instead this would save money. The cost of keeping someone in prison for life must be more plus then it would free up prison spaces.\r\n- maybe the death penalty would deter people from crime. If they killed someone then it would be a suitable punishment rather than being let out in a few years. \r\n- this should only be given if you are certain the person is guilty. if there is any doubt then maybe not give the death penalty.",
+      "word_count": 105,
+      "human_mean_clarity": 61.8,
+      "human_agreement_score": 0.8170000000000001,
+      "split": "train"
+    },
+    {
+      "document_id": "f20ffaa6d8d8a07f",
+      "proposition_id": 61,
+      "proposition": "The UK should reintroduce the death penalty.",
+      "text": "I think it depends on the situation and the crime that has been committed; the death penalty is not relevant for all crimes. For instance, I think paedophilia or any child abuse cases should be punishable by death - especially where there is a chance of the offender recommitting such a crime. There are cases, such as murder cases, where the lines may be greyer. For example, if someone murders an innocent person in cold blood, it would be morally right to punish them by death. On the other hand, if someone murders someone who has wronged them, e.g. their rapist, it could be considered morally wrong to punish them by death. ",
+      "word_count": 112,
+      "human_mean_clarity": 74.66666666666667,
+      "human_agreement_score": 0.6488888888888888,
+      "split": "train"
+    },
+    {
+      "document_id": "9f4280b5da38bb9e",
+      "proposition_id": 85,
+      "proposition": "The UK should significantly reduce immigration levels.",
+      "text": "Immigrants may select the UK as a destination for variable reasons. Those must be evaluated before passing any decision with regards to immigration. The UK is in need for skilled professionals in some fields, in which case, immigration is a solution to fill those gaps. Equally immigration might be to escape from financial and social situations or war. In such cases, refuge should be granted, as people do not have other choices. If the decision within the UK was to significantly reduce immigration levels, there may be repercussions related to the absence of skilled immigrants. All the same, the country can take measures to regulate immigration. ",
+      "word_count": 106,
+      "human_mean_clarity": 72.7,
+      "human_agreement_score": 0.384,
+      "split": "train"
+    },
+    {
+      "document_id": "b0766f8401a854aa",
+      "proposition_id": 85,
+      "proposition": "The UK should significantly reduce immigration levels.",
+      "text": "There are so may positives that come about as a result of immigration. Think about food, cultural dress and expression, beautiful 'mixed' relationships and children. These are certainly positives. Yes I agree that people immigrate because they are seeking better opportunities for themselves and their families but that is not a negative thing. In fact, if these people are helped sufficiently and properly trained, they can work and become an asset to the country in so many ways including health. There are many non immigrants here who are quite capable of working but who refuse to work. Choose people to help who will certainly make a contribution.",
+      "word_count": 107,
+      "human_mean_clarity": 69.18181818181819,
+      "human_agreement_score": 0.2127272727272727,
+      "split": "train"
+    },
+    {
+      "document_id": "b722f271a233c4db",
+      "proposition_id": 85,
+      "proposition": "The UK should significantly reduce immigration levels.",
+      "text": "The majority of people in this country lead a comfortable life. This is not the case for others around the globe. I believe it is our responsibility to take on a certain load as fellow human beings therefore the UK needs to allow a certain level of immigrants to enter the country. I believe at present we are accepting a reasonable share, I am unsure the country could take many more without impacting current residents detrimentally. I therefor believe the current level is about correct. I do not think we should reduce the level we allow in as we need to take some responsibility.",
+      "word_count": 104,
+      "human_mean_clarity": 49.77777777777778,
+      "human_agreement_score": 0.32,
+      "split": "train"
+    },
+    {
+      "document_id": "ff2113135c229b6f",
+      "proposition_id": 85,
+      "proposition": "The UK should significantly reduce immigration levels.",
+      "text": "Immigration is a tricky issue.  The UK certainly needs to prevent illegal immigration, particularly where people are being brought into the country for the wrong reasons - eg modern slavery.   The UK does however need to attract people with skills to fill the jobs that we can't fill ourselves.  Unplanned immigration causes issues with the provision of services such as hospitals and schools and has to have a negative impact on housing provision.  The current levels of immigration are causing increasing concern amongst some UK residents about the negative impact uncontrolled immigration can have.  I wonder what the impact of that will be and fear it will lead to increasing levels of resentment and unrest.",
+      "word_count": 115,
+      "human_mean_clarity": 60.3,
+      "human_agreement_score": 0.5760000000000001,
+      "split": "train"
+    },
+    {
+      "document_id": "00e8e3f48ab1b91d",
+      "proposition_id": 114,
+      "proposition": "The UK should mandate the inclusion of feminist perspectives in the national literature curriculum.",
+      "text": "Feminism is a potentially dangerous ideology as it is prevalent in socialist and communist world views which are totalitarian and ultimately anti human and anti family. Not too mention that any ideology that excludes half of the population is inherently exclusive and forcibly teaching it would result in at least half of the pupils disengaging from what is being taught so consequently should be left for specialist courses at university level. Feminism currently as a public image crisis as well, as many people do see it as a form of extremism as a result lt of a minority of very vocal activists generating very bad publicity.",
+      "word_count": 106,
+      "human_mean_clarity": 68.6923076923077,
+      "human_agreement_score": 0.2184615384615384,
+      "split": "train"
+    },
+    {
+      "document_id": "32ddf7d362fd9173",
+      "proposition_id": 114,
+      "proposition": "The UK should mandate the inclusion of feminist perspectives in the national literature curriculum.",
+      "text": "I am a firm believer in sexual equality but I cant really think of any ways that women are unequal in todays British society. Of course it is, however, important that pupils are given the full history of womens struggles for equality in the past and there are of course still areas that need attention these days. This isn't really an issue that I have a lot of knowledge and can only speak from my own experience. I do think that inclusion in the curriculum is important but I feel that the more radical views of some should be avoided.",
+      "word_count": 100,
+      "human_mean_clarity": 58.4,
+      "human_agreement_score": 0.483,
+      "split": "train"
+    },
+    {
+      "document_id": "cf4ad2036377e22d",
+      "proposition_id": 114,
+      "proposition": "The UK should mandate the inclusion of feminist perspectives in the national literature curriculum.",
+      "text": "Making it mandatory to include feminist perspectives in the national literature curriculum could cause several problems. One issue is that it might focus too much on one way of thinking and ignore other important viewpoints, which means students wouldn\u2019t get to explore a wide range of ideas and opinions. Literature is diverse, and focusing heavily on just feminist perspectives could limit students\u2019 understanding of different cultures, histories, and experiences. Additionally, this requirement might not truly represent what most people in society are interested in or concerned about, making the curriculum less relevant to some students. It could also limit the freedom of teachers to choose books and materials they believe are best suited for their students, and restrict students from discovering stories that speak to their own lives and interests. When education becomes too focused on promoting a single perspective, it can stop people from thinking critically and learning from many different voices. Overall, forcing only one viewpoint in the curriculum might do more harm than good by narrowing students\u2019 learning opportunities.\r\n",
+      "word_count": 172,
+      "human_mean_clarity": 80.77777777777777,
+      "human_agreement_score": 0.2033333333333333,
+      "split": "train"
+    },
+    {
+      "document_id": "ee2365695ecb2078",
+      "proposition_id": 114,
+      "proposition": "The UK should mandate the inclusion of feminist perspectives in the national literature curriculum.",
+      "text": "I think the UK curriculum needs to be expanded in general, its very western based and typically focuses on a small range of perspectives, which I dont agree with. Therefore, I'd like for others, like this one. to be included. Particuluarly, I think feminist perspectives on many topics would encourage more discussions or just students to think about other pespectives they do not think about. I am 75% for it therefore, I said i cant be 100% just because there are different kinds of feminist perspectives that I dont agree with as much and may be harmful or elicit negative opinions, so I would need to know more to be 100%. ",
+      "word_count": 111,
+      "human_mean_clarity": 55.833333333333336,
+      "human_agreement_score": 0.7283333333333333,
+      "split": "train"
+    },
+    {
+      "document_id": "fee8772289cf7b38",
+      "proposition_id": 114,
+      "proposition": "The UK should mandate the inclusion of feminist perspectives in the national literature curriculum.",
+      "text": "While I do think that it is important for students in the UK to learn about feminism in their national curriculum, I believe that it needs to be done in a balanced and integrated way. Many feminists are well know for being extremely 'against' men, whereas healthy feminism is able to take a balanced perspective of the role of men and women in history. To learn about the feminist movement, its purpose, and the good that can come of it is important, but it should not be an opportunity for feminists to further a polarising agenda to young, impressionable minds. ",
+      "word_count": 100,
+      "human_mean_clarity": 64.7,
+      "human_agreement_score": 0.366,
+      "split": "train"
+    },
+    {
+      "document_id": "0ed18b3b3a18283c",
+      "proposition_id": 122,
+      "proposition": "The UK should teach children about the LGBTQ+ community in primary school.",
+      "text": "While a person is maturing through the different stages in life, they absorb information through different layers of understanding. It is important not to rush this development so no stages are missed. An example is to allow young children to believe in Father Christmas, even although you know later they will have to understand he is a fairly story. Done properly, they will be able to hold two conflicting ideas in the head without bothering them. In this example, Father Christmas does not actual exist, but it is fun to go along with the idea during the Christmas period.\r\n    While their absorb many different things, including what are empirically provable facts and the various belief systems around. This includes wishful thinking, e.g. 1. You want you team to win this season. They have never won before, but it is OK to still cheer them on in the hope they will will. world view.  2. You have a bad feeling about a situation, place or person you have just met. You have no facts to back up that feeling, however, it is wise to acknowledge that feeling and perhaps remove yourself from that situation while you seek clarification.\r\n    As a child moves through these stages, they can often feel inadequate, different from everyone else; especially if they have negative words spoken to them. In trying to reconcile these negative feelings, they often look around for a explanation of how they are different from others around them. It can be easy to decide you are LGBTQ+ to explain these feeling and be drawn into that life style where others will accept you, even though if you had not had those negative feelings towards yourself you would not have. This is not to say that this is the reason all people decide they are LGBTQ+ but some do and then get very confused later as their feeling about themselves and attractions change.\r\n    It is important when teaching about LGBTQ+ or gender and sex in general, that it is not taught as just a mechanical or biological thing with no emotional consequences.  While It is good to explain that it is not wrong to be curious and have feelings, however, experimentation without a full understanding can be dangerous. Examples could be experimenting with different sexual acts (especially when a younger person is coerced by an older person into doing something) or drugs that they are offered.",
+      "word_count": 402,
+      "human_mean_clarity": 54.77777777777778,
+      "human_agreement_score": 0.4177777777777778,
+      "split": "train"
+    },
+    {
+      "document_id": "23c7c905d5b9d557",
+      "proposition_id": 122,
+      "proposition": "The UK should teach children about the LGBTQ+ community in primary school.",
+      "text": "Children in primary schools are to yet developed both sexually and in their maturity. It could lead to having more negative impact by potentially causing misunderstanding. It could also lead to more bullying and misuse of the topic. The topic can be very divisive if not taught or explained correctly. As a result the topic is one which is better understood by a more mature mind and where sexual maturity is established. This I feel will lead to a better understanding by those being taught about the topic and would be more suitable for those that are learning about their sexual orientation to obtain support and guidance where needed by those tutoring.",
+      "word_count": 112,
+      "human_mean_clarity": 70.0,
+      "human_agreement_score": 0.233,
+      "split": "train"
+    },
+    {
+      "document_id": "8741d6d0df672bf6",
+      "proposition_id": 122,
+      "proposition": "The UK should teach children about the LGBTQ+ community in primary school.",
+      "text": "Children should be able to enjoy childhood without being lectured about sex at an early age. The subject should be introduced gradually and sensitively, only with the parent's express wishes. It should primarily be about sexual reproduction. It should not be taught without their express consent. Teaching about LGBTQ+ is putting the cart before the horse. These are complex and difficult subjects which a child does not need to know about in any detail until they are at least ten years old (and even then, only at a surface level). There have been many examples of four year olds being taught (indoctrinated) about masturbation, gay sex, read to by transvestite men dressed in women's clothes, coached that they may be be trans, without their parents knowledge or consent. This is disgraceful. ",
+      "word_count": 131,
+      "human_mean_clarity": 85.45454545454545,
+      "human_agreement_score": 0.0527272727272727,
+      "split": "train"
+    },
+    {
+      "document_id": "ab835fd03c789cbc",
+      "proposition_id": 122,
+      "proposition": "The UK should teach children about the LGBTQ+ community in primary school.",
+      "text": "its just something i feel when you get older you can discover it for yourself school is already enough dont need that on top of it as it could just confuse kids more. I feel this is something parents can introduce to their kids if they want too, especially if they feel it would help their child find another community to help them discover themselves being around liked minded people but i feel at a young age kids are too impressionable so this wont help i feel just get in the way of their learning and just being a kid",
+      "word_count": 100,
+      "human_mean_clarity": 65.9,
+      "human_agreement_score": 0.233,
+      "split": "train"
+    },
+    {
+      "document_id": "acb676477c5f076b",
+      "proposition_id": 122,
+      "proposition": "The UK should teach children about the LGBTQ+ community in primary school.",
+      "text": "-It is important that children know that regardless of background, religion, sexual orientation, colour, finance etc everyone has a place in our society. No one is more or less important. We all have a part to play. Maybe there would be less bullying in schools if this were the case, although it is also important to get the parents on board too.\r\n\r\n-Children should feel safe and part of their school regardless of how they relate to society. If we can teach children to be more accepting of others from a young age and indeed talk about the LGBTQ+ community they would feel less alone and feel accepted. Also maybe we would have less hate crime and even less wars if people were taught to accept people who are not 100 percent the same as them.",
+      "word_count": 136,
+      "human_mean_clarity": 76.9,
+      "human_agreement_score": 0.95,
+      "split": "train"
+    },
+    {
+      "document_id": "6586a4961c496812",
+      "proposition_id": 129,
+      "proposition": "The UK should legally recognize and protect all forms of transgender identity.",
+      "text": "in a fair, open and successful soceity it is important that everyone is recognised and protected so everyone can give their 100% for the greater good of whole. diversity and equality hence are the importatn topics in todays' talks. if people are given fair chances and accepted as who they are and what they want to be the society can reap the rewards of this by taking every different one in society so can they feel accepted and put in effort that is needed for a successful and prosperous society. inclusivity, equality and fairness not just needed in the workplace it's a thought that should be with every individual of a country so people feel safe when they go out and about.",
+      "word_count": 122,
+      "human_mean_clarity": 53.63636363636363,
+      "human_agreement_score": 0.7790909090909091,
+      "split": "train"
+    },
+    {
+      "document_id": "6ddba6735568468e",
+      "proposition_id": 129,
+      "proposition": "The UK should legally recognize and protect all forms of transgender identity.",
+      "text": "Firstly, anyone can be who ever they want. That's a freedom our country allows. However in legal terms, the issue of gender has caused more chaos and more grief than most wars. Some individuals who claim to be the opposite gender abuse this freedom to manipulate and conduct them self's in an immoral and in some cases illegal manner. I talk about children as I dont want my children being forced these issues at their age. They should be able to go about their day without having another gender child in their bathrooms or changing rooms. Or having an entire office space change because someone made a comment they feel like the opposite sex. It causes unnecessary chaos where is is unrequired. ",
+      "word_count": 122,
+      "human_mean_clarity": 68.1,
+      "human_agreement_score": 0.456,
+      "split": "train"
+    },
+    {
+      "document_id": "a137685498a98a11",
+      "proposition_id": 129,
+      "proposition": "The UK should legally recognize and protect all forms of transgender identity.",
+      "text": "There are a number of positive implications of legally recognising all forms of transgender identity. Firstly, it would greatly improve the mental health of transgender individuals and would reduce depression and rates of suicide. Furthermore, it would help create a more equal and fairer society with everybody able to express their true selves openly. Moreover, it would help reduce discrimination in society which can affect individuals access to a number of areas such as healthcare and employment. However, there are a number of downsides to recognising transgender individuals such as the effect it can have on women's sports. Therefore, the law should be very clear on how to recognise transgender status without taking away from other people.",
+      "word_count": 117,
+      "human_mean_clarity": 78.8,
+      "human_agreement_score": 0.741,
+      "split": "train"
+    },
+    {
+      "document_id": "a14bc573c2629eb4",
+      "proposition_id": 129,
+      "proposition": "The UK should legally recognize and protect all forms of transgender identity.",
+      "text": "The Uk should not legally recognize and protect all forms if transgender identity as unfortunately it has now become an excuse used by some rogue individuals to protect them from illegal activities.  There have been recent articles with identifying females, born male, committing sexual attacks against females while identifying as a a female. Also children are being influenced by adults as being transgender at a very young age when they haven't grown into their own identity and personality.  Would this be covered if it became legally recognized, would there be an age range?  How would legalisation improve things when so many people cannot agree on what is female and male these days.",
+      "word_count": 112,
+      "human_mean_clarity": 74.36363636363636,
+      "human_agreement_score": 0.0554545454545454,
+      "split": "train"
+    },
+    {
+      "document_id": "b8adb3d2706c2781",
+      "proposition_id": 129,
+      "proposition": "The UK should legally recognize and protect all forms of transgender identity.",
+      "text": "While I feel we all have a right to do and behave as we want in a free society a lot of this trans stuff is really dangerous especially when it comes to very small children who shouldn't be exposed to it all. Live your life as a free person but do it so as it does not harm others.  All peoples should be protected. We shouldn't need to single identities out for special treatment. All should be equal under the law as people. It's pretty simple. I think actually setting people out as different cause massive problems in our communities. ",
+      "word_count": 101,
+      "human_mean_clarity": 60.2,
+      "human_agreement_score": 0.285,
+      "split": "train"
+    },
+    {
+      "document_id": "c401c704b5530d66",
+      "proposition_id": 129,
+      "proposition": "The UK should legally recognize and protect all forms of transgender identity.",
+      "text": "The society has the duty to give anyoone the same rights and and avoid dangerous forms of social inequality. Over the history we have seen various strong positions against homosexual people but a little by little the progress has brought huge progress towards the parity of sexual identity. Instead of fighting against it, we should embrace any sexual identity, including transgender, and  give the total freedom to take your choiuce based on what you are, not based on what someone else wants you to be. There is no risk or harm for other people, on the other hand there might be negative consequences if these people are not happy with their life.",
+      "word_count": 112,
+      "human_mean_clarity": 86.0,
+      "human_agreement_score": 0.922,
+      "split": "train"
+    },
+    {
+      "document_id": "2d52f5c25962cdda",
+      "proposition_id": 176,
+      "proposition": "The UK should increase its military spending to strengthen its role within NATO.",
+      "text": "I am a pacifist, and am horrified by the amount of bombs being dropped worldwide, and at the amount of money spent on the media to sway public opinion that other countries deserve to have their children blown to pieces by munitions made or funded in any way by our country.\r\nI am disgusted by our support for unjust wars, near to home and in the middle east. I am glad we have some sort of Europe wide defense force, but am disappointed that this force is not used to protect children who are bombed daily in certain countries, there is far too much killing which is counter to public opinion ",
+      "word_count": 111,
+      "human_mean_clarity": 74.0,
+      "human_agreement_score": 0.1877777777777778,
+      "split": "train"
+    },
+    {
+      "document_id": "55f3222686f7b6f9",
+      "proposition_id": 176,
+      "proposition": "The UK should increase its military spending to strengthen its role within NATO.",
+      "text": "UK hs many issue, from nhs problems, homelessness and economy as a whole is struggling. These are the main issues facing the country, government should focus on issues at hand before trying to stengthen an outside organisation. NATO should not pressure countries to give beyong what they can manage. Often NATO is worthless, especially when big war crimes are going on and they sit there taking no real action. I wonder if NATO are worthy of investing in and being part of. Focus should be on what actually will help this country inside and out. NATO is losing its powr and respect.",
+      "word_count": 102,
+      "human_mean_clarity": 69.7,
+      "human_agreement_score": 0.09,
+      "split": "train"
+    },
+    {
+      "document_id": "99fffa07302cf766",
+      "proposition_id": 176,
+      "proposition": "The UK should increase its military spending to strengthen its role within NATO.",
+      "text": "Unfortunately it's an unstable and changing world at the moment where it's important to show strength even if you don't intend to use it against other countries except in extreme circumstances. There has been a change in the world order with an increasingly isolationist US which necessitates higher priorities in terms of defence spending to ensure that Europe and the UK can defend themselves and their allies. Equally there is a danger in solely relying on the US for hardware and defence systems when a better model is to develop our own capabilities and ensure a more independent and robust defence policy. ",
+      "word_count": 102,
+      "human_mean_clarity": 56.7,
+      "human_agreement_score": 0.747,
+      "split": "train"
+    },
+    {
+      "document_id": "c7813ad0be89ac47",
+      "proposition_id": 176,
+      "proposition": "The UK should increase its military spending to strengthen its role within NATO.",
+      "text": "It is probably very true that the threats to the UK has grown in recent years and the world is a more unstable place so it is a necessary evil that the UK should increase military spending to strengthen its role within NATO and to help strengthen NATO as a whole.  With the Trump Presidency, it is clear that the USA is a less reliable ally and the other countries in NATO need to increase their contributions as a consequence.  That all said, military spending is not a great use of finite resource and everything should be done to reduce the risk and flashpoints and therefore the need for more military spending.  And it is likely to be a false economy to increase military spending by reducing spending on overseas aid.",
+      "word_count": 131,
+      "human_mean_clarity": 67.0,
+      "human_agreement_score": 0.62,
+      "split": "train"
+    },
+    {
+      "document_id": "d653d40e44474447",
+      "proposition_id": 176,
+      "proposition": "The UK should increase its military spending to strengthen its role within NATO.",
+      "text": "Increasing the UKs spending would reinforce its leadership role within NATO by enhancing its ability to contribute to collective defence and deter growing threats from places such as Russia. As global security challenges grow,  strong military presence would help NATOs readiness and credibility, ensuring the alliance remains effective and unified. Greater investment would also support the UKs strategic influence, improve relations with allied forces and demonstrate a firm commitment to shared secruity responsibilities. \r\nIt will also create jobs across the UK by boosting defence manufacturing, supporting research and development, expanding armed forces recruitment and stimulating local economies through supply chains and infrastructure projects. ",
+      "word_count": 103,
+      "human_mean_clarity": 80.33333333333333,
+      "human_agreement_score": 0.8844444444444445,
+      "split": "train"
+    },
+    {
+      "document_id": "67261502c0531ca6",
+      "proposition_id": 201,
+      "proposition": "The UK should significantly increase its military spending.",
+      "text": "Having a strong military presence globally is important to prevent being attacked or bullied politically by other countries. However, in the UK there is widespread poverty, driven by high cost of living, low wages and houses issues which could benefit more from increased spending than military reasons.\r\n\r\nThe UK is part of NATO and has strong allegiances with other countries who also have high levels of military presence to help with defence against hostile nations\r\n\r\nMany people in the UK do not want to perpetually be involved in wars and military actions not involving the UK directly, and consider much of military spending as wasteful and not necessary. ",
+      "word_count": 108,
+      "human_mean_clarity": 59.4,
+      "human_agreement_score": 0.49,
+      "split": "train"
+    },
+    {
+      "document_id": "82f16483e4e45902",
+      "proposition_id": 201,
+      "proposition": "The UK should significantly increase its military spending.",
+      "text": "The threat from Russia and other nations means the UK has no choice but to drastically increase defence spending immediately. They sleptwalked into severe underinvestment in defence in the last few decades and thus are very vunerable and weak to external threats. The global conflicts in many parts of the world mean we must act now and drastically increase defence spending, to protect ourselves and future generations. It will take years to catch up, to get to the level reuqired to properly defend ourselves, so there is no more time to wait. Act now UK or we are going to fall even further behind.",
+      "word_count": 104,
+      "human_mean_clarity": 84.88888888888889,
+      "human_agreement_score": 0.8766666666666667,
+      "split": "train"
+    },
+    {
+      "document_id": "b100a1180d9b1733",
+      "proposition_id": 201,
+      "proposition": "The UK should significantly increase its military spending.",
+      "text": "I think defense spending takes too much of money. This is quite unnecessary because there are more important causes in the country that need to be addressed such as cost of living, economy etc. This is wasteful expenditure as all it does is result in killing of people. I think UK should adopt a neutral stance and not get involved in other countries' affairs. It is unfair to spend this amount of money on other countries when our own country has so many unmet needs such as long waiting lists at the NHS hospitals and people not being able to afford basic necessities. There is child poverty that could do with this money.",
+      "word_count": 113,
+      "human_mean_clarity": 81.7,
+      "human_agreement_score": 0.037,
+      "split": "train"
+    },
+    {
+      "document_id": "b9d15c23dddd3dbf",
+      "proposition_id": 201,
+      "proposition": "The UK should significantly increase its military spending.",
+      "text": "i do not really know much about it , but i think millatary always deserves the best they should be given incentives also their familys as they protect borders . if not that they should be compensated in another way , i believe its important to invest in millitary as all around the world its not very ideal situation many countrys getting in to situation of wars milatary spending increase would help in preparing overall situation of forces and it will encourage more people to come in to this profession as at the end of the day every country need forces and men power",
+      "word_count": 104,
+      "human_mean_clarity": 28.4,
+      "human_agreement_score": 0.653,
+      "split": "train"
+    },
+    {
+      "document_id": "dfae43b9571d7360",
+      "proposition_id": 201,
+      "proposition": "The UK should significantly increase its military spending.",
+      "text": "We need to be able to defend ourselves against other countries and increasing our defence spending is required to do this. We need to be ready to defend ourselves and therefore need to ensure we have spent enough before anything happens, so we are ready to defend ourselves at short notice at any given time. The world is becoming increasingly more hostile with more wars between countries. Some countries are supporting others who are at war, for example the UK have provided funding to Ukraine to help them defend themselves from Russia. Russia could choose to turn on us for this although with America as our ally this is unlikely. We are no longer a part of Europe which in my eyes is not a good thing. I would prefer we were reunited with Europe again. I personally did not agree with Brexit as we could be more vulnerable now.",
+      "word_count": 150,
+      "human_mean_clarity": 74.4,
+      "human_agreement_score": 0.74,
+      "split": "train"
+    },
+    {
+      "document_id": "faf20ff21833d150",
+      "proposition_id": 201,
+      "proposition": "The UK should significantly increase its military spending.",
+      "text": "Security for our country as there is a lot going on around in the world like wars, hijacks etc, therefore we need to be well armed in space/air and ground.  Protection for our country's people so  people feel safe and protected from attacks specially riots.  Safety can be in air space and within the country, there is a lot we cannot see and we need to be well equipped for lots going on with regard to online cyber attacks, riots.  Strong because the more we invest the better outcome we will have for our country and results with better safety for the country.  Protect the country and its people.",
+      "word_count": 109,
+      "human_mean_clarity": 67.4,
+      "human_agreement_score": 0.8640000000000001,
+      "split": "train"
+    },
+    {
+      "document_id": "1014e542e8fda0fe",
+      "proposition_id": 242,
+      "proposition": "The UK should implement policies to ensure the protection and promotion of religious freedoms for Muslim communities.",
+      "text": "The UK should make sure that Muslims are able to practice their religion freely and safely. Whether or not policies need to be implemented to ensure this is another matter. As UK citizens we are free to practice our religions without fear of persecution and this is the case for the UK's Muslim population. Some time their religion comes under attack from certain elements of the wider population and it is important that minority groups are protected and can feel safe to practice their religion without fear of any violence or persecution. It is the right thing to do in a multicultural society.",
+      "word_count": 103,
+      "human_mean_clarity": 42.0,
+      "human_agreement_score": 0.58,
+      "split": "train"
+    },
+    {
+      "document_id": "383a319b299ba0fc",
+      "proposition_id": 242,
+      "proposition": "The UK should implement policies to ensure the protection and promotion of religious freedoms for Muslim communities.",
+      "text": "As far as i am aware, UK law protects everybody in the land, which by definition includes Muslims, and applies to all people whether they are UK citizens , Foreign nationals or even illegal residents.\r\n\r\nPromotion is a completely different thing, and i do not believe that the UK government should be promoting any religion. Given less than 10% of the population have any sort of religious affiliation, aside from weddings and funerals, it would seem that it is suggested implementing a policy that promotes something that 90% of the population aren't interested in, myself included.\r\n\r\nAs a suggestion, why don't we allow the promotion of religious freedoms for Muslims one a country by county basis whith any other nation that promotes or even allows Christianity, or more specifically Church of England, within that country.",
+      "word_count": 135,
+      "human_mean_clarity": 35.77777777777778,
+      "human_agreement_score": 0.3422222222222222,
+      "split": "train"
+    },
+    {
+      "document_id": "6fff9a3575bce43b",
+      "proposition_id": 242,
+      "proposition": "The UK should implement policies to ensure the protection and promotion of religious freedoms for Muslim communities.",
+      "text": "I believe that all forms of worship should be allowed but there is no particular reason why the UK should promote policies in favour of Islam.  Most Muslims are peaceful but there is a risk that more extremist views are spread in this religion.  The UK should not implement policies in favour of any particular religion in my view.  Protection of all citizens regardless of their religion should be the purpose of any policy - Islam is a powerful religion already and I see no reason why it should be further promoted by the government.  I am not anti-Islam but I am pro freedom and that applies to every religion.",
+      "word_count": 110,
+      "human_mean_clarity": 78.0,
+      "human_agreement_score": 0.287,
+      "split": "train"
+    },
+    {
+      "document_id": "9c9add9d2e6d3b14",
+      "proposition_id": 242,
+      "proposition": "The UK should implement policies to ensure the protection and promotion of religious freedoms for Muslim communities.",
+      "text": "I believe that UK institutions do already implement several policies to protect religious freedoms for recognised religions, this includes observance and freedom. In some ways I do agree with the statement but I don't understand why we are singling out one religion? Im unsure on the definition of \"promotion\", it sounds wrong to me and dangerous. There is also some issues with some religions preach or are interpreted in ways that are contrary to law so its a sticky problem. In my view all religions should be banned and kept as a hobby and not treated in a special way.",
+      "word_count": 100,
+      "human_mean_clarity": 68.6,
+      "human_agreement_score": 0.216,
+      "split": "train"
+    },
+    {
+      "document_id": "ace4a5c14b01f286",
+      "proposition_id": 242,
+      "proposition": "The UK should implement policies to ensure the protection and promotion of religious freedoms for Muslim communities.",
+      "text": "I disagree that the UK should implement policies to ensure the protection and promotion of religious freedoms for Muslim communities. In my opinion, in the UK, Islam, Judaism, Christianity, Catholicism, Hinduism, Sikhism and other religions and communities have plenty of freedom. There are mosques, temples, synagogues and churches already, there are Halal and Kosher foods available in supermarkets and some specialty shops. They already are protected in my opinion and giving special treatment to one particular religion is meritless as it only causes a divide. Additionally, pedestaling one religion could cause them to feel entitled to ask for more and more liberties and perks and is generally undesirable.",
+      "word_count": 108,
+      "human_mean_clarity": 84.18181818181819,
+      "human_agreement_score": 0.1254545454545454,
+      "split": "train"
+    },
+    {
+      "document_id": "ef3363ef2ec6117d",
+      "proposition_id": 242,
+      "proposition": "The UK should implement policies to ensure the protection and promotion of religious freedoms for Muslim communities.",
+      "text": "There is a growing concern among the white British population that there are now certain urban areas where it is now unsafe for them. In addition, there have been quite a few instances that don't reach the mainstream news (although you can find them happening on X/Twitter), where British people of all races have been harassed and/or arrested for preaching Christianity or reading Bible verses, because it has somehow caused offence to Muslims. This happening in a so-called Christian country seemingly panders to Muslim ideology. Plus, the fact that there are Sharia courts popping up everywhere, along with the mass illegal immigration of Muslim men, means the religious freedom of this community has/is causing more harm to the British people than good.",
+      "word_count": 122,
+      "human_mean_clarity": 71.6,
+      "human_agreement_score": 0.195,
+      "split": "train"
+    },
+    {
+      "document_id": "20ebc247c723af0b",
+      "proposition_id": 249,
+      "proposition": "The UK should formally apologize and provide reparations for the impacts of colonisation.",
+      "text": "There are few nations which haven't oppressed somebody else fairly recently.  Apologising for whatever harm we did is reasonable, and so is returning any treasures which we stole rather than bought.  Paying reparations, however, takes us into complicated territory.  The UK already spent a considerably fortune in ships and lives to end slavery, and working out how much we might owe in reparations would be impossibly complicated.  We used some predatory trade practices in India - but would India have been richer without us, or would it have been mired in local wars between petty kingdoms?  If we pay reparations to the Empire, should the Netherlands pay reparations to us for William of Orange, who was effectively an invader?  It would be better in my opinion to strengthen our ties with the Commonwealth, and give Commonwealth countries preferential trade agreements and aid and easier immigration, rather than trying to calculate blame.",
+      "word_count": 151,
+      "human_mean_clarity": 87.11111111111111,
+      "human_agreement_score": 0.25,
+      "split": "train"
+    },
+    {
+      "document_id": "2710cbcb908d4d1c",
+      "proposition_id": 249,
+      "proposition": "The UK should formally apologize and provide reparations for the impacts of colonisation.",
+      "text": "I realize that, both within UK and abroad, this is currently a hotly (and deservedly so) debated topic. However, I'm somewhat embarrassed to admit that I am woefully little informed, and therefore can't form an 'objective', fact-based opinion. I feel that apology for the country's colonial past might be welcome but essentially it would be an empty gesture. It would mean much more, perhaps, were it supported by financial investment in formerly colonised areas (ensuring independent growth, not ties to Britain), increase in overseas aid, disaster preparation, poverty relief, as well as educational initiatives (literacy, business skills etc), health-related areas, peace initiatives, and environmentally-oriented support. ",
+      "word_count": 105,
+      "human_mean_clarity": 62.6,
+      "human_agreement_score": 0.502,
+      "split": "train"
+    },
+    {
+      "document_id": "34660999de0708ec",
+      "proposition_id": 249,
+      "proposition": "The UK should formally apologize and provide reparations for the impacts of colonisation.",
+      "text": "While I do accept that many horrid things happened in our history, particularly in regards to the impact of colonisation, we can pay reparations to these countries for things that happened hundreds of years ago. The question would be how far back do you go, what impact did it have on these people and countries, how were people affected, and what is the purpose of providing money for something that can never change because it's already happened.  If we have to pay, can we claim back against other countries that affected us, ie, the Scandinavian countries whose Vikings invaded and forced people to become slaves, or the Romans who also did the same. It's opening a huge can of worms that is endless and futile.",
+      "word_count": 125,
+      "human_mean_clarity": 57.1,
+      "human_agreement_score": 0.4429999999999999,
+      "split": "train"
+    },
+    {
+      "document_id": "5ce8898af9b19cc8",
+      "proposition_id": 249,
+      "proposition": "The UK should formally apologize and provide reparations for the impacts of colonisation.",
+      "text": "I would say that we should but I only moderately agree as I don't know too much about the history of the UK colonising. I know that we have done this and it is part of our history but am not super aware. My main point as I've already said is that it is morally the right thing to do and I wasn't aware that we haven't already done this so I would say yes to it. My other point is that it is part of our past and I think it is important to address the past rather than just ignore it.",
+      "word_count": 103,
+      "human_mean_clarity": 30.5,
+      "human_agreement_score": 0.561,
+      "split": "train"
+    },
+    {
+      "document_id": "95ec660e378c5d36",
+      "proposition_id": 249,
+      "proposition": "The UK should formally apologize and provide reparations for the impacts of colonisation.",
+      "text": "I am bemused that someone has made this statement.  Colonisation brought benefits to the countries colonised.  Without the UK, they would have continued to have a poor standard of living.  The UK provided a trading partner and offered security against attacks from enemies.  Many colonies adopted English as their second language, thus placing them at an advatage in years to come.  Should France, Portugal and Spain also apologise?  I think not!  There is no explanation over what this apology should cover and why one is due.  This is political correctness to an extreme!  The colonies should be grateful to the UK for what it did.",
+      "word_count": 105,
+      "human_mean_clarity": 81.88888888888889,
+      "human_agreement_score": 0.1888888888888888,
+      "split": "train"
+    },
+    {
+      "document_id": "a8359ce622c2905e",
+      "proposition_id": 249,
+      "proposition": "The UK should formally apologize and provide reparations for the impacts of colonisation.",
+      "text": "With the UK refusing to apologize and provide reparations in the conservative government it comes as no surprise that Labour are doing the same.\r\nAt the end of the day it comes down to money.  If they could apologize without financial repercussions then they would but it's like Pandora's box... apologize and a whole host of other questions and expectations will come with it including remuneration.\r\nSlavery still goes on today in the form of trafficking so focus, time and money should now be put on this and move forward with the times. Sad to say it but i can't see an apology on the horizon",
+      "word_count": 106,
+      "human_mean_clarity": 69.27272727272727,
+      "human_agreement_score": 0.5872727272727273,
+      "split": "train"
+    },
+    {
+      "document_id": "fcb26f26f06c9c92",
+      "proposition_id": 249,
+      "proposition": "The UK should formally apologize and provide reparations for the impacts of colonisation.",
+      "text": "I believe that the UK should formally apologise and provide reparations for the impacts of colonisation because it has caused damage that has created a lot of disadvantages for a big portion of the world. Colonized countries have been exploited by the UK from their resources and have not been able to use them to develop. Furthermore, the impacts of colonisation continue to this day and the UK is still benefiting from the impact it has had in the world. Former colonies are undeveloped and the best people from these countries are immigrating to countries like the UK. This puts those countries at a disadvantage again and the UK benefits from the brain and talent that moves here.",
+      "word_count": 118,
+      "human_mean_clarity": 71.9,
+      "human_agreement_score": 0.727,
+      "split": "train"
+    },
+    {
+      "document_id": "73a910f7994c4417",
+      "proposition_id": 264,
+      "proposition": "The UK should sever all formal ties with the Catholic Church.",
+      "text": "The proposal that UK should sever all formal ties with the Catholic Church is both unprecedented and unfounded.  Approximately 10% of the UK population are Catholic and while some may regard UK as a secular state, the majority of the population would still regard themselves as Christian.  Accordingly, the state severing all ties with what is the largest Christian organisation by membership worldwide would be an offensive suggestion to both Catholic and non-Catholic citizens.  While the Catholic Church has had its problems in recent years, it is also responsible for many charitable works worldwide and remains both a force for good and a positive influence in most people's lives.  ",
+      "word_count": 109,
+      "human_mean_clarity": 81.55555555555556,
+      "human_agreement_score": 0.0888888888888888,
+      "split": "train"
+    },
+    {
+      "document_id": "88cae1dd635c3bfa",
+      "proposition_id": 264,
+      "proposition": "The UK should sever all formal ties with the Catholic Church.",
+      "text": "I feel things like this are just outdated and have a backwards way on looking at the world, yes it can help certain people but i feel its just something used to control people and make them think a certain way. With the amount of corruption and unspeakable things that have happen with the catholic church i feel its something that should be left in the past but i understand that wont happen as it has such a huge following where people need this type of stuff to have meaning to their lives. I just feel its not needed in todays times",
+      "word_count": 102,
+      "human_mean_clarity": 60.1,
+      "human_agreement_score": 0.862,
+      "split": "train"
+    },
+    {
+      "document_id": "fffcf25a823f6204",
+      "proposition_id": 264,
+      "proposition": "The UK should sever all formal ties with the Catholic Church.",
+      "text": "There has been a lot of religious conflict and tension over the centuries between the catholic church and the church of england within the United Kingdom. Whether that was during the reign of Henry the eighth or Elizabeth the first during Tudor times or more recently in northern ireland. But as part of a thriving democracy all religions should be tolerated as long as they do not seek to negatively influence the democracy in our country. There are a lot of practising catholics in the UK so severing all formal ties with the Catholic Church would be seen as very negative by them. ",
+      "word_count": 103,
+      "human_mean_clarity": 62.7,
+      "human_agreement_score": 0.191,
+      "split": "train"
+    },
+    {
+      "document_id": "02edefc53162fa00",
+      "proposition_id": 303,
+      "proposition": "The UK should abolish the monarchy.",
+      "text": "I am not completely sure of my stance, I think there is too much of tax payers money spent on their security etc. However I am aware that the monarchy does bring in an awful lot of money from tourism. I think it is more of an issue in the last couple of years since the Queen died. Because of the length of time she had on the thrown and her professionalism throughout her reign, she was regarded very highly. However there has been a shift since Charles became King, my opinion included. I'm not sure abolishing is necessary but maybe an investigation or inquest on spending vs income.",
+      "word_count": 109,
+      "human_mean_clarity": 49.44444444444444,
+      "human_agreement_score": 0.4988888888888889,
+      "split": "train"
+    },
+    {
+      "document_id": "1384966ca5ebbef3",
+      "proposition_id": 303,
+      "proposition": "The UK should abolish the monarchy.",
+      "text": "Tradition, it is British heritage, our Monarchy, they should not be 'abolished' wiped out, erased, it is our history still, who came up with the idea to abolish them, some p!$$ed off individual who started the ball rolling decades ago, Tourism, the World flocks to the UK, many parts .. London in particular, imagine the losses in revenue, London could not exist without tourism , the amount of tax it rakes in because the touring world still sees value in our Monarchy, seems Britons , younger ones, still have the least favourable view of them, they should stay , forever, granted, there has been some reported unsavoury actions by individuals , that turned fold against them, ",
+      "word_count": 116,
+      "human_mean_clarity": 68.1,
+      "human_agreement_score": 0.1009999999999999,
+      "split": "train"
+    },
+    {
+      "document_id": "15c3447cc3a6886e",
+      "proposition_id": 303,
+      "proposition": "The UK should abolish the monarchy.",
+      "text": "I haven't researched enough into the true heirs to the throne but I believe that the true British aristocracy would be British and not German/Greek. Unlike the monarchy of the past who would usually put British interests first the current monarchy put international interests first and neglect British interests and especially the peoples interests. They could improve this by honouring British culture and notable individuals. On an economical level I feel that they are a net negative as even though they do bring tourism to the UK, tourism would continue on regardless with or without them.\r\nCurrently the tax spent on providing them with a lavish life could be spent on more important things.",
+      "word_count": 114,
+      "human_mean_clarity": 63.111111111111114,
+      "human_agreement_score": 0.7566666666666667,
+      "split": "train"
+    },
+    {
+      "document_id": "ba402b9765f7455e",
+      "proposition_id": 303,
+      "proposition": "The UK should abolish the monarchy.",
+      "text": "I partly agree with this statement as the monarchy has been in place for many many years and abolishing it could lead to the UK climate changing drastically. There are a lot of tourists that come to the UK to see the royal family which  bolsters the economy due to tourism. However, most of the general opinion want the monarchy abolished because they are funded by the public just to upkeep an image. There are a lot of scandals that happen within the royal family so citizens may feel short-changed when they find that their money is funding a lifestyle whilst a majority of the country is living in poverty. ",
+      "word_count": 110,
+      "human_mean_clarity": 55.72727272727273,
+      "human_agreement_score": 0.509090909090909,
+      "split": "train"
+    },
+    {
+      "document_id": "be8284cce2b47127",
+      "proposition_id": 303,
+      "proposition": "The UK should abolish the monarchy.",
+      "text": "I think its good to have a royal family for many reasons but the main one being that they don't change whereas the PM and ruling government does. The Queen was amazing as was revered the world over, and the Royals in general represent us on the world stage. Britain is known for being British and tradition is a big part of that, which is where the royal fmaily play a big part too with all the ceremony involved. As well as their representation they own and contribute to many charities accross the world and ultimately are a force of good.",
+      "word_count": 101,
+      "human_mean_clarity": 83.5,
+      "human_agreement_score": 0.1369999999999999,
+      "split": "train"
+    },
+    {
+      "document_id": "18524faad3469a65",
+      "proposition_id": 308,
+      "proposition": "The UK should implement mandatory voting in all major elections.",
+      "text": "I think that a lot of the votes in this country currently are made by the elderly generation which is not helpful to society today. A lot of them are stagnating out economy, a lot of them are sat on assets or large sums of money,  bringing in triple locked pensions, and not actually spending a lot of that money in this country. They are only voting for things that benefit *ONLY* them, triple locked pensions wont benefit anyone else in this country. Younger people wont be blessed with that when they reach retirement age. Younger people are actually working and spending and contributing to the economy. In order for the country to thrive economically we need people out and spending, not sat at home with money in the bank. Younger people have more of an idea of what would help the economy since they are out there everyday. Older people tend to only vote for what they know. We would probably find that a different party would win the election and maybe some smaller parties would have a chance of even getting a coalition.",
+      "word_count": 185,
+      "human_mean_clarity": 41.1,
+      "human_agreement_score": 0.522,
+      "split": "train"
+    },
+    {
+      "document_id": "68e224dbbd78bcbc",
+      "proposition_id": 308,
+      "proposition": "The UK should implement mandatory voting in all major elections.",
+      "text": "In essence, it is a person's own choice whether to vote or not but we all have the privilege of voting so we should take that privilege and use it. It's very easy to not make the journey to the local polling station because you can't be bothered but there are some people in the world who could dream of being able to vote the way UK residents can. Choosing not to vote means that a prime minister will be elected not based on the wishes of the UK. We need as many people voting rather than 80% of the population; every vote counts.",
+      "word_count": 104,
+      "human_mean_clarity": 82.44444444444444,
+      "human_agreement_score": 0.6288888888888888,
+      "split": "train"
+    },
+    {
+      "document_id": "cf26e5510c40d090",
+      "proposition_id": 308,
+      "proposition": "The UK should implement mandatory voting in all major elections.",
+      "text": "Elections are supposed to represent the will and beliefs of a nation in regard to how a country should be run. however, we often see that this is not the case and in the clearest examples, we see that an increase in voter turnout has repeatedly shown to change elections, showing some smaller elections are dubiously representative. \r\n\r\nvoter disenfranchisement is an underhanded tool often used in politics to prevent another party's ability to acquire votes in certain areas, this may be due to a lack of access to voting booths or not having time to vote. mandatory, easy-access voting would prevent this as everyone would be required to show up and either vote or spoil their ballot.",
+      "word_count": 117,
+      "human_mean_clarity": 70.27272727272727,
+      "human_agreement_score": 0.8309090909090909,
+      "split": "train"
+    },
+    {
+      "document_id": "d81591ce20f3b1e5",
+      "proposition_id": 308,
+      "proposition": "The UK should implement mandatory voting in all major elections.",
+      "text": "I think it should be made mandatory for several reasons:  \r\n\r\nSome would be voters are too apathetic to vote but they should have a say as everyone should have representation regardless of their political leanings.  We would get voters from a wide range of demographics if it were compulsory.  There is no excuse as can send in a postal vote so whoever you are can vote assuming you are eligible.  It should mean a fair representation and it really would be the people's vote as currently the system is very flawed and shocking how few people actually vote, yet still moan if the party they ideally would lie do not get in! ",
+      "word_count": 112,
+      "human_mean_clarity": 75.55555555555556,
+      "human_agreement_score": 0.8755555555555555,
+      "split": "train"
+    },
+    {
+      "document_id": "4c0a8ef68196becf",
+      "proposition_id": 333,
+      "proposition": "The UK should strengthen the rights and powers of labour unions.",
+      "text": "The unions were once a powerful group, but they have become toothless in recent years. I put that down to corruption and backhanders to the egoists at the top. They tend to stand up for woke causes now and not British workers rights. They were formed to protect the worker but tend to attach themselves to the wrong causes, a bit like the modern Labour Party who aren't really Labour at all.  I don't think it would make any difference if they are strengthend or not. They are what they are. Their best days are behind them and that is very sad. ",
+      "word_count": 102,
+      "human_mean_clarity": 65.9,
+      "human_agreement_score": 0.3429999999999999,
+      "split": "train"
+    },
+    {
+      "document_id": "657183c6ae4b8883",
+      "proposition_id": 333,
+      "proposition": "The UK should strengthen the rights and powers of labour unions.",
+      "text": "Unions can represent and fight for the employee\u2019s rights more effectively, so in this respect they are vital for having a checked balance between rights and obligations from both sides -employees and employers.   Labour unions also can advocate for different social justice causes .  However, having too much powers can be a way to cause more disruptions like strikes that can not only disrupt companies but the economy in general.  It is very common to see how a very powerful union can stop changes in the conditions or in the market that will have an impact in the ability to compete in a world that needs constant changes to be competitive in the market. ",
+      "word_count": 114,
+      "human_mean_clarity": 58.4,
+      "human_agreement_score": 0.445,
+      "split": "train"
+    },
+    {
+      "document_id": "a10c32f479df06eb",
+      "proposition_id": 333,
+      "proposition": "The UK should strengthen the rights and powers of labour unions.",
+      "text": "I do not fully understand the current situation with labour unions in the UK, nor do I anticipate exactly what the implications of strengthening the labour unions with more rights and powers. I cannot think that it would be a bad thing to do this though. More rights and powers for employees in general could have a positive impact on the workplace. On the other hand, giving more power and rights to labour unions could complicate the structure of many companies, particularly the smaller ones. This could potentially lead to loss of profits due to fines and employee strikes which would not be good.",
+      "word_count": 104,
+      "human_mean_clarity": 37.9,
+      "human_agreement_score": 0.504,
+      "split": "train"
+    },
+    {
+      "document_id": "b91d3f0ac7f0823f",
+      "proposition_id": 333,
+      "proposition": "The UK should strengthen the rights and powers of labour unions.",
+      "text": "Being a part of a trade union means that the worker, new or old, has access to knowledge of what the current situation of the trade is and can contribute to valuable and relevant discussions. Moreover, whenever policies related to the trade are announced, trade unions evaluate those and find what the impact of those policies might be. Then, they can voice their opinions and demand what would be in their favour. This means that a worker's rights are preserved by this representative entity that is separate from the government, employers, and policy makers. As a result, decisions are discussed and improved through suggestions and demands from trade unions and the rights of the workers are preserved. ",
+      "word_count": 117,
+      "human_mean_clarity": 71.7,
+      "human_agreement_score": 0.737,
+      "split": "train"
+    },
+    {
+      "document_id": "cd15bc9d7aa3bb28",
+      "proposition_id": 333,
+      "proposition": "The UK should strengthen the rights and powers of labour unions.",
+      "text": "The U.K should strengthen the rights and powers of labour unions in order to ensure that the health and safety standards of workplaces are regulated through enforcements of codes such as proper PPE. Furthermore, labour unions keep companies in line when it comes to paying minimum wage and not setting unlawful hours for workers. Not only this but also allowing adequate sick leave and holidays throughout the year. Additionally, with limited powers labour unions are not able to enforce rights for workers when it comes to discrimination either within the workplace or upon recruitment or redundancy. Overall it is clear that labour unions are vital to the workforce and strengthening their rights and powers would serve to aid in the safety and security for workers and their families.",
+      "word_count": 128,
+      "human_mean_clarity": 82.5,
+      "human_agreement_score": 0.8590000000000001,
+      "split": "train"
+    },
+    {
+      "document_id": "2d5bd352a9e77ab9",
+      "proposition_id": 339,
+      "proposition": "The UK should increase military support to Ukraine in response to the 2022 Russian invasion.",
+      "text": "As with many things going on in other countries, I don't really have what I think is a strong opinion, but where the Ukraine is concerned I would say \"enough already\"! I mean, the powers that be had the UK waving the Ukraine flag on and off social media when most people are not even aware where Ukraine is in the first place. Or the history of this war. The Ukraine leader - if he's still around, I don't keep up with news so I am not sure -  seems highly suspicious in character to me too. This is not our war to win and for goodness\u2019s sake we have enough trouble with issues within our country to deal with. Let's do that before we offer help else where.",
+      "word_count": 129,
+      "human_mean_clarity": 64.5,
+      "human_agreement_score": 0.157,
+      "split": "train"
+    },
+    {
+      "document_id": "6e50a2e1e9d32ff6",
+      "proposition_id": 339,
+      "proposition": "The UK should increase military support to Ukraine in response to the 2022 Russian invasion.",
+      "text": "Nato forces were expanding into Russian teritory which basically forced Russia to protect their people. I obviously disagree with innocent people dying but like Trump and JD Vance said to Zelensky, he is a conman who is sending his own people to their deaths. He has been asking for aid and money from a lot of other countries but where is that money going? Also I find the international outrage over Ukraine very hyprocitical, especially when you look at what is going with the genocide that Israel are causing in Palestine and we don't hear much from the international media on that. ",
+      "word_count": 102,
+      "human_mean_clarity": 76.45454545454545,
+      "human_agreement_score": 0.0536363636363636,
+      "split": "train"
+    },
+    {
+      "document_id": "a77a7dad7bab1a07",
+      "proposition_id": 339,
+      "proposition": "The UK should increase military support to Ukraine in response to the 2022 Russian invasion.",
+      "text": "I do not think the Ukraine have done anything wrong.  Russia want to take land which is not theirs even though Russia is a huge country.  Putin has waged a war that most people do not want including his own people.  it is causing a huge loss of life on both sides.  He is an oppressor of his own people and anyone who had stood up to the regime has been severely punished. \r\n\r\nI think supporting the Ukraines is the humane and moral thing to do as i think they are the type of country who would do the same thing and stand up for what is right. ",
+      "word_count": 108,
+      "human_mean_clarity": 63.4,
+      "human_agreement_score": 0.792,
+      "split": "train"
+    },
+    {
+      "document_id": "a8334081355a78fd",
+      "proposition_id": 339,
+      "proposition": "The UK should increase military support to Ukraine in response to the 2022 Russian invasion.",
+      "text": "I wholeheartedly support this statement. Ukraine suffered a completely unprovoked assault by Russia, and has been left single-handedly fighting a war against an aggressor with wider ambitions to take territory in Europe - rebuilding the Russian Empire. Ukraine doesn't have the resources to continue to fend off the Russian assault indefinitely and relies on support from other countries, and it's vital that the UK does all it can to help. We've already provided funding, but this will be for nothing if we don't provide the fullest possible bacing and Ukraine ultimately falls. If it were to fall, the offensive would likely progress across other parts of Europe and we'd be required to commit even greater resources in order to see off this increasing threat. It would be shameful if the heroic people of Ukraine were to fall to Russia and we hadn't done all that we could do as a country to support them.",
+      "word_count": 154,
+      "human_mean_clarity": 97.0,
+      "human_agreement_score": 0.952,
+      "split": "train"
+    },
+    {
+      "document_id": "d266388fb61c11f2",
+      "proposition_id": 339,
+      "proposition": "The UK should increase military support to Ukraine in response to the 2022 Russian invasion.",
+      "text": "UKRAINE'S SOVEREIGNTY IS UNDER DIRECT THREAT, AND SUPPORTING THEM HELPS DEFEND INTERNATIONAL LAWS THAT PROTECT INDEPENDENT NATIONS FROM BEING INVADED. IF COUNTRIES ALLOW SUCH AGGRESSION TO GO UNCHECKED, IT SENDS A DANGEROUS SIGNAL THAT BORDERS CAN BE VIOLATED WITHOUT CONSEQUENCES. STRONG MILITARY AID ALSO DISCOURAGES FURTHER ESCALATION BY RUSSIA OR SIMILAR ACTIONS FROM OTHER COUNTRIES IN THE FUTURE. BY PROVIDING SUPPORT, THE UK STRENGHTHENS ITS ALLIANCES, SHOWING COMMITMENT TO NATO AND GLOBAL PARTNERSHIPS, WHICH HELPS MAINTAIN COLLECTIVE SECURITY. ADDIOTIONALLY, ONGOING CONFLICT IN UKRAINE HARMS EUROPEAN STABILITY, AFFECTING ECONOMIES AND INTERNATIONAL RELATIONS. INCREASING MILITARY SUPPORT COULD HELP BRING THE WAR TO A QUICKER RESOLUTION, REDUCING SUFFERING AND LONG TERM INSTABILITY.",
+      "word_count": 109,
+      "human_mean_clarity": 80.4,
+      "human_agreement_score": 0.906,
+      "split": "train"
+    },
+    {
+      "document_id": "f548c680c7348740",
+      "proposition_id": 339,
+      "proposition": "The UK should increase military support to Ukraine in response to the 2022 Russian invasion.",
+      "text": "I think that this war is only going to end one way unfortunately, and while it's important we have taken in refugees and done our part, we also have to realise this war needs to end, and for it to end we need less fighting and more talking, i can't see a scenario where Russia admit defeat, and it's just a matter of time before they get the lend they want. we need a deal with Russia and can revisit it in the future when Putin is no longer around. Ukraine for their part need to make some compromises, War is bad, but this is how it goes throughout history, land is won by wars.",
+      "word_count": 115,
+      "human_mean_clarity": 49.2,
+      "human_agreement_score": 0.1989999999999999,
+      "split": "train"
+    },
+    {
+      "document_id": "48049d5965995a36",
+      "proposition_id": 343,
+      "proposition": "The UK should defund the BBC.",
+      "text": "The BBC supports charities and raises money for causes such as children in need, which has a positive impact on many people's lives and so without funding they may not be able to continue doing this which would cause some people to suffer. The BBC also has a website dedicated to education and learning such as BBC bitesize, which many students rely on. They offer content from Key stage 1 right up to high school meaning they offer a large range of content. This can be useful for children who are home schooled as well as others who wouldn't have access to other educational support should it not be for the BBC and so I think its important that their funding isn't cut.",
+      "word_count": 123,
+      "human_mean_clarity": 64.55555555555556,
+      "human_agreement_score": 0.29,
+      "split": "train"
+    },
+    {
+      "document_id": "78f34e8c8bf9cefe",
+      "proposition_id": 343,
+      "proposition": "The UK should defund the BBC.",
+      "text": "I think that while the BBC has faults, it is overall something to protect. It is a British institution and has produced some of the finest drama and comedy entertainment that the UK is known for across the world. If the BBC did not exist it would further concentrate all media being owned by a small group of American companies. The BBC also produces documentaries and niche content that others do not because there would be no commercial interest to. I feel there is some issues with the BBC's news coverage and how it so strongly favours the establishment and government, and if this was addressed the BBC as an institution would once again be very popular in the UK.",
+      "word_count": 120,
+      "human_mean_clarity": 88.5,
+      "human_agreement_score": 0.222,
+      "split": "train"
+    },
+    {
+      "document_id": "a277c5f4eb07b9a4",
+      "proposition_id": 343,
+      "proposition": "The UK should defund the BBC.",
+      "text": "The BBC has been infamous for the protection of very prolific criminals, whose acts were known by executives and brushes aside for the sake of making money. Also the spread of certain propaganda, one of which being the demonization of the working class population for other working class citizens to gawp, laugh or scold at. One example being the Miner's Strike during Margaret Thatcher's time as Prime Minister, in which miners who were trying to afford a decent wage in order to feed their families were made out to be hooligans who attacked the police as well as violent protestors.",
+      "word_count": 100,
+      "human_mean_clarity": 75.66666666666667,
+      "human_agreement_score": 0.6744444444444444,
+      "split": "train"
+    },
+    {
+      "document_id": "b98841e21cddbb0d",
+      "proposition_id": 343,
+      "proposition": "The UK should defund the BBC.",
+      "text": "If the funding is appropriate then there is no reason to defund it as we do need media to understand what's going on. \r\nBut if funding can be reduced and use it in other departments which is much mire needed like health, housing, education, etc then they should definitely take action. That said defunding and reducing funding are different things. There should be clear reason and evidence to support why they are considering or trying to defund or reduce funding which should be clearly stated and voted with public. As BBC has its name for the longest and oldest standing media and do have reputation and trust of people.",
+      "word_count": 109,
+      "human_mean_clarity": 50.55555555555556,
+      "human_agreement_score": 0.4144444444444444,
+      "split": "train"
+    },
+    {
+      "document_id": "ba81032991cc703a",
+      "proposition_id": 343,
+      "proposition": "The UK should defund the BBC.",
+      "text": "The issue of funding for the BBC is multifaceted and does not have a simple answer. In light of the recent proliferation of platforms, many of which produce extremely high quality programming, the question for many is why the BBC is still being funded by taxpayer money. On the other hand, the BBC has become an institution and is synonymous with British culture for many abroad and within Britain. Defunding the BBC would lead either to its demise or to it having to look for other revenue streams such as advertising, which would for many cheapen the quality of its output and be a detriment to British culture and an established British institution.",
+      "word_count": 113,
+      "human_mean_clarity": 64.0,
+      "human_agreement_score": 0.312,
+      "split": "train"
+    },
+    {
+      "document_id": "bbc3aa8c756b8004",
+      "proposition_id": 343,
+      "proposition": "The UK should defund the BBC.",
+      "text": "BBC broadcast content that is loved by the people. It is not a profit driven media but produce content that serves the interest of people. It has high reputation and is recognized internationally. It provide content that are accurate reliable and in depth something that will be lost should UK decide to defund it. BBC provide equal access to information. They provide content that cuts across from educational politics documentaries and thus promoting culture and diversity. Their covering is wide and the commercial broadcasters cannot meet the requirement of their audience. It has a high number of audience and therefore defunding it will be unfair.",
+      "word_count": 105,
+      "human_mean_clarity": 80.88888888888889,
+      "human_agreement_score": 0.0977777777777777,
+      "split": "train"
+    },
+    {
+      "document_id": "261c1c5aa740e0ba",
+      "proposition_id": 368,
+      "proposition": "The UK should implement a 4-day workweek for all full-time employees.",
+      "text": "A four day week could be a real asset to some people if they are able to work their hours into the 4 days instead of working 5,  If not then they may end up earning less money and the employer is willing to pay the same wage for less hours which would be at great cost to some companies. Some jobs may not afford the employer to work 4 days for example teachers have to work the 5 days of the week that the children attend school, if that was to change then it would cause massive problems for working parents.\r\nWork productivity may increase for some people but some companies may not benefit from a break in productivity levels with a shorter working week or staff may become more stressed during the 4 days to make up for the loss of one working day.",
+      "word_count": 146,
+      "human_mean_clarity": 66.4,
+      "human_agreement_score": 0.506,
+      "split": "train"
+    },
+    {
+      "document_id": "8e2b2260768b182f",
+      "proposition_id": 368,
+      "proposition": "The UK should implement a 4-day workweek for all full-time employees.",
+      "text": "Workers on a 4 day week will have to produce the same outcome of a 5 day week with the time spent at work. Now this can be longer 4 days or it could be achieving the same outcomes for 5 days in 4 days. Hence the output stays the same. There may ne some savings by not having staff in for a day a week, but this will depend on the type of industry. This effectiveness in the 4 day week will make the company more agile and responsive. The benefits to the worker is the extra time off to address the work life balance, which in my opinion is better with a 4 day working week as the two days are not enough to reset the batteries and do all the chores needed for the following week. ",
+      "word_count": 139,
+      "human_mean_clarity": 53.888888888888886,
+      "human_agreement_score": 0.7166666666666667,
+      "split": "train"
+    },
+    {
+      "document_id": "a01467d363085a7b",
+      "proposition_id": 368,
+      "proposition": "The UK should implement a 4-day workweek for all full-time employees.",
+      "text": "I don't agree with this statement. From my perspective this statement would seem to imply that the UK government would mandate a 4 day week, which would be totally outside of what I think the remit for government involvement in the economy should be in a liberal country. I'm also not convinced that this would have any positive impact as it restricts the rights of those workers happy to work 5 or more days in a week. It would almost certainly have a negative economic impact as if there were any productivity or cost saving efficiencies to be made by such a program, I suspect the private sector would have already adopted such a scheme.",
+      "word_count": 115,
+      "human_mean_clarity": 76.7,
+      "human_agreement_score": 0.085,
+      "split": "train"
+    },
+    {
+      "document_id": "b79576ce69376747",
+      "proposition_id": 368,
+      "proposition": "The UK should implement a 4-day workweek for all full-time employees.",
+      "text": "Although I could be supportive of this because it would suit me, the organisation I work for has a mix of staff who work varying hours.  Half of our workforce does 9-5 and half do shifts over a 24 hour period.  I do not see how we could make it fair to all employees.  We are a charity and funded to deliver services which have very little room in them for us to make a surplus so it would add costs and potentially mean that we are losing money on the services we run which would mean that we can no longer deliver on them.  This would leave many people in our communities without access to mental health support and put further stress on the NHS. ",
+      "word_count": 126,
+      "human_mean_clarity": 58.5,
+      "human_agreement_score": 0.301,
+      "split": "train"
+    },
+    {
+      "document_id": "c800fd9850eaad96",
+      "proposition_id": 368,
+      "proposition": "The UK should implement a 4-day workweek for all full-time employees.",
+      "text": "I think many people can feel demotivated working full time over 5 days. Work can become monotonous and staff can lack   motivation.  By having 3 days break over a week would allow people time to focus on family, hobbies and their home. I consider that a job should not be your life! Working 4 days would also save many people on commuting costs/childcare.\r\nWorking the same job over a condensed 4 days would necessitate better time management,  working more effectively to get the job done.  I know many jobs, including ones I have had in the past, that a lot of time is wasted on non work and clock watching. 4 day weeks would not only benefit employees but employers too.",
+      "word_count": 121,
+      "human_mean_clarity": 89.5,
+      "human_agreement_score": 0.9366666666666668,
+      "split": "train"
+    },
+    {
+      "document_id": "27a4e25f740e674a",
+      "proposition_id": 369,
+      "proposition": "The UK should implement a universal basic income for all citizens.",
+      "text": "Humankind has developed greatly from their beginnings as a basic organism in the oceans. We have gone from a time when there was little respect for human beings and animals lower down the (social) scale. People have more empathy and sympathy to their fellow man/woman than ever before and creating this could only encourage more good men/women to provide a more egalitarian, hopeful, caring and positive society. Individuals with greater wealth would have slightly less power and more people would be encouraged to better themselves from a higher base. The UK should lead the world in compassionate, dynamic values that are the heart of a myriad, cosmopolitan society.",
+      "word_count": 108,
+      "human_mean_clarity": 53.9,
+      "human_agreement_score": 0.706,
+      "split": "train"
+    },
+    {
+      "document_id": "57fd62189b354291",
+      "proposition_id": 369,
+      "proposition": "The UK should implement a universal basic income for all citizens.",
+      "text": "Idealists seem to believe that with a universal basic income for all then yes some people would want more and work to generate money, but that most people would be happier and would still contribute to society in the best way they could. I do not believe most would. Many people would do little for society as now, but would also not attend their current jobs which help society function. I do not believe that the system would work, at least in a large society such as the UK. There would not be enough income generated overall for the government to then pay a basic income to all that would be anywhere near at a liveable level.  The country is already running out of money in providing a minimum income guarantee for pensioners, plus benefits to all who claim to be sick or need help. Basically nice idea, maybe once we have World peace and harmony (so never).  ",
+      "word_count": 158,
+      "human_mean_clarity": 77.18181818181819,
+      "human_agreement_score": 0.1072727272727272,
+      "split": "train"
+    },
+    {
+      "document_id": "5d70a4cd0cfa4f75",
+      "proposition_id": 369,
+      "proposition": "The UK should implement a universal basic income for all citizens.",
+      "text": "There are several countries from my understanding that have implemented UBI and the results were positive. I believe that if UBI was to be implemented, there would have to be caution exercised, with the main focus being getting people into jobs. In theory, if people had the money to sufficiently support themselves, healthcare systems would ideally struggle less, as there will be a healthier population. In the same vein, children would live more enriching, safer and healthier lives as the parents would not have to find money. Allowing people the time and freedom to search for a job as well, without worrying about money, would in turn boost the economy. It could ultimately be seen as an investment in the future.",
+      "word_count": 121,
+      "human_mean_clarity": 68.22222222222223,
+      "human_agreement_score": 0.6988888888888889,
+      "split": "train"
+    },
+    {
+      "document_id": "846d721cc1301499",
+      "proposition_id": 369,
+      "proposition": "The UK should implement a universal basic income for all citizens.",
+      "text": "Only for certain income earnings below certain amount as these group of people will have difficulty with paying bills, working long hours, child care, distance.  For students because firstly when they go to university the work load is mentally and physically draining, living costs, travelling cost, loan for the course, wellbeing cost.  Once they start work, its difficult as the starting income is low but cost of living is high eg. bills, rent, food, travel.  With doing long hours at work they do not have time to look at hobbies because of costs.  It is very stressful for young adults.  \r\n",
+      "word_count": 100,
+      "human_mean_clarity": 54.0,
+      "human_agreement_score": 0.6663636363636364,
+      "split": "train"
+    },
+    {
+      "document_id": "e61c2a3d0a9003dc",
+      "proposition_id": 369,
+      "proposition": "The UK should implement a universal basic income for all citizens.",
+      "text": "The state the UK is in right now is morally reprehensible, there are thousands and thousands of children who go hungry every day while there are still millionaires and billionaires who make more money than a reasonable person could ever spend in their lives. \r\n\r\nUBI has been shown by many countries to be an effective remedy to unemployment, poverty, and healthcare. so many issues span from people being poor and therefore, becoming a burden on a nation's finances. these issues could be prevented if every person received a basic security payment to ensure they can afford food, heating and medicine. ",
+      "word_count": 100,
+      "human_mean_clarity": 81.0,
+      "human_agreement_score": 0.8059999999999999,
+      "split": "train"
+    },
+    {
+      "document_id": "48ee1216e683cc03",
+      "proposition_id": 20,
+      "proposition": "The UK should mandate COVID-19 vaccinations for all eligible citizens.",
+      "text": "I believe there is a case for compulsary covid vaccination as with past deseases such as measles which was almost wiped out until scare stories about mmr reduced the uptake and it made a comeback . Our N.H.S. is already over loaded especially in the winter months when covid is more likely to emerge along with other seasonal illnesses . I also think that the more people who are protected the less the virus is likely to spread among large groups thereby reducing the need to close pubs and restaurants to help  curb the spread which would also not have such a huge impact on the economy .",
+      "word_count": 108,
+      "human_mean_clarity": 72.6,
+      "human_agreement_score": 0.758,
+      "split": "eval"
+    },
+    {
+      "document_id": "458b38bbad1c8117",
+      "proposition_id": 40,
+      "proposition": "The UK should legalise euthanasia.",
+      "text": "I have a great deal of sympathy for those who want to see euthanasia legalised in the UK. Nobody want to see someone's last days and months to be painful ones.  And it seems only fair that those suffering be given the freedom to choose.  But this choice is a false one whilst we do not have high-quality end-of-life care for everyone. The choice is also a moot one if patients feel under pressure to end their life prematurely to avoid the financial burden of caring for them. Until palliative care is massively improved, I do not think euthanasia should be legalised. ",
+      "word_count": 102,
+      "human_mean_clarity": 74.9,
+      "human_agreement_score": 0.158,
+      "split": "eval"
+    },
+    {
+      "document_id": "6cca9ae2d3612b21",
+      "proposition_id": 40,
+      "proposition": "The UK should legalise euthanasia.",
+      "text": "I do agree in part that it should be legalised as it offers the right to a choice that is granted to everyone else if they wish to commit suicide in other ways, but in a way that is safer and more comfortable. It would allow people who are terminally ill or otherwise chronically suffering to end their pain with dignity and comfortably. However, I can also recognise that legalising this would raise several ethical issues and risk further complications. For example, it risks being a 'slippery slope' where people may feel coerced into euthanasia by others, or could even be used as a method to kill someone against their will with an 'excuse'.",
+      "word_count": 114,
+      "human_mean_clarity": 47.4,
+      "human_agreement_score": 0.584,
+      "split": "eval"
+    },
+    {
+      "document_id": "35fd94aa46066b75",
+      "proposition_id": 54,
+      "proposition": "The UK should implement stricter regulations on the sale of violent video games to minors.",
+      "text": "I believe that with consent from guardians, some minors should be able to buy more violent video games as some children like such games and are more mature than others. Furthermore these games can have major benefits for their social life and they can make so many friends, from instance from school if they were to play games such as GTA 5. If the parents know and are o with it with them ministering their childs playtime and if they aren't acting and changing due to the games violent nature I see no few problems in such a thing. It would also be difficult to impose such regulations as minors will find a way to still play such games",
+      "word_count": 119,
+      "human_mean_clarity": 60.09090909090909,
+      "human_agreement_score": 0.1527272727272727,
+      "split": "eval"
+    },
+    {
+      "document_id": "60eb67ee17a9c62f",
+      "proposition_id": 54,
+      "proposition": "The UK should implement stricter regulations on the sale of violent video games to minors.",
+      "text": "I quite strongly disagree with the idea that the UK government should impose stricter regulations on violent video games to minors. To my knowledge, there is no significant scientific evidence proving that violent video games directly cause violent behaviour in children. The UK already has a pretty robust rating system though the PEGI rating scheme, which labels and age rating to aid the consumer and retailer. I think it would be much more effective to focus on parental guidance and education rather than enacting new laws. Parents are best placed to decide what's appropriate for their children as they know their kids values and how mature they are.",
+      "word_count": 108,
+      "human_mean_clarity": 82.1,
+      "human_agreement_score": 0.027,
+      "split": "eval"
+    },
+    {
+      "document_id": "c93eddda93521f8f",
+      "proposition_id": 54,
+      "proposition": "The UK should implement stricter regulations on the sale of violent video games to minors.",
+      "text": "Young people can be very impressionable and playing violent video games probably doesn't help with their development. If a younger person sees something violent in a video game, they may feel the need to react to it in some way and may want to reenact it in real life. However I also believe there should be an element of responsibility from the parents to ensure they are on top of what their child is playing and that they are ensuring their safety. There should be regulations and shops need to adhere to these, but the parent should definitely also take responsibility for this.",
+      "word_count": 103,
+      "human_mean_clarity": 73.0,
+      "human_agreement_score": 0.7090000000000001,
+      "split": "eval"
+    },
+    {
+      "document_id": "362f9a44bd8fe0b8",
+      "proposition_id": 61,
+      "proposition": "The UK should reintroduce the death penalty.",
+      "text": "First of all, I'm against death penalty, human life is simply too valuable to just take it away. I would love to see prisoners being instead involved in some wider country improvement programs; US system - although flawed - involves prisoners in contributing to the country - be it by small scale manufacturing ar social work. UK is not utilising those opportunities.\r\nOn top of that there is always a doubt when it comes to the sentence, and although I believe most of sentences are correct, mistakes can happen - that is not defining factor against death penalty for me though.",
+      "word_count": 101,
+      "human_mean_clarity": 58.4,
+      "human_agreement_score": 0.07,
+      "split": "eval"
+    },
+    {
+      "document_id": "75bd7260a5fab070",
+      "proposition_id": 61,
+      "proposition": "The UK should reintroduce the death penalty.",
+      "text": "This is a tough one and I can see both sides to the argument. There are miscarriages of justice, such as the Lucy Letby case, she might have been hanged back in the day. But there are clear cases, such as the Southport killer, who I'd be happy to see hanged, electrocuted or poisoned. People like that will never change, have no remorse and are of no use to society. So why keep them in prison for 50 years or more? I therefore think it would be appropriate it some cases. Pointless discussion though - never gonna happen in the UK as liberal bed wetters have taken over.",
+      "word_count": 108,
+      "human_mean_clarity": 66.22222222222223,
+      "human_agreement_score": 0.5966666666666667,
+      "split": "eval"
+    },
+    {
+      "document_id": "ffb26f5bb9624226",
+      "proposition_id": 61,
+      "proposition": "The UK should reintroduce the death penalty.",
+      "text": "I think the death penalty is an easy way out and is a very extreme punishment. If someone has murdered, for example, I do believe they do not deserve to be here on this planet. However, I think they should suffer and rot in prison, supporting the aim of retribution. Also, innocent people could wrongly get accused and receive the death penalty as seen in cases in America. Therefore, if the death penalty were to be ever reintroduced solid factual evidence would have to be provided. On the other hand, the death penalty is a good deterrence to have in society, and I would expect offending and re-offending would reduce as a result. ",
+      "word_count": 113,
+      "human_mean_clarity": 57.1,
+      "human_agreement_score": 0.344,
+      "split": "eval"
+    },
+    {
+      "document_id": "391bd8b3ff15d9b8",
+      "proposition_id": 85,
+      "proposition": "The UK should significantly reduce immigration levels.",
+      "text": "whilst legal immigration can bring lots of benefits to the country, in respect of filling skilled job vacancies and making the country more diverse. Surely given the number of people unemployed we should be ensuring that children are well educated and unemployed people trained to take on vacancies. We are a small country and it feels increasingly difficult to access health care and for people who were born here to get housing. Lots of the traditions and customs of our country have been diluted - such as companies avoiding saying Easter or Christmas etc. As for illegal immigration we have to get tough, far too many single men who have different understanding and beliefs in respect of women are allowed to stay. The cost to the country is too much and any person who arrives illegally should never be given the full benefits of a person born here or a legal immigrant",
+      "word_count": 152,
+      "human_mean_clarity": 78.4,
+      "human_agreement_score": 0.807,
+      "split": "eval"
+    },
+    {
+      "document_id": "d777b3675643c139",
+      "proposition_id": 85,
+      "proposition": "The UK should significantly reduce immigration levels.",
+      "text": "Immigration levels are a very difficult and emotive topic.  On the one hand I can see arguments to limit especially with the resulting burden on both the benefit and health systems on the country.   However, immigrants also provide vital contributions to the workforce and help create a more diverse society allowing different views.  Further with a decreasing birth rate and ageing population do we have enough people in the country to fill jobs that we need people to do in the country.  Overall perhaps there should be a targeted approach to limit immigration to those individuals who can add to the economic envelopment of the country.",
+      "word_count": 106,
+      "human_mean_clarity": 62.9,
+      "human_agreement_score": 0.429,
+      "split": "eval"
+    },
+    {
+      "document_id": "f98f8e077528fa3c",
+      "proposition_id": 85,
+      "proposition": "The UK should significantly reduce immigration levels.",
+      "text": "The country is in obvious decline. A controlled demolition of the British way of life. One of the reasons for pointless wars and regime change operations seems to be to generate migration. This migration is profited on and the leads to division and chaos. People no longer trust their neighbours and our cities become no go zones. Hard working people are expected to pay for declining services and home ownership becomes unaffordable. The new arrivals who work reduce wages and put pressure on services and housing. This is an experiment that has failed. People are labelled as bad people for telling the truth",
+      "word_count": 103,
+      "human_mean_clarity": 84.36363636363636,
+      "human_agreement_score": 0.8763636363636365,
+      "split": "eval"
+    },
+    {
+      "document_id": "18f5f384e7c03cad",
+      "proposition_id": 114,
+      "proposition": "The UK should mandate the inclusion of feminist perspectives in the national literature curriculum.",
+      "text": "Including feminist perspectives in the National literature curriculum would be a very positive thing to do, it would help to broaden students understanding of literature and also challenge the traditional male narratives. It would promote critical thinking which can only be positive, having the views of feminists along side the traditional male narrative would promote critical thinking about gender and power. The inclusion of feminist perspectives would have to be implemented thoughtfully, we would have to make sure that we ensure that diverse feminist voices and perspectives are represented in order to make sure that the approach is inclusive of all students. Feminist writers have had an important role in our society so it is only right that the national literature curriculum shows that.",
+      "word_count": 124,
+      "human_mean_clarity": 89.0909090909091,
+      "human_agreement_score": 0.9145454545454546,
+      "split": "eval"
+    },
+    {
+      "document_id": "cf80305df3fe0b16",
+      "proposition_id": 114,
+      "proposition": "The UK should mandate the inclusion of feminist perspectives in the national literature curriculum.",
+      "text": "A study of literature should seek to embrace all genres of which there are good quality examples/ feminist literature includes some excellent writing, for example Jane Austen Hilary Mantel, Zadie smith l and Kate Atkinson. No student of literature would be complete without the inclusion of feminist perspectives, which has traditionally  been underepresented at best and totally ignored at worse in my many curricula. You men in particular would grow up knowing much more and understanding much more about feminism and, indeed, being a woman if they studied literature from that perspective. Early studies of feminist literature could be very revealing and quite exciting ",
+      "word_count": 104,
+      "human_mean_clarity": 77.11111111111111,
+      "human_agreement_score": 0.9266666666666667,
+      "split": "eval"
+    },
+    {
+      "document_id": "d018b12feaff8b5e",
+      "proposition_id": 122,
+      "proposition": "The UK should teach children about the LGBTQ+ community in primary school.",
+      "text": "Children have a right to an inocent childhood without being force fed information regarding heterosexual or homosexual life styles. They are unlikely to full understand either at a young age and may form opinions which  later lead to confusion. They should be allowed to come to their own conclusion over time snfd then whatever their choice they should by all means be given help and guidance as to how to follow these up and live a happy life content in their own skin and free from outside influence and prejudice. Only that way will they feel fullfilled and very content",
+      "word_count": 100,
+      "human_mean_clarity": 78.6,
+      "human_agreement_score": 0.053,
+      "split": "eval"
+    },
+    {
+      "document_id": "e64e4c8848d64503",
+      "proposition_id": 122,
+      "proposition": "The UK should teach children about the LGBTQ+ community in primary school.",
+      "text": "It should really be down to parents to decide if their children learn about contentious subjects like this. There will be a lot of parents that won't want their children to learn about this, as they may see it as encouraging children to consider being transgender, when it would be something they would not have considered otherwise. Some parents will disagree that a person can change gender and will see this as brainwashing their children at an age where they are accepting of anything they're told. However, learning more about this at a young age, could reduce bullying in later years, if children know more about this and as we celebrate equality, this could be seen to be part of that and essential. However, I do think overall that parents should get to voice their opinions on strong subjects like this and it would likely be too divisive to implement this at primary age.",
+      "word_count": 154,
+      "human_mean_clarity": 45.55555555555556,
+      "human_agreement_score": 0.29,
+      "split": "eval"
+    },
+    {
+      "document_id": "eb644ffad06f5679",
+      "proposition_id": 129,
+      "proposition": "The UK should legally recognize and protect all forms of transgender identity.",
+      "text": "Although I am strongly in favour of sex-based rights for women, and want to see separate spaces based on sex in certain contexts for example hospitals, prisons, rape crisis centres, I still believe that transgender people have rights too. By being recognised and protected in law (which I believe transgender identities already are in the UK), this does not have to have a negative impact on women who wish to uphold single sex spaces. It should be possible to find a solution whereby there are spaces for all identities. As a marginalised and somewhat persecuted group, I would not want transgender people to feel like they aren't being recognised for who they are as this can be devastating. ",
+      "word_count": 118,
+      "human_mean_clarity": 65.0,
+      "human_agreement_score": 0.6481818181818181,
+      "split": "eval"
+    },
+    {
+      "document_id": "4ecd35043c88cd4c",
+      "proposition_id": 176,
+      "proposition": "The UK should increase its military spending to strengthen its role within NATO.",
+      "text": "The spending increase enables the UK to have a stronger say and input with our NATO counterparts. It will send a clear message to others that the UK is ready and able to defend itself should the need ever arise.\r\nIncreased spending will also unite us with our NATO allies showing them that the UK is fully committed to the alliance.\r\nThe increase in spending will allow the UK to invest in the latest technologies and advanced weaponry needed in this day and age to keep up with the ever changing evolution of weaponry which would be needed if we ever had to go to war. We also need the extra money to train all NATO nations to have a united front and to work together seamlessly should we be required to do so.",
+      "word_count": 134,
+      "human_mean_clarity": 84.1,
+      "human_agreement_score": 0.868,
+      "split": "eval"
+    },
+    {
+      "document_id": "8f1f44069b0526c7",
+      "proposition_id": 176,
+      "proposition": "The UK should increase its military spending to strengthen its role within NATO.",
+      "text": "There are currently wars, such as in Ukraine, Iran, and Israel, which could leave the UK very vulnerable and a target for foreign attacks. Therefore it is important that the UK should strengthen its international relationships, solidify its role within NATO, and protect itself against potential attacks, in particular nuclear bombing. However, the downside to this is that the UK may alienate countries outside of NATO and give the impression that they are militarily preparing to defend itself against attack. While ethically I don't really agree with bolstering the UK military, I can see that it is an unfortunate necessity of our times.",
+      "word_count": 103,
+      "human_mean_clarity": 58.2,
+      "human_agreement_score": 0.607,
+      "split": "eval"
+    },
+    {
+      "document_id": "a8f507be577097e4",
+      "proposition_id": 201,
+      "proposition": "The UK should significantly increase its military spending.",
+      "text": "The world is very unstable and there are becoming more threats from countries like Russia and China meaning the UK should make sure they are using a good amount of funding on military equipment. The war in Ukraine is rising and that shows us that it is still important to spend on the military. Stronger military means the UK are going to have stronger and more allies. Also more defence helps support hundreds of jobs I the uk and investment into the military is also helping to boost innovation and helps to support the economy more effectively therefore it is important to spend on military equipment and fund it effectively.",
+      "word_count": 110,
+      "human_mean_clarity": 61.1,
+      "human_agreement_score": 0.848,
+      "split": "eval"
+    },
+    {
+      "document_id": "c144e0803c44c34c",
+      "proposition_id": 242,
+      "proposition": "The UK should implement policies to ensure the protection and promotion of religious freedoms for Muslim communities.",
+      "text": "The UK should implement policies to ensure the protection of religious freedoms of all communities. Or in general UK should implement policies to ensure people who do not show respect have consequences. A much better approach is to develop a set of policies for all communities this way there is no need to make new policies for new groups. Also the UK should be careful not to promote only specific religions and should let people choose their own religion, although promoting religious freedoms for every religion should definitiely be encouraged. To conclude I agree with the statement and policies should be considered.",
+      "word_count": 102,
+      "human_mean_clarity": 63.44444444444444,
+      "human_agreement_score": 0.7133333333333333,
+      "split": "eval"
+    },
+    {
+      "document_id": "94d83807823fbfc9",
+      "proposition_id": 264,
+      "proposition": "The UK should sever all formal ties with the Catholic Church.",
+      "text": "*catholic church helps bring peace-so first the catholic church has been in the frontline fighting for peace and encouraging brotherhood among the citizens and it can only achieve this with the support of the country and this will better the country to be a good place to stay.\r\n*The church helps the needy groups such as opharns- by the help of the church, the orphans and other needy groups in the societ has benefited alot through the funds given to them by the church for help and also by building infrastructures such as schools and hospitals near them.\r\n*The church has not in anyway disrupted the running of the countries economy or politics as it keeps away from politics and only advocates for peace throughout.",
+      "word_count": 125,
+      "human_mean_clarity": 74.3,
+      "human_agreement_score": 0.1169999999999999,
+      "split": "eval"
+    },
+    {
+      "document_id": "119e773966db21f6",
+      "proposition_id": 303,
+      "proposition": "The UK should abolish the monarchy.",
+      "text": "While the UK monarchy is usually characterised as being largely ceremonial and symbolic, they still hold a considerable amount of power and influence. King Charles III, when he was Prince of Wales, is known to have quietly influenced government decisions. In a true democracy, there should not be any person whose power comes solely from their lineage, as even with the best will in the world they can never truly represent the people of that nation. Add to that the monarchy holds huge amounts of wealth and land (the crown estates covers something 200,000 acres), and makes money from it all. People who argue that the monarchy costs the country very little, and even is a profit because of tourism, fail to recognise that we can keep the palaces and royal parks even if the monarchy itself is removed.",
+      "word_count": 139,
+      "human_mean_clarity": 75.33333333333333,
+      "human_agreement_score": 0.7,
+      "split": "eval"
+    },
+    {
+      "document_id": "f405d3b23d36ce48",
+      "proposition_id": 303,
+      "proposition": "The UK should abolish the monarchy.",
+      "text": "The monarchy continues to become outdated the farther we head into the century, especially when considering how much money from the taxpayer is used for lavish celebrations for coronations and weddings or renovating the palace. They may draw in tourism, but they are still a family who, to me, do not earn that kind of power \u2014 a power that seems quite underused to begin with when it comes to laws, etc \u2014 unlike democratically-elected leaders such as a Prime Minister or President. However, it is not as simple as one would hope, as the assets would more than likely going to the family rather than the state. ",
+      "word_count": 108,
+      "human_mean_clarity": 79.9,
+      "human_agreement_score": 0.8029999999999999,
+      "split": "eval"
+    },
+    {
+      "document_id": "80efc9df1ef595c9",
+      "proposition_id": 308,
+      "proposition": "The UK should implement mandatory voting in all major elections.",
+      "text": "There is no good reason to compel people to vote in elections, and in a free society , we should be free to not vote of we wish.  Many people have no interest in politics, or don't support any party, so it would be pointless demanding that they vote.  Practically this would be impossible to arrange.  Many people would be physically unable to vote, by reason of illness, or absence.  This is an unnecessarily draconian measure, which would have no benefit to the democratic process, and would only serve to alienate the ordinary person.  What would the penalties be for non-compliance?  ",
+      "word_count": 101,
+      "human_mean_clarity": 92.11111111111111,
+      "human_agreement_score": 0.1244444444444444,
+      "split": "eval"
+    },
+    {
+      "document_id": "b22a5d1527162f9e",
+      "proposition_id": 308,
+      "proposition": "The UK should implement mandatory voting in all major elections.",
+      "text": "though making everyng vote would ensure everyone would have their say, it would not work under the current system.  Measures to ensure there were options, like none of the above, would need to be vailable on ballots to ensure people were not forced into making choices they do not truly want.  Under the current first past the post system there would also be issues in making selections of candidates people acttually want.  its important to ensure that those with the most votes are actually being elected, and marginal candidates do not end up winning in elections where everyone needs to vote ",
+      "word_count": 101,
+      "human_mean_clarity": 40.5,
+      "human_agreement_score": 0.2983333333333333,
+      "split": "eval"
+    },
+    {
+      "document_id": "f3cceb98140c5b65",
+      "proposition_id": 308,
+      "proposition": "The UK should implement mandatory voting in all major elections.",
+      "text": "Despite the government literally running our lives, the majority of the country do not currently feel interested enough to vote in an election.  This could be because, compared to other countries, the United Kingdom is actually a good place to live, whoever is in power.  It would take a pretty bad series of events to compel people to vote voluntarily, and if they won't vote of their own accord, the chance of getting them to vote with any seriousness if they were forced to is slight.  In the current age of social media, if people were forced to vote it would be far too easy to sway the population to vote for an idiotic ideal.",
+      "word_count": 115,
+      "human_mean_clarity": 70.11111111111111,
+      "human_agreement_score": 0.2322222222222222,
+      "split": "eval"
+    },
+    {
+      "document_id": "746ef8eb4a0c4ec7",
+      "proposition_id": 333,
+      "proposition": "The UK should strengthen the rights and powers of labour unions.",
+      "text": "I believe the UK should strengthen the rights and powers of labour unions, and I would rate my agreement of 90 out of 100. Stronger unions are essential for protecting workers rights, ensuring fair pay, safe working conditions, and reasonable working hours, especially in sectors where employees are more vulnerable to exploitation. By balancing between employees, unions help prevent abuses and promote more equitable treatment across the workforce. They also contribute to economic justice and come equality , and supporting collective bargaining that uplifts low and high earners voice in key decisions that affect their lively hood and well being.",
+      "word_count": 100,
+      "human_mean_clarity": 87.9,
+      "human_agreement_score": 0.935,
+      "split": "eval"
+    },
+    {
+      "document_id": "84ec85a51d7fd649",
+      "proposition_id": 333,
+      "proposition": "The UK should strengthen the rights and powers of labour unions.",
+      "text": "Perhaps it is the press coverage they receive or perhaps I read the wrong newspapers but the monies paid to some of these union leaders and the perks they receive are totally disproportionate to their abilities to negotiate \"reasonable\"  deals or to accept in may cases what appear to be more than reasonable pay and condition settlements. There is quite often a disconnect between ordinary union members and union leaders. The closed shop would appear to still be in place in certain areas and the present voting systems perhaps should be looked at. The days of \"Red Robbo\" may have gone but there is still an element of intimidation and coercion present. On the other side of the coin employers are quite often not blameless.",
+      "word_count": 125,
+      "human_mean_clarity": 63.666666666666664,
+      "human_agreement_score": 0.3833333333333333,
+      "split": "eval"
+    },
+    {
+      "document_id": "e6626da3f5e898ee",
+      "proposition_id": 339,
+      "proposition": "The UK should increase military support to Ukraine in response to the 2022 Russian invasion.",
+      "text": "Ukraine haven't done anything wrong to my knowledge that would give Russia the right to do what they are doing, and so I think it is right that we as well as other countries, support them and increase military aid. Especially as they are a smaller country and so do not have the same level of military as we do, further more they do not have a military alliance in terms of NATO and so they do not have the same level of protection as we do. However I would be cautious to increase military aid as this would open up the UK to a possible attack/war with Russia which could put our country and its people in danger and so it may not be worth putting ourselves in danger.",
+      "word_count": 130,
+      "human_mean_clarity": 57.09090909090909,
+      "human_agreement_score": 0.639090909090909,
+      "split": "eval"
+    },
+    {
+      "document_id": "5961bae3d8e0fcd4",
+      "proposition_id": 343,
+      "proposition": "The UK should defund the BBC.",
+      "text": "so ime very sceptical about bbc news and ime very sceptical about other newsw channels or news medias. i find bbc news to be informative but then i see they all have the same ways about them like they are one  way or another i donnt tend listen to much of certain things because the news can say what they like  and sway the public away they like in a certain way. i think the general public are sceptical for sure. i think the uk should defund the bbc and i think the tax payers should have more right on where teir money is going ",
+      "word_count": 105,
+      "human_mean_clarity": 47.18181818181818,
+      "human_agreement_score": 0.7827272727272727,
+      "split": "eval"
+    },
+    {
+      "document_id": "42dc451755be280a",
+      "proposition_id": 368,
+      "proposition": "The UK should implement a 4-day workweek for all full-time employees.",
+      "text": "Legislating for a four day working week for all makes very little sense. Most commercial work is demand driven or cyclical, for this reason the inflexible approach of a four day week would not work. Another major problem with such an approach is pay, because unless people are going to receive the same amount of money for a four day week as they would have done for a five day week, and therefore work the same number of hours in longer days, people will be worse off and may not be able to pay basics such as a mortgage or rent. The labour market definitely needs reforming, however this approach is not the way forward.",
+      "word_count": 115,
+      "human_mean_clarity": 78.55555555555556,
+      "human_agreement_score": 0.19,
+      "split": "eval"
+    },
+    {
+      "document_id": "e06dbb25960bdc27",
+      "proposition_id": 368,
+      "proposition": "The UK should implement a 4-day workweek for all full-time employees.",
+      "text": "I think it could increase productivity because people would be able to achieve more in the working week if they were better rested and had a better work life balance so this would boost the economy. I think there would be fewer days lost to illness at work as people would not be as tired. I am certain that there would be fewer vehicles on the road so therefore there would be fewer traffic Jams and this would massively boost the UK economy as currently there are almost always delays on any road journey. I think it would boost family life because people would see their children more and get to spend more time with them. So all these reasons make me think it could be a good idea.",
+      "word_count": 129,
+      "human_mean_clarity": 70.1,
+      "human_agreement_score": 0.8540000000000001,
+      "split": "eval"
+    },
+    {
+      "document_id": "42cb4dcbdfc58736",
+      "proposition_id": 369,
+      "proposition": "The UK should implement a universal basic income for all citizens.",
+      "text": "this is a very good idea, as long as the amount given is only given once, i.e. if the money goes they cannot have any more. People would be able to budget better and at least would know what they have each month. If it replaced other benefits it could potentially mean a great saving to the country, which is something required at the moment. The world is changing and more and more costs are in every country's sights. The amount would have to be carefully worked out, but should ensure the rent can be paid and household expenses met.",
+      "word_count": 100,
+      "human_mean_clarity": 61.27272727272727,
+      "human_agreement_score": 0.870909090909091,
+      "split": "eval"
+    },
+    {
+      "document_id": "fee565120f257d39",
+      "proposition_id": 369,
+      "proposition": "The UK should implement a universal basic income for all citizens.",
+      "text": "The concept of UBI is similar to the concept of communism.  Everybody treated in the same way.  Except that it never works that way in communist countries and UBI would not create equality here either.  The rich would get the money but it would be irrelevant, the poor would get it but it wouldn't be enough to make their lives good.  Therefore it is hard to understand why UBI would be seen to be a good thing.  It is just benefits as they are now but dressed up in wording to make it sound like something more.  UBI experiments carried out around the world have failed to prove that it is a good, workable idea",
+      "word_count": 115,
+      "human_mean_clarity": 84.44444444444444,
+      "human_agreement_score": 0.1644444444444444,
+      "split": "eval"
+    }
+  ]
+}
