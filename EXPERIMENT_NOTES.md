@@ -240,4 +240,21 @@ Quadratic penalty: `α·(r−1)²`. Default α=100. Gentle in-band (r=0.95 → 0
 - **Notable: held-out Δ+6.29 > either in-panel Δ**. Strong cross-judge transfer — improvements not judge-specific.
 - First attempt OOM'd on Gemma init (default gpu_mem=0.22 vs weights 17.22 GB). Fixed by per-judge `gpu_mem_util` auto-pick (gemma 0.28, llama 0.25, qwen 0.22).
 
-#### Fold 3: train llama8b+gemma9b, held-out qwen7b — RUNNING (started 02:22 UTC)
+#### Fold 3: train llama8b+gemma9b, held-out qwen7b — DONE 03:44 UTC
+- **First attempt OOM'd**: Llama (20 GB) + Gemma (22 GB) = 42 GB judges + Qwen-1.5B trainer (35 GB peak with per_device=8) = 77 GB on 80 GB (out of memory during backward).
+- **Fix**: added `--per-device-batch` CLI arg, halved per_device from 8 → 4 with grad_accum 4 → 8 (preserves effective batch of 32 gens/step).
+- judge_llama8b (in-panel): 80.49 → 89.91 (Δ +9.43)
+- judge_gemma9b (in-panel): 79.43 → 85.00 (Δ +5.57)
+- **judge_qwen7b (HELD-OUT): 80.09 → 86.31 (Δ +6.23)**
+- length/frac_outside_tol: 0.094 (best fold!)
+- Wandb: `grpo-fold3_heldout_qwen-20260418-024527`
+
+#### Held-out delta summary across all 3 folds
+
+| Fold | Train | Held-out | Held-out Δ |
+|---|---|---|---|
+| 1 | qwen7b + llama8b | gemma9b | **+8.14** |
+| 2 | qwen7b + gemma9b | llama8b | **+6.29** |
+| 3 | llama8b + gemma9b | qwen7b | **+6.23** |
+
+Mean held-out Δ across the rotation: **+6.89**. All three folds show genuine cross-judge transfer; nothing is judge-specific gaming.
