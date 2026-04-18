@@ -258,3 +258,21 @@ Quadratic penalty: `α·(r−1)²`. Default α=100. Gentle in-band (r=0.95 → 0
 | 3 | llama8b + gemma9b | qwen7b | **+6.23** |
 
 Mean held-out Δ across the rotation: **+6.89**. All three folds show genuine cross-judge transfer; nothing is judge-specific gaming.
+
+#### HF artefacts (all pushed 03:49 UTC, private repos under daxmavy)
+- `daxmavy/attack-llm-judge-grpo-fold1-20260418` — train Qwen+Llama, held-out Gemma
+- `daxmavy/attack-llm-judge-grpo-fold2-20260418` — train Qwen+Gemma, held-out Llama
+- `daxmavy/attack-llm-judge-grpo-fold3-20260418` — train Llama+Gemma, held-out Qwen
+
+Each repo contains the full bf16 rewriter (~6 GB safetensors), tokenizer, training_args, README with delta summary, and `eval_summary.json` with per-prompt scores + raw rewrites.
+
+#### Mission completion summary
+
+**Mission deadline:** 09:00 UTC (10 am UK time).
+**Mission completion:** 03:49 UTC (HF pushes done). **5h 11min buffer.**
+
+Key incidents tonight:
+- B-10 TRL `use_vllm=True` IS-ratio collapse — sidestepped by reverting to vLLM-judges + HF-rewriter path.
+- B-11 Gemma-9B vLLM OOM with default 0.22 gpu_mem_util — fixed by per-judge auto-pick (gemma 0.28, llama 0.25, qwen 0.22).
+- B-12 Fold 3 OOM during backward (Llama+Gemma judges + per_device=8 trainer too much) — fixed by `--per-device-batch 4` (effective batch preserved via grad_accum 4→8).
+- D-13 length penalty: tried tolerance-band additive (pilot #1, ratio drifted to 0.94), then user clarified "gentle inside ±10%, steep outside" → switched to quadratic `α·(r−1)²` (pilot #2, then all folds: ratio converged to ~1.0).
