@@ -22,7 +22,19 @@ def compute_length_penalty(
     alpha: float = 100.0,
     tol: float = 0.10,
     shape: str = "quadratic",
+    gamma: float = 1000.0,
+    over_tol: float = 0.15,
 ) -> float:
+    """Length penalty.
+
+    Shapes:
+      - "additive": alpha * max(0, |r-1| - tol). Zero inside ±tol band.
+      - "quadratic": alpha * (r - 1)^2. Symmetric, gentle in-band, steeper outside.
+      - "asymm_cubic": quadratic everywhere, PLUS gamma*(r - 1 - over_tol)^3 when r > 1 + over_tol.
+        Only adds extra pain for overshoots beyond the tolerance; undershoots stay at quadratic.
+
+    `r = generated_wc / target_wc`.
+    """
     if target_wc <= 0:
         return 0.0
     r = generated_wc / max(target_wc, 1)
@@ -31,6 +43,10 @@ def compute_length_penalty(
         return alpha * max(0.0, deviation)
     elif shape == "quadratic":
         return alpha * (r - 1.0) ** 2
+    elif shape == "asymm_cubic":
+        base = alpha * (r - 1.0) ** 2
+        extra = gamma * max(0.0, r - 1 - over_tol) ** 3 if r > 1 + over_tol else 0.0
+        return base + extra
     else:
         raise ValueError(f"unknown penalty shape: {shape}")
 

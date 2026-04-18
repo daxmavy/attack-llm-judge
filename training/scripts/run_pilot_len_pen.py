@@ -208,9 +208,21 @@ def main():
     ap.add_argument("--alpha", type=float, default=100.0, help="length penalty weight")
     ap.add_argument("--tol", type=float, default=0.10, help="length penalty tolerance band (only for additive shape)")
     ap.add_argument("--penalty-shape", type=str, default="quadratic",
-                    choices=["additive", "quadratic"],
+                    choices=["additive", "quadratic", "asymm_cubic"],
                     help="quadratic: alpha*(r-1)^2 (gentle in-band, steep outside); "
-                         "additive: alpha*max(0, |r-1|-tol)")
+                         "additive: alpha*max(0, |r-1|-tol); "
+                         "asymm_cubic: quadratic + gamma*(r-1-over_tol)^3 for r>1+over_tol only")
+    ap.add_argument("--penalty-gamma", type=float, default=1000.0,
+                    help="asymm_cubic: cubic weight for overshoots beyond 1+over_tol")
+    ap.add_argument("--penalty-over-tol", type=float, default=0.15,
+                    help="asymm_cubic: overshoot threshold past which cubic kicks in")
+    # Embedding-similarity (fidelity) reward shaping
+    ap.add_argument("--embed-sim", action="store_true",
+                    help="Enable embedding-similarity penalty in the training reward")
+    ap.add_argument("--embed-beta", type=float, default=20.0,
+                    help="fidelity penalty weight: beta * max(0, threshold - cos_sim)")
+    ap.add_argument("--embed-threshold", type=float, default=0.85)
+    ap.add_argument("--embed-model", type=str, default="intfloat/e5-large-v2")
     ap.add_argument("--lr", type=float, default=5e-6)
     ap.add_argument("--beta", type=float, default=0.01)
     ap.add_argument("--temperature", type=float, default=1.0)
@@ -234,6 +246,17 @@ def main():
     ap.add_argument("--dataset-json", type=str, default=None,
                     help="if set, load paragraphs from this JSON (produced by build_controversial_subset.py); "
                          "overrides --n-propositions and top-decile filter")
+    # vLLM rewriter settings (TRL use_vllm=True)
+    ap.add_argument("--use-rewriter-vllm", action="store_true",
+                    help="Enable TRL's use_vllm=True for rewriter generation (vLLM colocate mode)")
+    ap.add_argument("--rewriter-vllm-gpu-mem", type=float, default=0.12)
+    ap.add_argument("--rewriter-vllm-sleep-mode", action="store_true",
+                    help="Enable vLLM sleep-mode (offload rewriter copy during optim step)")
+    ap.add_argument("--disable-is-correction", action="store_true",
+                    help="Disable TRL's vllm_importance_sampling_correction (on-policy assumption)")
+    ap.add_argument("--vllm-is-mode", type=str, default="sequence_mask",
+                    help="vllm_importance_sampling_mode: sequence_mask | sequence_truncate | ...")
+    ap.add_argument("--vllm-is-cap", type=float, default=3.0)
     args = ap.parse_args()
 
     train_judge_keys = [s.strip() for s in args.train_judges.split(",")]
@@ -290,6 +313,35 @@ def main():
     print(f"[{time.strftime('%H:%M:%S')}] judges loaded in {time.time()-t_load:.1f}s  "
           f"VRAM={torch.cuda.memory_allocated()/1e9:.1f}GB", flush=True)
 
+    # Optional embedding-similarity backbone (e5-large-v2 by default)
+    embedder_tok = embedder_model = None
+    if args.embed_sim:
+        print(f"[{time.strftime('%H:%M:%S')}] loading embedder {args.embed_model}...", flush=True)
+        from transformers import AutoModel
+        embedder_tok = AutoTokenizer.from_pretrained(args.embed_model, cache_dir="/workspace/hf_cache",
+                                                     token=os.environ.get("HF_TOKEN"))
+        embedder_model = AutoModel.from_pretrained(args.embed_model, cache_dir="/workspace/hf_cache",
+                                                    dtype=torch.bfloat16, device_map="cuda",
+                                                    token=os.environ.get("HF_TOKEN"))
+        embedder_model.eval()
+        print(f"  embedder VRAM={torch.cuda.memory_allocated()/1e9:.1f}GB", flush=True)
+
+    @torch.no_grad()
+    def embed_batch(texts, prefix="query: ", batch_size=32, max_length=512):
+        import numpy as np
+        embs = []
+        for i in range(0, len(texts), batch_size):
+            b = [prefix + t for t in texts[i:i + batch_size]]
+            enc = embedder_tok(b, padding=True, truncation=True, max_length=max_length,
+                                return_tensors="pt").to("cuda")
+            out = embedder_model(**enc)
+            h = out.last_hidden_state.float()
+            mask = enc["attention_mask"].unsqueeze(-1).float()
+            pooled = (h * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1)
+            pooled = pooled / pooled.norm(dim=1, keepdim=True).clamp(min=1e-6)
+            embs.append(pooled.cpu().numpy())
+        return np.concatenate(embs, axis=0)
+
     run = wandb.init(
         project="attack-llm-judge",
         entity="daxmavy-university-of-oxford",
@@ -330,9 +382,22 @@ def main():
         gen_wcs = [_wc(r) for r in rewrites]
         len_ratios = [gw / max(tw, 1) for gw, tw in zip(gen_wcs, target_wcs)]
         penalties = [compute_length_penalty(gw, tw, alpha=args.alpha, tol=args.tol,
-                                            shape=args.penalty_shape)
+                                            shape=args.penalty_shape,
+                                            gamma=args.penalty_gamma,
+                                            over_tol=args.penalty_over_tol)
                      for gw, tw in zip(gen_wcs, target_wcs)]
-        penalised = [ej - p for ej, p in zip(ensemble_judge, penalties)]
+        # Optional fidelity (embedding-similarity) penalty
+        if args.embed_sim and embedder_tok is not None:
+            originals = kwargs["original_text"]
+            import numpy as np
+            emb_o = embed_batch(originals)
+            emb_r = embed_batch(rewrites)
+            cos_sims = [float(np.dot(emb_o[i], emb_r[i])) for i in range(len(rewrites))]
+            fid_pens = [args.embed_beta * max(0.0, args.embed_threshold - cs) for cs in cos_sims]
+        else:
+            cos_sims = [None] * len(rewrites)
+            fid_pens = [0.0] * len(rewrites)
+        penalised = [ej - p - f for ej, p, f in zip(ensemble_judge, penalties, fid_pens)]
 
         step_counter["n"] += 1
         m1 = sum(j1) / len(j1)
@@ -360,6 +425,13 @@ def main():
             "timing/score_seconds": t_score,
             "reward_fn_step": step_counter["n"],
         }
+        if args.embed_sim:
+            valid_sims = [c for c in cos_sims if c is not None]
+            if valid_sims:
+                log_payload["fidelity/mean_cos_sim"] = sum(valid_sims) / len(valid_sims)
+                log_payload["fidelity/min_cos_sim"] = min(valid_sims)
+                log_payload["fidelity/mean_penalty"] = sum(fid_pens) / len(fid_pens)
+                log_payload["fidelity/frac_below_threshold"] = sum(1 for c in valid_sims if c < args.embed_threshold) / len(valid_sims)
         wandb.log(log_payload)
         print(f"[{time.strftime('%H:%M:%S')}] reward_fn #{step_counter['n']}  "
               f"j1={m1:.1f}  j2={m2:.1f}  ej={m_ej:.1f}  pen={m_pen:.2f}  "
@@ -394,12 +466,12 @@ def main():
 
     from trl import GRPOConfig, GRPOTrainer
 
-    cfg = GRPOConfig(
+    cfg_kwargs = dict(
         output_dir=str(OUT_DIR / f"ckpt_{args.name_suffix}"),
         num_generations=args.num_generations,
         per_device_train_batch_size=args.per_device_batch if args.per_device_batch else args.num_generations * 2,
         gradient_accumulation_steps=4 if not args.per_device_batch else
-            (args.num_generations * 2 * 4) // args.per_device_batch,  # preserve effective batch (32 gens / step)
+            (args.num_generations * 2 * 4) // args.per_device_batch,
         max_completion_length=260,
         learning_rate=args.lr,
         beta=args.beta,
@@ -414,6 +486,18 @@ def main():
         top_p=1.0,
         seed=42,
     )
+    if args.use_rewriter_vllm:
+        cfg_kwargs.update(
+            use_vllm=True,
+            vllm_mode="colocate",
+            vllm_gpu_memory_utilization=args.rewriter_vllm_gpu_mem,
+            vllm_max_model_length=1024,
+            vllm_enable_sleep_mode=args.rewriter_vllm_sleep_mode,
+            vllm_importance_sampling_correction=not args.disable_is_correction,
+            vllm_importance_sampling_cap=args.vllm_is_cap,
+            vllm_importance_sampling_mode=args.vllm_is_mode,
+        )
+    cfg = GRPOConfig(**cfg_kwargs)
 
     # Capture manifest for reproducibility
     try:
