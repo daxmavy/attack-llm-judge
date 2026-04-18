@@ -231,5 +231,13 @@ Quadratic penalty: `α·(r−1)²`. Default α=100. Gentle in-band (r=0.95 → 0
 - Train wall-clock: ~48 min
 - Wandb: `grpo-fold1_heldout_gemma-20260418-001738`
 
-#### Fold 2: train qwen7b+gemma9b, held-out llama8b — RUNNING (started 01:05 UTC)
-#### Fold 3: train llama8b+gemma9b, held-out qwen7b — queued
+#### Fold 2: train qwen7b+gemma9b, held-out llama8b — DONE 02:22 UTC
+- judge_qwen7b (in-panel): 80.09 → 86.06 (Δ +5.97)
+- judge_gemma9b (in-panel): 79.43 → 85.00 (Δ +5.57)
+- **judge_llama8b (HELD-OUT): 80.49 → 86.77 (Δ +6.29)**
+- length/frac_outside_tol: 0.3125 (some length drift, but controlled)
+- Wandb: `grpo-fold2_heldout_llama-20260418-012926`
+- **Notable: held-out Δ+6.29 > either in-panel Δ**. Strong cross-judge transfer — improvements not judge-specific.
+- First attempt OOM'd on Gemma init (default gpu_mem=0.22 vs weights 17.22 GB). Fixed by per-judge `gpu_mem_util` auto-pick (gemma 0.28, llama 0.25, qwen 0.22).
+
+#### Fold 3: train llama8b+gemma9b, held-out qwen7b — RUNNING (started 02:22 UTC)
