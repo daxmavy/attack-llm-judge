@@ -342,7 +342,7 @@ def main():
             embs.append(pooled.cpu().numpy())
         return np.concatenate(embs, axis=0)
 
-    run = wandb.init(
+    wandb_common = dict(
         project="attack-llm-judge",
         entity="daxmavy-university-of-oxford",
         name=f"grpo-{args.name_suffix}-{time.strftime('%Y%m%d-%H%M%S')}",
@@ -359,6 +359,14 @@ def main():
             "cli_args": vars(args),
         },
     )
+    wandb_mode_env = os.environ.get("WANDB_MODE", "online")
+    try:
+        run = wandb.init(mode=wandb_mode_env,
+                          settings=wandb.Settings(init_timeout=180),
+                          **wandb_common)
+    except Exception as _e:
+        print(f"[wandb] online init failed ({_e!r}); falling back to offline mode", flush=True)
+        run = wandb.init(mode="offline", **wandb_common)
 
     step_counter = {"n": 0, "t_total_score": 0.0}
 

@@ -171,10 +171,12 @@ def main():
     pre_mean = sum(pre_scores) / len(pre_scores)
     post_mean = sum(post_scores) / len(post_scores)
     delta = post_mean - pre_mean
-    print(f"\n=== fixed_eval_score ===")
-    print(f"  pre  mean: {pre_mean:.2f}")
-    print(f"  post mean: {post_mean:.2f}")
-    print(f"  delta    : {delta:+.2f}")
+    # Also report raw in-panel judge-only delta (no length/fidelity penalties) — so we can distinguish
+    # "fixed-eval improvement" from "judge-only improvement" when comparing pilots.
+    judge_only_delta = post_jmean - pre_jmean
+    print(f"\n=== cross-pilot comparison metrics ===")
+    print(f"  [fixed_eval_score] pre={pre_mean:.2f} post={post_mean:.2f} delta={delta:+.2f}")
+    print(f"  [judge_only_delta] pre={pre_jmean:.2f} post={post_jmean:.2f} delta={judge_only_delta:+.2f}")
     print(f"\nbreakdown averages (pre → post):")
     keys = ["len_ratio", "len_penalty", "cos_sim", "fidelity_penalty"]
     for k in keys:
@@ -193,6 +195,9 @@ def main():
         "pre_mean": pre_mean,
         "post_mean": post_mean,
         "delta": delta,
+        "pre_judge_only_mean": pre_jmean,
+        "post_judge_only_mean": post_jmean,
+        "judge_only_delta": judge_only_delta,
     }
     out_path = summary_path.parent / "fixed_eval.json"
     out_path.write_text(json.dumps(out, indent=2))
