@@ -126,7 +126,17 @@ def supports_system_role(tok):
 class JudgeVLLM:
     """vLLM judge. Uses HF tokenizer for chat template; vLLM for fast inference."""
 
-    def __init__(self, name, model_id, gpu_mem_util=0.22, max_model_len=3072):
+    def __init__(self, name, model_id, gpu_mem_util=None, max_model_len=3072):
+        # Auto-pick mem util based on model size if not specified.
+        # Qwen-7B (~14 GB weights) → 0.22; Llama-8B (~16 GB) → 0.25; Gemma-9B (~18 GB) → 0.28.
+        if gpu_mem_util is None:
+            mid = model_id.lower()
+            if "gemma" in mid:
+                gpu_mem_util = 0.28
+            elif "llama" in mid:
+                gpu_mem_util = 0.25
+            else:
+                gpu_mem_util = 0.22
         from vllm import LLM, SamplingParams
         self.name = name
         self.model_id = model_id
