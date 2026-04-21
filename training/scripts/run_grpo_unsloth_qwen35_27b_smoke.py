@@ -345,6 +345,14 @@ def main():
         use_vllm=False,
     )
 
+    # TRL 0.22.2 writes `model.warnings_issued["estimate_tokens"] = True` during
+    # trainer construction; transformers 5.x no longer exposes that attribute on
+    # PreTrainedModel. Install the dict on the innermost base model so the
+    # PEFT __getattr__ chain finds it.
+    _base = getattr(getattr(model, "base_model", None), "model", None) or model
+    if not hasattr(_base, "warnings_issued"):
+        _base.warnings_issued = {}
+
     print(f"[{time.strftime('%H:%M:%S')}] building GRPOTrainer", flush=True)
     trainer = GRPOTrainer(
         model=model,
