@@ -3,18 +3,18 @@
 # Usage: bash run_grpo_3fold_with_rewriter.sh <rewriter-hf-id> <rewriter-short-name> <criterion>
 #   e.g. bash run_grpo_3fold_with_rewriter.sh LiquidAI/LFM2.5-1.2B-Instruct lfm25-12b clarity
 set -e
-cd /workspace/grpo_run
+cd /data/shil6647/attack-llm-judge/grpo_run
 
 REWRITER="${1:?rewriter HF id required}"
 SHORT="${2:?short name required}"
 CRITERION="${3:-clarity}"
 
-COMMON_ENV="PYTHONUSERBASE=/workspace/pylocal PYTHONPATH=/workspace/pylocal/lib/python3.11/site-packages HF_HOME=/workspace/hf_cache VLLM_CACHE_ROOT=/workspace/vllm_cache VLLM_WORKER_MULTIPROC_METHOD=spawn PYTORCH_ALLOC_CONF=expandable_segments:True WANDB_MODE=offline TMPDIR=/workspace/tmp"
+COMMON_ENV="HF_HOME=/data/shil6647/attack-llm-judge/hf_cache VLLM_CACHE_ROOT=/data/shil6647/attack-llm-judge/vllm_cache VLLM_WORKER_MULTIPROC_METHOD=spawn PYTORCH_ALLOC_CONF=expandable_segments:True WANDB_MODE=offline TMPDIR=/data/shil6647/attack-llm-judge/tmp"
 
 COMMON_ARGS=(
   --max-steps 400
   --alpha 100
-  --dataset-json /workspace/grpo_run/controversial_40_3fold.json
+  --dataset-json /data/shil6647/attack-llm-judge/grpo_run/controversial_40_3fold.json
   --lr 5e-6
   --penalty-shape asymm_cubic --penalty-gamma 1000 --penalty-over-tol 0.15
   --embed-sim --embed-beta 200 --embed-threshold 0.85
@@ -33,10 +33,10 @@ for FOLD in $FOLDS; do
   HELD="${HELD_OUT[$FOLD]}"
   NAME="grpo_${SHORT}_fold${FOLD}_${CRITERION}"
   LOG="progress_${NAME}.log"
-  FINAL_DIR="/workspace/grpo_run/final_${NAME}"
+  FINAL_DIR="/data/shil6647/attack-llm-judge/grpo_run/final_${NAME}"
   echo "=== [$(date +%T)] GRPO ${NAME}: base=${REWRITER} train=${TRAIN_JUDGES} held=${HELD} ==="
   > "$LOG"
-  env $COMMON_ENV python3 -u run_pilot_len_pen.py "${COMMON_ARGS[@]}" \
+  env $COMMON_ENV python3 -u /home/shil6647/attack-llm-judge/training/scripts/run_pilot_len_pen.py "${COMMON_ARGS[@]}" \
     --train-judges $TRAIN_JUDGES \
     --heldout-judge $HELD \
     --name-suffix $NAME \
@@ -47,7 +47,7 @@ for FOLD in $FOLDS; do
   # Push to HF
   REPO="daxmavy/grpo-${SHORT}-fold${FOLD}-${CRITERION}"
   echo "=== [$(date +%T)] pushing ${NAME} to ${REPO} ==="
-  export $(grep -v '^#' /home/max/attack-llm-judge/.env | xargs) >/dev/null 2>&1
+  export $(grep -v '^#' /home/shil6647/attack-llm-judge/.env | xargs) >/dev/null 2>&1
   env $COMMON_ENV python3 -c "
 from huggingface_hub import HfApi
 import os
@@ -60,7 +60,7 @@ print('pushed:', 'https://huggingface.co/$REPO')
 " >> "$LOG" 2>&1
 
   # Backfill DB (rewrites + held-out scores) via dedicated script
-  env $COMMON_ENV python3 /home/max/backfill_grpo_rewriter.py \
+  env $COMMON_ENV python3 /home/shil6647/attack-llm-judge/scripts/backfill_grpo_rewriter.py \
     --short "$SHORT" --fold "$FOLD" --criterion "$CRITERION" \
     --rewriter "$REWRITER" --held-out "$HELD" >> "$LOG" 2>&1
 
