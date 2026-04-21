@@ -40,3 +40,6 @@ paper/*.fdb_latexmk
 
 # agent tooling
 .claude/
+
+# Unsloth's per-host compiled cache (auto-regenerated on first import)
+unsloth_compiled_cache/
