@@ -1,21 +1,26 @@
-"""Smoke test for the Unsloth + QLoRA + GRPO stack on Qwen3-30B-A3B-Instruct-2507.
+"""Smoke test for the Unsloth + LoRA + GRPO stack on Qwen3-30B-A3B-Instruct-2507.
 
 Runs ONE GRPO step on a 4-paragraph micro-dataset with a single judge
 (gemma-2-9b-it) as the reward signal, then saves the LoRA adapter.
 
-Architecture:
-- GPU 0: Unsloth FastModel (rewriter, 4-bit QLoRA) + TRL GRPOTrainer + vLLM rollouts
-  via UNSLOTH_VLLM_STANDBY=1. Unsloth grabs ~88% of GPU 0.
-- GPU 1: gemma-2-9b-it judge as a vLLM OpenAI-compatible server (subprocess).
-  Main process talks to it over HTTP. Keeps the judge's memory budget off GPU 0.
+Follows Unsloth's official MoE recipe (Qwen3_MoE.ipynb): MoE + vLLM
+fast_inference is not supported, so:
+  - load_in_4bit=False  (bf16 weights; ~60 GB on A100-80)
+  - fast_inference=False  (rewriter rollouts go through HF model.generate)
+  - UNSLOTH_MOE_DISABLE_AUTOTUNE=1  (MoE autotune is a Colab-scale killer)
+The LoRA+MoE+bnb combination crashes vLLM's modular-kernel path (see B-13);
+not our bug, so we avoid it entirely.
 
-Purpose: verify the dependency stack (unsloth FastModel + vLLM fast_inference +
-TRL 0.24.x GRPOTrainer + bitsandbytes 4-bit) loads + runs end-to-end before we
-invest in the full training run. Not meant to produce a useful checkpoint.
+Architecture:
+- GPU 0: Unsloth FastModel (bf16) + LoRA r=32 + TRL GRPOTrainer with HF rollouts.
+- GPU 1: gemma-2-9b-it judge as a vLLM OpenAI-compatible server (subprocess).
+  Main process talks to it over HTTP.
+
+Purpose: verify the dependency stack loads + runs end-to-end on the MoE base
+before we invest in the full 3-fold run. Not meant to produce a useful checkpoint.
 
 Run:
     HF_HOME=/data/shil6647/attack-llm-judge/hf_cache \
-    UNSLOTH_VLLM_STANDBY=1 \
     python3 training/scripts/run_grpo_unsloth_smoke.py
 """
 from __future__ import annotations
@@ -37,7 +42,8 @@ os.environ.setdefault("VLLM_CACHE_ROOT", "/data/shil6647/attack-llm-judge/vllm_c
 os.environ.setdefault("TMPDIR", "/data/shil6647/attack-llm-judge/tmp")
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("WANDB_MODE", "offline")
-os.environ.setdefault("UNSLOTH_VLLM_STANDBY", "1")
+# Per Unsloth's Qwen3_MoE.ipynb — disables MoE autotune startup overhead.
+os.environ.setdefault("UNSLOTH_MOE_DISABLE_AUTOTUNE", "1")
 # Mixed A100/L40S host → force PCI bus order so CUDA device IDs are stable.
 os.environ.setdefault("CUDA_DEVICE_ORDER", "PCI_BUS_ID")
 # Training/rewriter process must see only GPU 0. The judge subprocess launched
@@ -201,26 +207,27 @@ def main():
     start_judge_server()
     judge_client = OpenAI(base_url=JUDGE_URL, api_key="EMPTY")
 
-    # Load the rewriter via Unsloth FastModel (QLoRA 4-bit + vLLM fast_inference)
+    # Load the rewriter via Unsloth FastModel (bf16 + LoRA, per Qwen3_MoE.ipynb).
+    # MoE + vLLM fast_inference is unsupported in Unsloth 2026.4.x, so we
+    # intentionally disable fast_inference and 4-bit (see B-13).
     print(f"[{time.strftime('%H:%M:%S')}] loading rewriter {REWRITER_MODEL}", flush=True)
     t_load = time.time()
     model, tokenizer = FastModel.from_pretrained(
         model_name=REWRITER_MODEL,
         max_seq_length=2048,
-        load_in_4bit=True,
-        fast_inference=True,
-        max_lora_rank=32,
-        gpu_memory_utilization=0.85,  # judge is on GPU 1 → we can use most of GPU 0
-        float8_kv_cache=True,
+        load_in_4bit=False,
+        fast_inference=False,
     )
     print(f"[{time.strftime('%H:%M:%S')}] rewriter loaded in {time.time() - t_load:.1f}s  "
           f"VRAM={torch.cuda.memory_allocated()/1e9:.1f}GB", flush=True)
 
-    # Attach LoRA
+    # Attach LoRA on attention + MoE expert MLPs. gate_proj/up_proj/down_proj
+    # names match the per-expert modules on Qwen3-MoE (Unsloth resolves the
+    # `mlp.experts.*` path automatically).
     model = FastModel.get_peft_model(
         model,
         r=32,
-        lora_alpha=32,
+        lora_alpha=64,
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
                         "gate_proj", "up_proj", "down_proj"],
         use_gradient_checkpointing="unsloth",
@@ -282,10 +289,11 @@ def main():
 
     cfg = GRPOConfig(
         output_dir=OUT_DIR,
-        num_generations=4,
-        per_device_train_batch_size=4,
+        num_generations=2,
+        per_device_train_batch_size=2,
         gradient_accumulation_steps=1,
-        max_completion_length=260,
+        max_prompt_length=1024,
+        max_completion_length=200,
         learning_rate=5e-6,
         beta=0.01,
         max_steps=1,
@@ -297,8 +305,8 @@ def main():
         top_p=1.0,
         seed=42,
         loss_type="dr_grpo",
-        use_vllm=True,
-        vllm_mode="colocate",
+        # No vLLM colocate (MoE incompat). HF model.generate does rollouts.
+        use_vllm=False,
         optim="adamw_8bit",
     )
 
