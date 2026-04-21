@@ -277,6 +277,20 @@ def main():
               f"sample_rewrite={rewrites[0][:120]!r}", flush=True)
         return scores
 
+    # TRL 0.22.2 + transformers 5.3 compat: transformers' _is_package_available
+    # now returns (bool, version) by default, but TRL's import_utils assumes a
+    # plain bool — so every _*_available module flag is a truthy tuple, which
+    # triggers a spurious `from vllm_ascend import ...` inside grpo_trainer.
+    # Correct the flags to bools before the lazy grpo_trainer loader runs.
+    # Also force _vllm_available=False: our vllm 0.18.1 is ahead of TRL 0.22.2's
+    # API (missing GuidedDecodingParams), and we're using use_vllm=False anyway.
+    import trl.import_utils as _trl_imp
+    for _attr in [a for a in dir(_trl_imp) if a.startswith("_") and a.endswith("_available")]:
+        _v = getattr(_trl_imp, _attr)
+        if isinstance(_v, tuple):
+            setattr(_trl_imp, _attr, bool(_v[0]))
+    _trl_imp._vllm_available = False
+
     from trl import GRPOConfig, GRPOTrainer
 
     # GRPOConfig ported from Qwen3_5_(4B)_Vision_GRPO.ipynb with two changes:
