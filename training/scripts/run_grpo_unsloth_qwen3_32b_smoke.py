@@ -1,23 +1,23 @@
-"""Smoke test: Unsloth + LoRA + GRPO on Qwen3.5-27B (dense hybrid attention).
+"""Smoke test: Unsloth + LoRA + GRPO on Qwen3-32B (pure dense LM).
 
-Combines two Unsloth reference notebooks:
-  - Qwen_3_5_27B_A100(80GB).ipynb   (model loader + LoRA — SFT only)
-  - Qwen3_5_(4B)_Vision_GRPO.ipynb  (GRPOConfig + GSPO-style sampling)
+Originally targeted Qwen3.5-27B, but that model bundles a siglip vision tower
+which Unsloth's fast_inference path refuses ("Found architectures: siglip,
+qwen3_5"). Switched to Qwen3-32B (pure Qwen3ForCausalLM, no vision tower) —
+same size class, better supported by Unsloth's vLLM-colocate fast_inference.
 
-Qwen3.5-27B is a hybrid (gated DeltaNet + gated attention) model, NOT an
-expert-MoE like Qwen3-30B-A3B. So we skip the bnb/vLLM/MoE workarounds from
-the earlier smoke and just load bf16 via FastLanguageModel.
+GRPO config ported from Qwen3_5_(4B)_Vision_GRPO.ipynb (GSPO-style sampling).
 
 Architecture:
-- GPU 0: Qwen3.5-27B bf16 + LoRA r=16 + TRL GRPOTrainer with HF rollouts.
+- GPU 0: Qwen3-32B 4-bit QLoRA + Unsloth fast_inference (in-process vLLM for
+  rollouts) + LoRA r=16 + TRL GRPOTrainer.
 - GPU 1: gemma-2-9b-it judge as a vLLM OpenAI-compatible server (subprocess).
 
-Purpose: verify Qwen3.5-27B runs end-to-end under GRPO on A100 80GB at
-reasonable step time. If it does, this replaces Qwen3-30B-A3B as our rewriter.
+Purpose: verify the full GRPO pipeline runs on Qwen3-32B with step time in the
+10-60s range (vs the 191s/step we saw with HF generate() on Qwen3.5-27B).
 
 Run:
     HF_HOME=/data/shil6647/attack-llm-judge/hf_cache \
-    python3 training/scripts/run_grpo_unsloth_qwen35_27b_smoke.py
+    python3 training/scripts/run_grpo_unsloth_qwen3_32b_smoke.py
 """
 from __future__ import annotations
 
@@ -57,16 +57,20 @@ from datasets import Dataset
 from openai import OpenAI
 
 
-REWRITER_MODEL = "unsloth/Qwen3.5-27B"
+# Switched from unsloth/Qwen3.5-27B (VL hybrid, rejected by Unsloth fast_inference
+# because of the siglip vision tower) to unsloth/Qwen3-32B pure Qwen3ForCausalLM.
+# Unsloth's `-unsloth-bnb-4bit` prequantized variant uses Unsloth's mixed-precision
+# scheme, designed for the fast_inference vLLM-colocate path.
+REWRITER_MODEL = "unsloth/Qwen3-32B-unsloth-bnb-4bit"
 JUDGE_MODEL = "google/gemma-2-9b-it"
 JUDGE_GPU = "1"
 JUDGE_HOST = "127.0.0.1"
 JUDGE_PORT = 8910
 JUDGE_URL = f"http://{JUDGE_HOST}:{JUDGE_PORT}/v1"
 DATASET_JSON = "/home/shil6647/attack-llm-judge/data/controversial_40_3fold.json"
-SAVE_DIR = "/data/shil6647/attack-llm-judge/smoke_test/qwen35_27b_lora"
-OUT_DIR = "/data/shil6647/attack-llm-judge/smoke_test/qwen35_27b_ckpt"
-JUDGE_LOG = "/data/shil6647/attack-llm-judge/tmp/smoke_qwen35_27b_judge_server.log"
+SAVE_DIR = "/data/shil6647/attack-llm-judge/smoke_test/qwen3_32b_lora"
+OUT_DIR = "/data/shil6647/attack-llm-judge/smoke_test/qwen3_32b_ckpt"
+JUDGE_LOG = "/data/shil6647/attack-llm-judge/tmp/smoke_qwen3_32b_judge_server.log"
 
 CLARITY_RUBRIC = """You are judging the CLARITY of a short argumentative paragraph written in response to a political/policy proposition.
 
@@ -180,23 +184,19 @@ def build_rewrite_messages(proposition: str, text: str, word_count: int):
 
 def main():
     t0 = time.time()
-    print(f"[{time.strftime('%H:%M:%S')}] starting Qwen3.5-27B GRPO smoke", flush=True)
+    print(f"[{time.strftime('%H:%M:%S')}] starting Qwen3-32B GRPO smoke", flush=True)
 
     start_judge_server()
     judge_client = OpenAI(base_url=JUDGE_URL, api_key="EMPTY")
 
-    # Load the rewriter via Unsloth FastLanguageModel — matches the 27B A100 notebook.
-    # bf16 weights (~54 GB), LoRA on top. No fast_inference (no vLLM colocate).
     print(f"[{time.strftime('%H:%M:%S')}] loading rewriter {REWRITER_MODEL}", flush=True)
     t_load = time.time()
-    # QLoRA: 4-bit weights (~14 GB) leave headroom for ref model clone,
-    # rollout KV cache, activations, and LoRA grads. bf16 weights (54 GB) push
-    # trainer construction past 78 GB on A100 80GB before step 1 can run.
-    # fast_inference=True spins up Unsloth's in-process vLLM engine sharing
-    # GPU 0 with training. gpu_memory_utilization=0.4 reserves ~32 GB for
-    # vLLM's KV cache; training weights (4-bit ~14 GB) + LoRA grads + acts
-    # fit in the remaining ~48 GB. Rollouts then flow through vLLM instead
-    # of HF generate(), cutting step time by ~5-20x per the GRPO notebook.
+    # 4-bit prequantized (Unsloth mixed-precision bnb, ~18 GB) + fast_inference
+    # spins up Unsloth's in-process vLLM engine on GPU 0. gpu_memory_utilization=0.4
+    # caps vLLM's VRAM at ~32 GB (weights + KV cache); training activations +
+    # LoRA grads + optimizer state share the remaining ~48 GB on the A100 80GB.
+    # Rollouts flow through vLLM instead of HF generate(), cutting step time
+    # ~5-20x per the Qwen3 GRPO notebook.
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=REWRITER_MODEL,
         max_seq_length=2048,
@@ -210,7 +210,7 @@ def main():
     print(f"[{time.strftime('%H:%M:%S')}] rewriter loaded in {time.time() - t_load:.1f}s  "
           f"VRAM={torch.cuda.memory_allocated()/1e9:.1f}GB", flush=True)
 
-    # LoRA per Qwen3.5-27B nb's target list (attention + MLP + out_proj) with
+    # LoRA per Qwen3 GRPO nb's target list (attention + MLP) with
     # rank bumped from 8 (SFT nb) to 16 (GRPO vision nb) since RL needs more
     # capacity to move the policy than supervised fine-tuning.
     model = FastLanguageModel.get_peft_model(
@@ -219,14 +219,27 @@ def main():
         lora_alpha=16,
         lora_dropout=0,
         bias="none",
+        # Qwen3 dense uses q_proj/k_proj/v_proj/o_proj for attention and
+        # gate_proj/up_proj/down_proj for MLP. out_proj was Qwen3.5-VL-specific
+        # (vision-tower output projection) — dropped for pure-LM Qwen3-32B.
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
-                        "gate_proj", "up_proj", "down_proj",
-                        "out_proj"],
+                        "gate_proj", "up_proj", "down_proj"],
         use_gradient_checkpointing="unsloth",
         random_state=3407,
         use_rslora=False,
         loftq_config=None,
     )
+
+    # Diagnostic: Unsloth's trainer-boot banner reports "Trainable parameters
+    # = 0 of 27B" which is cosmetic if get_peft_model really attached LoRA.
+    # Print the ground truth so we can tell a real misconfig from a bad count.
+    _n_trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    _n_total = sum(p.numel() for p in model.parameters())
+    _lora_names = [n for n, p in model.named_parameters()
+                   if p.requires_grad and "lora" in n.lower()]
+    print(f"[{time.strftime('%H:%M:%S')}] trainable_params={_n_trainable:,} "
+          f"total={_n_total:,} lora_modules={len(_lora_names)} "
+          f"first_lora={_lora_names[0] if _lora_names else 'NONE'}", flush=True)
 
     # Tiny dataset: 4 rows. Pre-format the chat template with enable_thinking=False
     # — TRL's GRPOTrainer doesn't expose a hook for chat_template_kwargs, so we
