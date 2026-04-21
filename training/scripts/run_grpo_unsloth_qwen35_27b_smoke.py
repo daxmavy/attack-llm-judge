@@ -297,6 +297,19 @@ def main():
 
     from trl import GRPOConfig, GRPOTrainer
 
+    # Workaround for TRL 0.22.2 bug: prepare_peft_model (called inside
+    # GRPOTrainer.__init__) does `dataclasses.replace(args, gradient_checkpointing=False)`,
+    # which re-runs __post_init__ on a config where generation_batch_size and
+    # steps_per_generation are both already populated (computed during the
+    # first __post_init__). The `both set` branch raises unconditionally.
+    # Reset generation_batch_size to None so the second pass recomputes it.
+    _orig_grpo_post = GRPOConfig.__post_init__
+    def _grpo_post_tolerant(self):
+        if self.generation_batch_size is not None and self.steps_per_generation is not None:
+            self.generation_batch_size = None
+        _orig_grpo_post(self)
+    GRPOConfig.__post_init__ = _grpo_post_tolerant
+
     # GRPOConfig ported from Qwen3_5_(4B)_Vision_GRPO.ipynb with two changes:
     #   max_steps=1  (smoke, not the notebook's 60)
     #   max_completion_length=200  (rewrite task ~90 words, not math proof)
