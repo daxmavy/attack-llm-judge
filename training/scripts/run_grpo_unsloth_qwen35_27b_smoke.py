@@ -306,7 +306,9 @@ def main():
         lr_scheduler_type="cosine",
         optim="adamw_8bit",
         logging_steps=1,
-        per_device_train_batch_size=1,
+        # TRL 0.22.2 requires generation_batch_size % num_generations == 0, so
+        # per_device_train_batch_size must be a multiple of num_generations.
+        per_device_train_batch_size=2,
         gradient_accumulation_steps=1,
         num_generations=2,
         max_prompt_length=1024,
