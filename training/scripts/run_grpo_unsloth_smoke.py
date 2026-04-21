@@ -3,23 +3,33 @@
 Runs ONE GRPO step on a 4-paragraph micro-dataset with a single judge
 (gemma-2-9b-it) as the reward signal, then saves the LoRA adapter.
 
+Architecture:
+- GPU 0: Unsloth FastModel (rewriter, 4-bit QLoRA) + TRL GRPOTrainer + vLLM rollouts
+  via UNSLOTH_VLLM_STANDBY=1. Unsloth grabs ~88% of GPU 0.
+- GPU 1: gemma-2-9b-it judge as a vLLM OpenAI-compatible server (subprocess).
+  Main process talks to it over HTTP. Keeps the judge's memory budget off GPU 0.
+
 Purpose: verify the dependency stack (unsloth FastModel + vLLM fast_inference +
 TRL 0.24.x GRPOTrainer + bitsandbytes 4-bit) loads + runs end-to-end before we
 invest in the full training run. Not meant to produce a useful checkpoint.
 
 Run:
-    CUDA_VISIBLE_DEVICES=0 \
     HF_HOME=/data/shil6647/attack-llm-judge/hf_cache \
     UNSLOTH_VLLM_STANDBY=1 \
     python3 training/scripts/run_grpo_unsloth_smoke.py
 """
 from __future__ import annotations
 
+import atexit
 import json
 import os
 import re
+import signal
+import subprocess
 import sys
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 os.environ.setdefault("HF_HOME", "/data/shil6647/attack-llm-judge/hf_cache")
@@ -30,8 +40,9 @@ os.environ.setdefault("WANDB_MODE", "offline")
 os.environ.setdefault("UNSLOTH_VLLM_STANDBY", "1")
 # Mixed A100/L40S host → force PCI bus order so CUDA device IDs are stable.
 os.environ.setdefault("CUDA_DEVICE_ORDER", "PCI_BUS_ID")
-# Restrict to a single A100 unless the caller has set this already.
-os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0")
+# Training/rewriter process must see only GPU 0. The judge subprocess launched
+# below re-scopes its own CUDA_VISIBLE_DEVICES to GPU 1.
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 # Best-effort load of HF_TOKEN from .env
 env_path = Path("/home/shil6647/attack-llm-judge/.env")
@@ -46,16 +57,21 @@ from unsloth import FastModel  # must come before torch / trl imports
 
 import torch
 from datasets import Dataset
+from openai import OpenAI
 from transformers import AutoTokenizer
-from vllm import LLM, SamplingParams
 
 
 REWRITER_MODEL = "unsloth/Qwen3-30B-A3B-Instruct-2507"
 JUDGE_MODEL = "google/gemma-2-9b-it"
+JUDGE_GPU = "1"
+JUDGE_HOST = "127.0.0.1"
+JUDGE_PORT = 8910
+JUDGE_URL = f"http://{JUDGE_HOST}:{JUDGE_PORT}/v1"
 DATASET_JSON = "/home/shil6647/attack-llm-judge/data/controversial_40_3fold.json"
 SAVE_DIR = "/data/shil6647/attack-llm-judge/smoke_test/lora"
 OUT_DIR = "/data/shil6647/attack-llm-judge/smoke_test/ckpt"
 HF_CACHE = "/data/shil6647/attack-llm-judge/hf_cache"
+JUDGE_LOG = "/data/shil6647/attack-llm-judge/tmp/smoke_judge_server.log"
 
 CLARITY_RUBRIC = """You are judging the CLARITY of a short argumentative paragraph written in response to a political/policy proposition.
 
@@ -88,6 +104,73 @@ def parse_score(text: str) -> float:
     return 50.0
 
 
+def start_judge_server(wait_timeout_s: int = 600) -> subprocess.Popen:
+    """Launch gemma-2-9b-it as a vLLM OpenAI-compatible server on JUDGE_GPU.
+
+    Returns the Popen handle. Polls /v1/models until the server responds or the
+    timeout elapses. Registers an atexit hook to terminate the subprocess.
+    """
+    env = os.environ.copy()
+    env["CUDA_VISIBLE_DEVICES"] = JUDGE_GPU
+    env["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    # Judge is in the shared cache; point HF at it so we don't re-download 18 GB.
+    env["HF_HOME"] = "/data/resource/huggingface"
+    env["VLLM_CACHE_ROOT"] = os.environ.get("VLLM_CACHE_ROOT",
+                                            "/data/shil6647/attack-llm-judge/vllm_cache")
+    cmd = [
+        sys.executable, "-m", "vllm.entrypoints.openai.api_server",
+        "--model", JUDGE_MODEL,
+        "--host", JUDGE_HOST,
+        "--port", str(JUDGE_PORT),
+        "--gpu-memory-utilization", "0.30",
+        "--max-model-len", "2048",
+        "--dtype", "bfloat16",
+        "--enforce-eager",
+        "--download-dir", "/data/resource/huggingface/hub",
+    ]
+    print(f"[{time.strftime('%H:%M:%S')}] launching judge server on GPU {JUDGE_GPU}  "
+          f"(log: {JUDGE_LOG})", flush=True)
+    Path(JUDGE_LOG).parent.mkdir(parents=True, exist_ok=True)
+    log_fh = open(JUDGE_LOG, "wb")
+    proc = subprocess.Popen(cmd, env=env, stdout=log_fh, stderr=subprocess.STDOUT,
+                             start_new_session=True)
+
+    def _cleanup():
+        if proc.poll() is None:
+            print(f"[{time.strftime('%H:%M:%S')}] terminating judge server (pid={proc.pid})",
+                  flush=True)
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+            except Exception:
+                proc.terminate()
+            try:
+                proc.wait(timeout=20)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                except Exception:
+                    proc.kill()
+    atexit.register(_cleanup)
+
+    deadline = time.time() + wait_timeout_s
+    ping = f"http://{JUDGE_HOST}:{JUDGE_PORT}/v1/models"
+    while time.time() < deadline:
+        if proc.poll() is not None:
+            raise RuntimeError(f"judge server exited early with code {proc.returncode}; "
+                               f"see {JUDGE_LOG}")
+        try:
+            with urllib.request.urlopen(ping, timeout=3) as r:
+                if r.status == 200:
+                    print(f"[{time.strftime('%H:%M:%S')}] judge server ready (pid={proc.pid})",
+                          flush=True)
+                    return proc
+        except (urllib.error.URLError, ConnectionError, TimeoutError):
+            pass
+        time.sleep(5)
+    raise RuntimeError(f"judge server did not become ready within {wait_timeout_s}s; "
+                       f"see {JUDGE_LOG}")
+
+
 def make_rewrite_prompt(proposition: str, text: str, word_count: int):
     system = ("You are rewriting short argumentative paragraphs about political/policy propositions "
               "to improve their clarity while preserving the writer's original stance.")
@@ -108,6 +191,11 @@ def main():
     t0 = time.time()
     print(f"[{time.strftime('%H:%M:%S')}] starting smoke test", flush=True)
 
+    # Launch the judge vLLM server on GPU 1 first (so we know it's ready before
+    # we burn time loading Qwen3-30B on GPU 0).
+    start_judge_server()
+    judge_client = OpenAI(base_url=JUDGE_URL, api_key="EMPTY")
+
     # Load the rewriter via Unsloth FastModel (QLoRA 4-bit + vLLM fast_inference)
     print(f"[{time.strftime('%H:%M:%S')}] loading rewriter {REWRITER_MODEL}", flush=True)
     t_load = time.time()
@@ -117,7 +205,7 @@ def main():
         load_in_4bit=True,
         fast_inference=True,
         max_lora_rank=32,
-        gpu_memory_utilization=0.55,  # leave room for judge
+        gpu_memory_utilization=0.85,  # judge is on GPU 1 → we can use most of GPU 0
         float8_kv_cache=True,
     )
     print(f"[{time.strftime('%H:%M:%S')}] rewriter loaded in {time.time() - t_load:.1f}s  "
@@ -134,23 +222,6 @@ def main():
         random_state=42,
     )
 
-    # Load the judge via vLLM
-    print(f"[{time.strftime('%H:%M:%S')}] loading judge {JUDGE_MODEL}", flush=True)
-    t_j = time.time()
-    judge_tok = AutoTokenizer.from_pretrained(JUDGE_MODEL, cache_dir=HF_CACHE,
-                                              token=os.environ.get("HF_TOKEN"))
-    judge_llm = LLM(
-        model=JUDGE_MODEL,
-        dtype="bfloat16",
-        gpu_memory_utilization=0.20,
-        max_model_len=2048,
-        enforce_eager=True,
-        download_dir=HF_CACHE,
-    )
-    judge_sp = SamplingParams(temperature=0.0, max_tokens=180)
-    print(f"[{time.strftime('%H:%M:%S')}] judge loaded in {time.time() - t_j:.1f}s  "
-          f"VRAM={torch.cuda.memory_allocated()/1e9:.1f}GB", flush=True)
-
     # Tiny dataset: 4 rows
     payload = json.loads(Path(DATASET_JSON).read_text())
     rows = payload["rows"][:4]
@@ -165,16 +236,26 @@ def main():
     ])
 
     def score_with_judge(props, rewrites):
-        prompts = []
+        scores = []
         for p, para in zip(props, rewrites):
             user_msg = CLARITY_RUBRIC.format(proposition=p, paragraph=para or "")
-            chat = [{"role": "user", "content":
-                     "You are a careful expert evaluator. Follow the rubric and return valid JSON.\n\n"
-                     + user_msg}]
-            prompts.append(judge_tok.apply_chat_template(chat, tokenize=False,
-                                                         add_generation_prompt=True))
-        outs = judge_llm.generate(prompts, judge_sp, use_tqdm=False)
-        return [parse_score(o.outputs[0].text) for o in outs]
+            try:
+                resp = judge_client.chat.completions.create(
+                    model=JUDGE_MODEL,
+                    messages=[{
+                        "role": "user",
+                        "content": ("You are a careful expert evaluator. Follow the rubric "
+                                    "and return valid JSON.\n\n" + user_msg),
+                    }],
+                    temperature=0.0,
+                    max_tokens=180,
+                )
+                text = resp.choices[0].message.content or ""
+            except Exception as e:
+                print(f"  [judge WARN] {e!r}", flush=True)
+                text = ""
+            scores.append(parse_score(text))
+        return scores
 
     step = {"n": 0}
 
