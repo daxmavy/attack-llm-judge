@@ -192,12 +192,20 @@ def main():
     # QLoRA: 4-bit weights (~14 GB) leave headroom for ref model clone,
     # rollout KV cache, activations, and LoRA grads. bf16 weights (54 GB) push
     # trainer construction past 78 GB on A100 80GB before step 1 can run.
+    # fast_inference=True spins up Unsloth's in-process vLLM engine sharing
+    # GPU 0 with training. gpu_memory_utilization=0.4 reserves ~32 GB for
+    # vLLM's KV cache; training weights (4-bit ~14 GB) + LoRA grads + acts
+    # fit in the remaining ~48 GB. Rollouts then flow through vLLM instead
+    # of HF generate(), cutting step time by ~5-20x per the GRPO notebook.
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=REWRITER_MODEL,
         max_seq_length=2048,
         load_in_4bit=True,
         load_in_8bit=False,
         full_finetuning=False,
+        fast_inference=True,
+        max_lora_rank=16,
+        gpu_memory_utilization=0.4,
     )
     print(f"[{time.strftime('%H:%M:%S')}] rewriter loaded in {time.time() - t_load:.1f}s  "
           f"VRAM={torch.cuda.memory_allocated()/1e9:.1f}GB", flush=True)
@@ -286,14 +294,19 @@ def main():
     # plain bool — so every _*_available module flag is a truthy tuple, which
     # triggers a spurious `from vllm_ascend import ...` inside grpo_trainer.
     # Correct the flags to bools before the lazy grpo_trainer loader runs.
-    # Also force _vllm_available=False: our vllm 0.18.1 is ahead of TRL 0.22.2's
-    # API (missing GuidedDecodingParams), and we're using use_vllm=False anyway.
     import trl.import_utils as _trl_imp
     for _attr in [a for a in dir(_trl_imp) if a.startswith("_") and a.endswith("_available")]:
         _v = getattr(_trl_imp, _attr)
         if isinstance(_v, tuple):
             setattr(_trl_imp, _attr, bool(_v[0]))
-    _trl_imp._vllm_available = False
+    # vllm 0.18.1 renamed GuidedDecodingParams -> StructuredOutputsParams; TRL
+    # 0.22.2 still does `from vllm.sampling_params import GuidedDecodingParams`.
+    # We need use_vllm=True for fast rollouts, so alias the symbol. The only
+    # call-site that would break is the regex-guided decoding path, which we
+    # don't use (no guided_decoding_regex set on GRPOConfig).
+    import vllm.sampling_params as _vllm_sp
+    if not hasattr(_vllm_sp, "GuidedDecodingParams"):
+        _vllm_sp.GuidedDecodingParams = _vllm_sp.StructuredOutputsParams
 
     from trl import GRPOConfig, GRPOTrainer
 
@@ -342,7 +355,14 @@ def main():
         importance_sampling_level="sequence",
         mask_truncated_completions=False,
         loss_type="dr_grpo",
-        use_vllm=False,
+        # vLLM colocate: rollouts flow through the in-process vLLM engine
+        # that FastLanguageModel(fast_inference=True) spun up above, sharing
+        # GPU 0 with training. Cuts per-step rollout cost by ~5-20x vs HF
+        # generate. vllm_gpu_memory_utilization mirrors the 0.4 we gave the
+        # engine at load time so TRL doesn't re-reserve.
+        use_vllm=True,
+        vllm_mode="colocate",
+        vllm_gpu_memory_utilization=0.4,
     )
 
     # TRL 0.22.2 writes `model.warnings_issued["estimate_tokens"] = True` during
