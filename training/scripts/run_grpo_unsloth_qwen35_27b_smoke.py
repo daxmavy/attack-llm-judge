@@ -39,6 +39,7 @@ os.environ.setdefault("TMPDIR", "/data/shil6647/attack-llm-judge/tmp")
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("WANDB_MODE", "offline")
 os.environ.setdefault("CUDA_DEVICE_ORDER", "PCI_BUS_ID")
+os.environ.setdefault("PYTORCH_ALLOC_CONF", "expandable_segments:True")
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 env_path = Path("/home/shil6647/attack-llm-judge/.env")
@@ -188,10 +189,13 @@ def main():
     # bf16 weights (~54 GB), LoRA on top. No fast_inference (no vLLM colocate).
     print(f"[{time.strftime('%H:%M:%S')}] loading rewriter {REWRITER_MODEL}", flush=True)
     t_load = time.time()
+    # QLoRA: 4-bit weights (~14 GB) leave headroom for ref model clone,
+    # rollout KV cache, activations, and LoRA grads. bf16 weights (54 GB) push
+    # trainer construction past 78 GB on A100 80GB before step 1 can run.
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=REWRITER_MODEL,
         max_seq_length=2048,
-        load_in_4bit=False,
+        load_in_4bit=True,
         load_in_8bit=False,
         full_finetuning=False,
     )
