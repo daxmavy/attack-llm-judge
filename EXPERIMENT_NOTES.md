@@ -276,3 +276,29 @@ Key incidents tonight:
 - B-11 Gemma-9B vLLM OOM with default 0.22 gpu_mem_util — fixed by per-judge auto-pick (gemma 0.28, llama 0.25, qwen 0.22).
 - B-12 Fold 3 OOM during backward (Llama+Gemma judges + per_device=8 trainer too much) — fixed by `--per-device-batch 4` (effective batch preserved via grad_accum 4→8).
 - D-13 length penalty: tried tolerance-band additive (pilot #1, ratio drifted to 0.94), then user clarified "gentle inside ±10%, steep outside" → switched to quadratic `α·(r−1)²` (pilot #2, then all folds: ratio converged to ~1.0).
+
+---
+
+## 2026-04-19 — Mission setup: 3-fold attack comparison
+
+**Decision: prune feedback-free rewriter methods**
+Operator chose to retain only `naive`, `lit_informed_tight`, and `rubric_aware` for the
+core paper. Removed from `rewriters/rewrite_prompts.py` and `rewriters/orchestrators.py`:
+
+- `lit_informed`        (loose-length variant of `lit_informed_tight`; superseded by it)
+- `naive_tight`         (tight-length variant of `naive`; covered by `naive` + retry-on-length)
+- `rules_explicit`      (numbered-rules variant of `lit_informed_tight`; redundant)
+- `scaffolded_cot_distill`  (JSON plan/draft/critique/final; orchestrator was `run_scaffolded`)
+
+Also removed: `LIT_INFORMED_USER_TEMPLATE`, `NAIVE_TIGHT_USER_TEMPLATE`, `RULES_EXPLICIT_TEMPLATE`,
+`SCAFFOLDED_TEMPLATE`. `TIGHT_RETRY_SUFFIX` and `length_bounds` retained — used by retry path.
+
+**Mission scope locked**
+- Panel: Qwen3.5-9B (no_think) + Llama-3.1-8B + Gemma-2-9B (3 leave-one-out folds)
+- Dataset: top-40 controversial props × all writers, 60/40 split, 3×3 stratified by clarity tertile × agreement tertile (1091 train / 714 eval)
+- Attack methods:
+    - Feedback-free (run once, fold-independent): `naive`, `lit_informed_tight`, `rubric_aware`
+    - Feedback-utilising inference-only: `bon_panel` K=16, with candidates generated **once** then scored 3 times (one per fold's 2-judge in-panel) to pick argmax
+    - RL-trained: `grpo_400step_foldN` with embed-sim scaled to ~30% of (judge_mean − length_penalty)
+- All rewrites persisted to new `attack_rewrites` + `attack_judge_scores` tables in `paragraphs.db`
+- Inference-only attacks moved to local-vLLM judges (same `JudgeVLLM` codepath as RL); OpenRouter retained via `JUDGE_BACKEND=openrouter`
