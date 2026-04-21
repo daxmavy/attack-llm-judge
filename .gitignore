@@ -10,3 +10,30 @@ data/smoke_e2e.log
 data/smoke_e2e.pid
 data/smoke_summary.json
 *.safetensors
+
+# runtime artifacts (logs, pids, cached analysis reports)
+data/*.log
+data/*.pid
+data/*.pkl
+data/*.json
+data/analysis_main_20pct/
+data/run_report_*.json
+
+# paragraphs DB is large + contains derived results; use scripts + HF artifacts to reproduce
+data/paragraphs.db
+
+# archive of old materials
+archive/
+
+# paper build artifacts
+paper/out_dir/
+paper/figures/
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.synctex.gz
+paper/*.fls
+paper/*.fdb_latexmk
+
+# agent tooling
+.claude/
