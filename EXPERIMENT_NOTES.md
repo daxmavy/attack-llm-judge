@@ -302,3 +302,26 @@ Also removed: `LIT_INFORMED_USER_TEMPLATE`, `NAIVE_TIGHT_USER_TEMPLATE`, `RULES_
     - RL-trained: `grpo_400step_foldN` with embed-sim scaled to ~30% of (judge_mean − length_penalty)
 - All rewrites persisted to new `attack_rewrites` + `attack_judge_scores` tables in `paragraphs.db`
 - Inference-only attacks moved to local-vLLM judges (same `JudgeVLLM` codepath as RL); OpenRouter retained via `JUDGE_BACKEND=openrouter`
+
+---
+
+## 2026-04-21 — Unsloth + Qwen3-30B-A3B smoke test
+
+### B-13. vLLM `BitsAndBytesMoEMethod` missing `select_gemm_impl` — blocks Unsloth QLoRA MoE stack
+**Context.** Smoke test `training/scripts/run_grpo_unsloth_smoke.py` tries to stand up Unsloth FastModel on `unsloth/Qwen3-30B-A3B-Instruct-2507` (MoE, 4-bit bnb, LoRA r=32) with vLLM colocated rollouts + gemma-2-9b-it judge on GPU 1.
+**Symptom.** After 16/16 safetensors shards load cleanly, vLLM init fails:
+```
+ValueError: BitsAndBytesMoEMethod uses the new modular kernel initialization logic.
+This function should not be called.
+```
+Raised from `vllm/model_executor/layers/fused_moe/fused_moe_method_base.py:88` (`select_gemm_impl`), called by `vllm/lora/layers/fused_moe.py:150` via `_inject_lora_into_fused_moe`.
+**Root cause.** vLLM 0.18.1's `BitsAndBytesMoEMethod` inherits `FusedMoEMethodBase.select_gemm_impl` (which raises) and does **not** set `supports_internal_mk=True`, so vLLM's MoE-LoRA injection code path hits the base and raises. Checked vLLM 0.19.1 source on GitHub — **still unfixed**. AWQ-Marlin has an explicit `select_gemm_impl` guard ("Only used when LoRA is enabled"); bnb MoE does not.
+**Stack.** Unsloth 2026.4.6, unsloth-zoo 2026.4.8, vLLM 0.18.1, torch 2.10, bnb 4-bit fp4 with `enable_lora=True, max_lora_rank=32` forced by Unsloth fast_inference.
+**Unsloth-zoo patches.** Grepped unsloth-zoo for `select_gemm_impl` / `BitsAndBytesMoE` / `supports_internal_mk` — no local patch, so Unsloth assumes vLLM handles this.
+**Diagnostic cost.** Judge vLLM server on GPU 1 came up fine (20:12:46) and teardown was clean via atexit; 0 GPU leaks. hf-xet re-downloaded all 16 shards (57 GB) over 572s even though LFS snapshot was already cached — that's Unsloth's "fast downloading" path writing blobs into a new xet-hash format, worth knowing for future runs (duplicates disk use 1×). Full smoke wall-clock to the crash: ~20 minutes.
+**Options for path forward (pending Max's decision).**
+1. **Monkey-patch `BitsAndBytesMoEMethod.select_gemm_impl`** — build a `FusedMoEExpertsModular` that dequants bnb weights then calls `TritonExperts`. Risk: correctness of dequant inside modular kernel is not obvious; LoRA's per-token expert routing may break.
+2. **Downgrade vLLM below the modular-kernel refactor** (e.g. 0.10.x) — risks breaking Unsloth 2026.4.6 which pins against the newer API.
+3. **Switch the base model to a non-MoE Qwen3 variant** (Qwen3-8B / Qwen3-14B dense with bnb-4bit) that takes the non-MoE LoRA code path which doesn't touch `select_gemm_impl`. Loses the MoE rewriter capacity but unblocks the training pipeline today.
+4. **Abandon the Unsloth/fast_inference stack for this run** — fall back to TRL + transformers + DeepSpeed or vanilla PEFT QLoRA without vLLM rollouts. Much slower per step but known-working on MoE.
+**Next step.** Escalate to Max before attempting option (1) — monkey-patching vLLM internals is a long detour with uncertain correctness, and the model-selection decision is his.
