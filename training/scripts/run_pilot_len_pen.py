@@ -402,7 +402,7 @@ def main():
         print(f"  embedder VRAM={torch.cuda.memory_allocated()/1e9:.1f}GB", flush=True)
 
     @torch.no_grad()
-    def embed_batch(texts, prefix="query: ", batch_size=32, max_length=512):
+    def embed_batch(texts, prefix="passage: ", batch_size=32, max_length=512):
         import numpy as np
         embs = []
         for i in range(0, len(texts), batch_size):

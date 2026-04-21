@@ -35,6 +35,10 @@ before running. They assume:
 - `preflight_rewriter.py` — vLLM compatibility check: load → generate → single GRPO step with live judge. Produces `/home/max/attack-llm-judge/PREFLIGHT.md`.
 - `build_controversial_subset.py` — regenerates the 40-prop stratified train/eval split. Only needed if you need a new subset.
 
+## Known differences from the currently-live `/workspace/grpo_run/run_pilot_len_pen.py`
+
+- Embedding prefix for e5-large-v2 fidelity check was changed from `"query: "` to `"passage: "` (the E5 paper's documented recipe for symmetric paragraph-vs-paragraph similarity). **The live `/workspace/grpo_run/` copy still uses `"query: "` for the currently-running Qwen2.5 / LFM2.5 / Gemma-3-1b experiments** — changing mid-run would break the fidelity-penalty calibration (threshold=0.85 was tuned against "query: " embeddings). The repo copy is for follow-up runs. Re-calibrate the threshold on a sample of known-stance-preserving vs known-stance-flipped rewrites before the new prefix is used in production.
+
 ## Running order for a new rewriter × criterion
 
 ```
