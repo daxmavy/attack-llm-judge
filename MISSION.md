@@ -105,12 +105,21 @@ Per CLAUDE.md rewriter-swap rule: up to ~10 genuine debug attempts per candidate
 
 ---
 
-## 9. Out of scope for tonight
-- 3-fold rotation (stretch only).
-- Informativeness criterion (stretch only).
-- Held-out judge evaluation (stretch only).
+## 9. Stretch goals (if minimum lands with wall-time remaining)
+Per Max's 2026-04-22 note: "if for some reason you complete what I've asked, continue onto the 2nd and 3rd folds". Order:
+1. Clarity fold 2 (swap in-panel judges per the rotation in `REPLICATION.md`).
+2. Clarity fold 3.
+3. Informativeness fold 1 (only after all three clarity folds are done).
+4. Held-out judge evaluation pass (one judge per fold).
+5. Agreement-score regressor re-application.
+
+Push each fold's GRPO checkpoint to HF and verify round-trip **before** starting the next fold so a crash doesn't cost the earlier work.
+
+## 9b. Out of scope for tonight
 - 2nd rewriter replication (explicitly future work).
-- Agreement-score regressor re-application (only if stretch time).
+
+## 9c. GPU-sharing caveat
+Per Max's 2026-04-22 note: "the A100s are shared - others might jump on them, look out for this and tell me if so". Every monitoring check-in must include `nvidia-smi`; if a foreign process lands on GPU 0 or GPU 1 mid-run, raise it to Max at the next user turn with PID/user/free-VRAM/run-stability context. Don't kill other users' jobs.
 
 ---
 
