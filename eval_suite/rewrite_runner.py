@@ -26,7 +26,6 @@ from judge.client import load_api_key
 from rewriters.orchestrators import (
     run_bon_panel,
     run_icir_single,
-    run_injection_leadin,
     run_scaffolded,
     run_simple,
 )
@@ -35,17 +34,17 @@ from rewriters.rewriter_client import REWRITER_LABEL, REWRITER_MODEL
 
 # Method slug -> registration metadata. 2026-04-17: operator pruned
 # `lit_informed`, `naive_tight`, `rules_explicit`, `scaffolded_cot_distill`
-# from the minimum set. Remaining 6 methods.
+# from the minimum set. 2026-04-18: operator pruned `injection_leadin`.
+# Remaining 5 methods.
 METHOD_SPEC = {
     "naive":              {"calls_pp": 1.3,  "t": 0.7, "simple": True},
-    "lit_informed_tight": {"calls_pp": 1.3,  "t": 0.7, "simple": True},
-    "injection_leadin":   {"calls_pp": 1.3,  "t": 0.4, "simple": False},
+    "lit_informed_tight": {"calls_pp": 1.0,  "t": 0.7, "simple": True},  # no length retry
     "rubric_aware":       {"calls_pp": 1.3,  "t": 0.5, "simple": True},
-    # icir_single now scores with BOTH in-panel judges (Qwen-2.5-7B + Llama-3.1-8B)
-    # and averages; plan-of-record per MODELS.md is that the training signal is
-    # mean of the two in-panel judges, so the ICIR feedback loop should match.
+    # icir_single scores with the 3 attack judges (Qwen-2.5-7B + Llama-3.1-8B +
+    # Gemma-2-9B per MODELS.md) and averages. Served locally via HF when
+    # weights are in /workspace/hf_cache.
     "icir_single":        {"calls_pp": 15.0, "t": 0.5, "simple": False},
-    # bon_panel uses the 2-judge attack panel (was 5 before the minimum-set change).
+    # bon_panel uses the same 3-judge attack panel, served locally where possible.
     "bon_panel":          {"calls_pp": 10.0, "t": 1.0, "simple": False},
 }
 
@@ -128,8 +127,6 @@ def do_one(method: str, row: dict, api_key: str, rot_index: int) -> dict:
                   "rules_explicit", "rubric_aware"):
         return run_simple(method, prop, para, api_key,
                           temperature=METHOD_SPEC[method]["t"])
-    if method == "injection_leadin":
-        return run_injection_leadin(prop, para, api_key, rot_index)
     if method == "scaffolded_cot_distill":
         return run_scaffolded(prop, para, api_key)
     if method == "icir_single":

@@ -7,7 +7,6 @@ Metrics with benchmarks:
 - Clarity regressor: from deberta_regressor.benchmark_clarity (if trained).
 - Embedding sim: from embedding.benchmark.
 - Hallucinated specifics: from hallucinated_specifics.benchmark.
-- AI detector: from ai_detector.benchmark.
 - Word count: descriptive stats (word_count.benchmark).
 
 Writes the whole block to eval_suite/benchmarks/benchmarks_<timestamp>.json
@@ -80,7 +79,7 @@ def judges_vs_humans(criterion: str = "clarity", panel: str | None = None,
 
 def run(db_path: Path = DEFAULT_DB_PATH) -> dict:
     from eval_suite.metrics import word_count, embedding, hallucinated_specifics
-    from eval_suite.metrics import deberta_regressor, ai_detector
+    from eval_suite.metrics import deberta_regressor
     results: dict = {"when": time.strftime("%Y-%m-%dT%H:%M:%S")}
 
     print("[bench] word_count ...")
@@ -117,12 +116,6 @@ def run(db_path: Path = DEFAULT_DB_PATH) -> dict:
         results["hallucinated_specifics"] = hallucinated_specifics.benchmark(db_path=db_path)
     except Exception as e:
         results["hallucinated_specifics"] = {"error": str(e)}
-
-    print("[bench] ai_detector ...")
-    try:
-        results["ai_detector"] = ai_detector.benchmark(db_path=db_path)
-    except Exception as e:
-        results["ai_detector"] = {"error": str(e)}
 
     stamp = time.strftime("%Y%m%d_%H%M%S")
     out_path = BENCH_DIR / f"benchmarks_{stamp}.json"

@@ -178,9 +178,6 @@ def run(sample_tag: str, criterion: str = "clarity",
         # hallucinated specifics
         hs = sub[sub["metric"]=="hallucinated_specifics_rate_per100w"]
         row["hallucinated_specifics_per100w"] = float(hs["value"].mean()) if len(hs) else None
-        # detector p_machine
-        pm = sub[sub["metric"]=="ai_detector_p_machine"]
-        row["detector_p_machine"] = float(pm["value"].mean()) if len(pm) else None
         # agreement_score_pred
         ag = sub[sub["metric"]=="agreement_score_pred"]
         row["agreement_pred_mean"] = float(ag["value"].mean()) if len(ag) else None
@@ -198,8 +195,6 @@ def run(sample_tag: str, criterion: str = "clarity",
     row["word_ratio_vs_base"] = 1.0
     row["embed_sim_mean"] = None
     row["hallucinated_specifics_per100w"] = None
-    pm = orig[orig["metric"]=="ai_detector_p_machine"]
-    row["detector_p_machine"] = float(pm["value"].mean()) if len(pm) else None
     ag = orig[orig["metric"]=="agreement_score_pred"]
     row["agreement_pred_mean"] = float(ag["value"].mean()) if len(ag) else None
     cr = orig[orig["metric"]=="clarity_score_pred"]

@@ -29,12 +29,12 @@ from eval_suite.schema import DEFAULT_DB_PATH, connect
 
 
 METRIC = "embed_cosine_sim_to_base"
-SOURCE_DEFAULT = "e5-large-v2"
+SOURCE_DEFAULT = "intfloat/e5-large-v2"
 
 
-def _load_model(model_name: str):
+def _load_model(model_name: str, device: str | None = None):
     from sentence_transformers import SentenceTransformer
-    return SentenceTransformer(model_name)
+    return SentenceTransformer(model_name, device=device) if device else SentenceTransformer(model_name)
 
 
 def _encode_texts(model, texts: list[str], prefix: str = "passage: ") -> np.ndarray:
@@ -47,7 +47,8 @@ def _encode_texts(model, texts: list[str], prefix: str = "passage: ") -> np.ndar
 
 def score_rewrites(model_name: str = SOURCE_DEFAULT,
                    db_path: Path = DEFAULT_DB_PATH,
-                   batch_size: int = 64) -> int:
+                   batch_size: int = 64,
+                   device: str | None = None) -> int:
     con = connect(db_path)
     try:
         pairs = pd.read_sql_query("""
@@ -59,7 +60,7 @@ def score_rewrites(model_name: str = SOURCE_DEFAULT,
         """, con)
         if len(pairs) == 0:
             return 0
-        model = _load_model(model_name)
+        model = _load_model(model_name, device=device)
         emb_rw = _encode_texts(model, pairs["rewrite_text"].tolist())
         emb_base = _encode_texts(model, pairs["base_text"].tolist())
         sims = (emb_rw * emb_base).sum(axis=1)

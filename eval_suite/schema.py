@@ -11,7 +11,7 @@ Design choices:
   or model) so new metrics / new criteria / new judges all append
   without schema churn. `criterion` is a string ("clarity",
   "informativeness", or NULL for metrics that aren't criterion-specific
-  like word_count or ai_detector).
+  like word_count).
 - `criteria` just records which criteria are in scope — currently only
   "clarity"; adding "informativeness" is one row + re-running.
 
@@ -80,9 +80,9 @@ CREATE INDEX IF NOT EXISTS idx_para_prop ON paragraphs(proposition_id);
 
 CREATE TABLE IF NOT EXISTS evaluations (
     paragraph_id      TEXT NOT NULL,
-    metric            TEXT NOT NULL,          -- "judge_score" | "word_count" | "embed_sim_to_base" | "ai_detector_prob_machine" | "agreement_pred" | "clarity_regressor_pred" | "hallucinated_specifics_rate" | "hallucinated_specifics_count" | ...
+    metric            TEXT NOT NULL,          -- "judge_score" | "word_count" | "embed_sim_to_base" | "agreement_pred" | "clarity_regressor_pred" | "hallucinated_specifics_rate" | "hallucinated_specifics_count" | ...
     criterion         TEXT,                   -- "clarity" / "informativeness" / NULL
-    source            TEXT,                   -- judge model slug for judge_score; "e5-large-v2" for embed; "binoculars" for ai_detector; etc.
+    source            TEXT,                   -- judge model slug for judge_score; "e5-large-v2" for embed; etc.
     panel             TEXT,                   -- "attack" | "gold" | NULL
     value             REAL,
     extra_json        TEXT,                   -- reasoning, tokens, retries, etc.

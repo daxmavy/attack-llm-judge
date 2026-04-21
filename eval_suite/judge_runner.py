@@ -19,6 +19,10 @@ import pandas as pd
 
 from judge.client import call_judge, load_api_key
 from judge.rubrics import SYSTEM_PROMPT as JUDGE_SYSTEM, build_prompt
+from judge.vllm_client import (
+    call_judge_local_batch,
+    is_local_available as judge_is_local_available,
+)
 from eval_suite.panels import JudgeConfig, panel as get_panel
 from eval_suite.schema import DEFAULT_DB_PATH, connect
 
@@ -66,23 +70,53 @@ def run_panel(
     try:
         paragraphs = load_paragraphs_for_judging(con, where)
         skip_keys = set() if force else existing_eval_keys(con, criterion, panel_name)
-        tasks = []
+
+        # Split judges into local-vLLM vs remote-OpenRouter. Local judges are
+        # sent as a single bulk batch so vLLM's continuous batching kicks in;
+        # remote judges use the existing threadpool. Cuts attack-panel wall
+        # time from ~45 min (serialised 1-prompt calls) to ~3 min on an A100.
+        local_judges = [j for j in judges if judge_is_local_available(j.model_id)]
+        remote_judges = [j for j in judges if not judge_is_local_available(j.model_id)]
+        if local_judges:
+            print(f"[{panel_name}/{criterion}] local vLLM judges: "
+                  f"{[j.slug for j in local_judges]}")
+        if remote_judges:
+            print(f"[{panel_name}/{criterion}] OpenRouter judges: "
+                  f"{[j.slug for j in remote_judges]}")
+
+        # Pending (doc_id, prop, text) tuples per judge, in stable order.
+        pending: dict[str, list[tuple]] = {j.slug: [] for j in judges}
         for _, row in paragraphs.iterrows():
             for j in judges:
                 if (row["document_id"], j.slug) in skip_keys:
                     continue
-                tasks.append((row["document_id"], row["proposition"], row["text"], j))
+                pending[j.slug].append((row["document_id"], row["proposition"], row["text"]))
+
+        n_queued = sum(len(v) for v in pending.values())
         print(f"[{panel_name}/{criterion}] paragraphs={len(paragraphs)} judges={len(judges)} "
-              f"calls_queued={len(tasks)} (skipped {len(skip_keys)} existing)")
+              f"calls_queued={n_queued} (skipped {len(skip_keys)} existing)")
         if dry_run:
-            return {"queued": len(tasks), "done": 0, "cost_usd": 0.0}
-        if not tasks:
+            return {"queued": n_queued, "done": 0, "cost_usd": 0.0}
+        if n_queued == 0:
             return {"queued": 0, "done": 0, "cost_usd": 0.0}
 
-        def _go(t):
-            doc_id, prop, text, j = t
-            prompt = build_prompt(criterion, prop, text)
-            r = call_judge(j.model_id, JUDGE_SYSTEM, prompt, api_key, max_tokens=250, temperature=0.0)
+        t0 = time.time()
+        done = 0
+        total_cost = 0.0
+        batch = []
+        BATCH = 50
+
+        def _flush():
+            nonlocal batch
+            if batch:
+                con.executemany(INSERT_EVAL_SQL, batch)
+                con.commit()
+                batch = []
+
+        def _record(doc_id, j, r):
+            nonlocal done, total_cost
+            done += 1
+            score_val = float(r.score) if (r.ok and r.score is not None) else None
             extra = {
                 "ok": bool(r.ok),
                 "error": r.error,
@@ -91,38 +125,51 @@ def run_panel(
                 "completion_tokens": r.completion_tokens,
                 "judge_model_id": j.model_id,
             }
-            return (doc_id, j, r, extra)
+            batch.append((doc_id, METRIC_NAME, criterion, j.slug, j.panel, score_val,
+                          json.dumps(extra)))
+            p_tokens = r.prompt_tokens or 0
+            c_tokens = r.completion_tokens or 0
+            total_cost += (p_tokens / 1e6) * j.prompt_in_per_1m_usd \
+                        + (c_tokens / 1e6) * j.prompt_out_per_1m_usd
+            if len(batch) >= BATCH:
+                _flush()
+            if done % 50 == 0 or done == n_queued:
+                elapsed = time.time() - t0
+                rate = done / elapsed if elapsed else 0
+                print(f"  [{panel_name}/{criterion}] {done}/{n_queued} "
+                      f"elapsed={elapsed:.0f}s rate={rate:.1f}/s cost=${total_cost:.4f}")
 
-        t0 = time.time()
-        done = 0
-        total_cost = 0.0
-        # Commit in batches.
-        batch = []
-        BATCH = 50
-        with cf.ThreadPoolExecutor(max_workers=max_workers) as ex:
-            for doc_id, j, r, extra in ex.map(_go, tasks):
-                done += 1
-                score_val = float(r.score) if (r.ok and r.score is not None) else None
-                batch.append((doc_id, METRIC_NAME, criterion, j.slug, j.panel, score_val,
-                              json.dumps(extra)))
-                # Cost accounting.
-                p_tokens = r.prompt_tokens or 0
-                c_tokens = r.completion_tokens or 0
-                total_cost += (p_tokens / 1e6) * j.prompt_in_per_1m_usd \
-                            + (c_tokens / 1e6) * j.prompt_out_per_1m_usd
-                if len(batch) >= BATCH:
-                    con.executemany(INSERT_EVAL_SQL, batch)
-                    con.commit()
-                    batch = []
-                if done % 50 == 0 or done == len(tasks):
-                    elapsed = time.time() - t0
-                    rate = done / elapsed if elapsed else 0
-                    print(f"  [{panel_name}/{criterion}] {done}/{len(tasks)} "
-                          f"elapsed={elapsed:.0f}s rate={rate:.1f}/s cost=${total_cost:.4f}")
-        if batch:
-            con.executemany(INSERT_EVAL_SQL, batch)
-            con.commit()
-        return {"queued": len(tasks), "done": done, "cost_usd": float(total_cost)}
+        # Local judges: one bulk vLLM call per judge.
+        for j in local_judges:
+            items = pending[j.slug]
+            if not items:
+                continue
+            pairs = [(JUDGE_SYSTEM, build_prompt(criterion, prop, text))
+                     for (_, prop, text) in items]
+            results = call_judge_local_batch(j.model_id, pairs,
+                                              max_tokens=250, temperature=0.0)
+            for (doc_id, _, _), r in zip(items, results):
+                _record(doc_id, j, r)
+
+        # Remote judges: per-call threadpool, same as before.
+        remote_tasks = []
+        for j in remote_judges:
+            for doc_id, prop, text in pending[j.slug]:
+                remote_tasks.append((doc_id, prop, text, j))
+
+        if remote_tasks:
+            def _go(t):
+                doc_id, prop, text, j = t
+                prompt = build_prompt(criterion, prop, text)
+                r = call_judge(j.model_id, JUDGE_SYSTEM, prompt, api_key,
+                                max_tokens=250, temperature=0.0, prefer_local=False)
+                return (doc_id, j, r)
+            with cf.ThreadPoolExecutor(max_workers=max_workers) as ex:
+                for doc_id, j, r in ex.map(_go, remote_tasks):
+                    _record(doc_id, j, r)
+
+        _flush()
+        return {"queued": n_queued, "done": done, "cost_usd": float(total_cost)}
     finally:
         con.close()
 
