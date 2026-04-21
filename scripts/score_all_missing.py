@@ -24,9 +24,9 @@ import sqlite3
 import sys
 import time
 
-sys.path.insert(0, "/data/shil6647/attack-llm-judge/grpo_run")
+sys.path.insert(0, "/workspace/grpo_run")
 
-DB = "/home/shil6647/attack-llm-judge/data/paragraphs.db"
+DB = "/home/max/attack-llm-judge/data/paragraphs.db"
 JUDGE_KEYS = ["qwen95b", "llama8b", "gemma9b"]
 CRITERIA = ["clarity", "informativeness"]
 

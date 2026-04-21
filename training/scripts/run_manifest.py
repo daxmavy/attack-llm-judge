@@ -7,7 +7,7 @@ Usage at top of any training script:
         script_path=__file__,
         grpo_config=cfg,  # GRPOConfig or dict
         extra={"rewriter": REWRITER, "judges": [...], ...},
-        out_dir="/data/shil6647/attack-llm-judge/grpo_run/pilot_...",
+        out_dir="/workspace/grpo_run/pilot_...",
     )
     wandb.config.update({"manifest": manifest}, allow_val_change=True)
 
@@ -44,7 +44,7 @@ def _file_sha256(path):
         return f"ERROR: {e}"
 
 
-def _git_info(repo_dir="/home/shil6647/attack-llm-judge"):
+def _git_info(repo_dir="/home/max/attack-llm-judge"):
     try:
         sha = subprocess.check_output(["git", "-C", repo_dir, "rev-parse", "HEAD"],
                                        stderr=subprocess.DEVNULL).decode().strip()

@@ -24,21 +24,21 @@ import sys
 import time
 from pathlib import Path
 
-ENV = "/home/shil6647/attack-llm-judge/.env"
+ENV = "/home/max/attack-llm-judge/.env"
 if os.path.exists(ENV):
     for line in open(ENV):
         line = line.strip()
         if "=" in line and not line.startswith("#"):
             k, v = line.split("=", 1)
             os.environ[k] = v
-os.environ.setdefault("HF_HOME", "/data/shil6647/attack-llm-judge/hf_cache")
-os.environ.setdefault("VLLM_CACHE_ROOT", "/data/shil6647/attack-llm-judge/vllm_cache")
+os.environ.setdefault("HF_HOME", "/workspace/hf_cache")
+os.environ.setdefault("VLLM_CACHE_ROOT", "/workspace/vllm_cache")
 
-sys.path.insert(0, "/data/shil6647/attack-llm-judge/grpo_run")
-sys.path.insert(0, "/home/shil6647/attack-llm-judge")
+sys.path.insert(0, "/workspace/grpo_run")
+sys.path.insert(0, "/home/max/attack-llm-judge")
 
-DB = "/home/shil6647/attack-llm-judge/data/paragraphs.db"
-DATASET = "/data/shil6647/attack-llm-judge/grpo_run/controversial_40_3fold.json"
+DB = "/home/max/attack-llm-judge/data/paragraphs.db"
+DATASET = "/workspace/grpo_run/controversial_40_3fold.json"
 REWRITER = "Qwen/Qwen2.5-1.5B-Instruct"
 
 FOLDS = {
@@ -111,7 +111,7 @@ def main():
     print(f"[{time.strftime('%H:%M:%S')}] eval rows: {len(eval_rows)}", flush=True)
 
     rewriter = args.rewriter or REWRITER
-    rew_tok = AutoTokenizer.from_pretrained(rewriter, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
+    rew_tok = AutoTokenizer.from_pretrained(rewriter, cache_dir="/workspace/hf_cache",
                                              token=os.environ.get("HF_TOKEN"))
     if rew_tok.pad_token is None:
         rew_tok.pad_token = rew_tok.eos_token
@@ -128,7 +128,7 @@ def main():
 
     print(f"[{time.strftime('%H:%M:%S')}] loading rewriter {rewriter}", flush=True)
     rew_llm = LLM(model=rewriter, dtype="bfloat16", gpu_memory_utilization=0.18,
-                   max_model_len=3072, enforce_eager=True, download_dir="/data/shil6647/attack-llm-judge/hf_cache")
+                   max_model_len=3072, enforce_eager=True, download_dir="/workspace/hf_cache")
     rew_sp = SamplingParams(temperature=args.temperature, top_p=1.0, max_tokens=400, n=1)
 
     config = {"method": "icir", "n_iter": args.n_iter, "temperature": args.temperature}

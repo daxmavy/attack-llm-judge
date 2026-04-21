@@ -1,6 +1,6 @@
 """Apply the trained agreement_score regressor to every row in attack_rewrites.
 
-Regressor: /home/shil6647/attack-llm-judge/agreement_model/runs/main/final
+Regressor: /home/max/attack-llm-judge/agreement_model/runs/main/final
 Input:     (proposition, paragraph) sentence-pair, max_length=256
 Output:    float in [0, 1] (clipped)
 
@@ -18,8 +18,8 @@ import numpy as np
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-DB = "/home/shil6647/attack-llm-judge/data/paragraphs.db"
-MODEL_DIR = "/home/shil6647/attack-llm-judge/agreement_model/runs/main/final"
+DB = "/home/max/attack-llm-judge/data/paragraphs.db"
+MODEL_DIR = "/home/max/attack-llm-judge/agreement_model/runs/main/final"
 MAX_LEN = 256
 BATCH = 64
 

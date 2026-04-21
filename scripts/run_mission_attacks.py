@@ -20,23 +20,23 @@ import time
 from pathlib import Path
 
 # .env first (HF_TOKEN etc)
-ENV_FILE = "/home/shil6647/attack-llm-judge/.env"
+ENV_FILE = "/home/max/attack-llm-judge/.env"
 if os.path.exists(ENV_FILE):
     for line in open(ENV_FILE):
         line = line.strip()
         if "=" in line and not line.startswith("#"):
             k, v = line.split("=", 1)
             os.environ[k] = v
-os.environ.setdefault("HF_HOME", "/data/shil6647/attack-llm-judge/hf_cache")
-os.environ.setdefault("VLLM_CACHE_ROOT", "/data/shil6647/attack-llm-judge/vllm_cache")
+os.environ.setdefault("HF_HOME", "/workspace/hf_cache")
+os.environ.setdefault("VLLM_CACHE_ROOT", "/workspace/vllm_cache")
 
-sys.path.insert(0, "/data/shil6647/attack-llm-judge/grpo_run")
-sys.path.insert(0, "/home/shil6647/attack-llm-judge")
+sys.path.insert(0, "/workspace/grpo_run")
+sys.path.insert(0, "/home/max/attack-llm-judge")
 
 import sqlite3
 
-DB = "/home/shil6647/attack-llm-judge/data/paragraphs.db"
-DATASET = "/data/shil6647/attack-llm-judge/grpo_run/controversial_40_3fold.json"
+DB = "/home/max/attack-llm-judge/data/paragraphs.db"
+DATASET = "/workspace/grpo_run/controversial_40_3fold.json"
 REWRITER = "Qwen/Qwen2.5-1.5B-Instruct"
 
 FOLDS = {
@@ -103,14 +103,14 @@ def cmd_feedback_free(args):
     eval_rows = load_eval_paragraphs()
     print(f"[{time.strftime('%H:%M:%S')}] loaded {len(eval_rows)} eval paragraphs", flush=True)
 
-    tok = AutoTokenizer.from_pretrained(rewriter, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
+    tok = AutoTokenizer.from_pretrained(rewriter, cache_dir="/workspace/hf_cache",
                                           token=os.environ.get("HF_TOKEN"))
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
 
     print(f"[{time.strftime('%H:%M:%S')}] loading vLLM rewriter {rewriter}", flush=True)
     llm = LLM(model=rewriter, dtype="bfloat16", gpu_memory_utilization=0.20,
-              max_model_len=3072, enforce_eager=True, download_dir="/data/shil6647/attack-llm-judge/hf_cache")
+              max_model_len=3072, enforce_eager=True, download_dir="/workspace/hf_cache")
 
     sys_ok = _supports_system_role(tok)
     sp = SamplingParams(temperature=0.7, top_p=1.0, max_tokens=400, n=1)
@@ -177,14 +177,14 @@ def cmd_bon_generate(args):
     eval_rows = load_eval_paragraphs()
     K = args.k
 
-    tok = AutoTokenizer.from_pretrained(rewriter, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
+    tok = AutoTokenizer.from_pretrained(rewriter, cache_dir="/workspace/hf_cache",
                                           token=os.environ.get("HF_TOKEN"))
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
 
     print(f"[{time.strftime('%H:%M:%S')}] loading vLLM rewriter for BoN K={K} ({rewriter})", flush=True)
     llm = LLM(model=rewriter, dtype="bfloat16", gpu_memory_utilization=0.20,
-              max_model_len=3072, enforce_eager=True, download_dir="/data/shil6647/attack-llm-judge/hf_cache")
+              max_model_len=3072, enforce_eager=True, download_dir="/workspace/hf_cache")
 
     sys_ok = _supports_system_role(tok)
     sp = SamplingParams(temperature=1.0, top_p=1.0, max_tokens=400, n=K)

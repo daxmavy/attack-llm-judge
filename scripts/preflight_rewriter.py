@@ -17,18 +17,18 @@ import time
 import traceback
 from pathlib import Path
 
-ENV = "/home/shil6647/attack-llm-judge/.env"
+ENV = "/home/max/attack-llm-judge/.env"
 if os.path.exists(ENV):
     for line in open(ENV):
         line = line.strip()
         if "=" in line and not line.startswith("#"):
             k, v = line.split("=", 1)
             os.environ[k] = v
-os.environ.setdefault("HF_HOME", "/data/shil6647/attack-llm-judge/hf_cache")
-os.environ.setdefault("VLLM_CACHE_ROOT", "/data/shil6647/attack-llm-judge/vllm_cache")
+os.environ.setdefault("HF_HOME", "/workspace/hf_cache")
+os.environ.setdefault("VLLM_CACHE_ROOT", "/workspace/vllm_cache")
 
-sys.path.insert(0, "/data/shil6647/attack-llm-judge/grpo_run")
-sys.path.insert(0, "/home/shil6647/attack-llm-judge")
+sys.path.insert(0, "/workspace/grpo_run")
+sys.path.insert(0, "/home/max/attack-llm-judge")
 
 
 CANDIDATES = [
@@ -45,7 +45,7 @@ def check_vllm_generate(model_id: str):
         from transformers import AutoTokenizer
 
         tok = AutoTokenizer.from_pretrained(
-            model_id, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
+            model_id, cache_dir="/workspace/hf_cache",
             token=os.environ.get("HF_TOKEN"),
         )
         result["details"]["tokenizer_loaded"] = True
@@ -57,7 +57,7 @@ def check_vllm_generate(model_id: str):
             model=model_id, dtype="bfloat16",
             gpu_memory_utilization=0.18,
             max_model_len=3072, enforce_eager=True,
-            download_dir="/data/shil6647/attack-llm-judge/hf_cache",
+            download_dir="/workspace/hf_cache",
         )
         result["details"]["load_time_s"] = round(time.time() - t0, 1)
 
@@ -107,7 +107,7 @@ def check_grpo_step(model_id: str):
         from trl import GRPOConfig, GRPOTrainer
         from run_pilot_len_pen import JudgeVLLM, JUDGE_REGISTRY
 
-        tok = AutoTokenizer.from_pretrained(model_id, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
+        tok = AutoTokenizer.from_pretrained(model_id, cache_dir="/workspace/hf_cache",
                                              token=os.environ.get("HF_TOKEN"))
         if tok.pad_token is None:
             tok.pad_token = tok.eos_token
@@ -115,7 +115,7 @@ def check_grpo_step(model_id: str):
 
         t0 = time.time()
         model = AutoModelForCausalLM.from_pretrained(
-            model_id, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
+            model_id, cache_dir="/workspace/hf_cache",
             dtype=torch.bfloat16, device_map="cuda",
             token=os.environ.get("HF_TOKEN"),
         )
@@ -149,7 +149,7 @@ def check_grpo_step(model_id: str):
         ds = Dataset.from_list(fake_data)
 
         cfg = GRPOConfig(
-            output_dir="/data/shil6647/attack-llm-judge/grpo_run/ckpt_preflight",
+            output_dir="/workspace/grpo_run/ckpt_preflight",
             max_steps=1,
             num_generations=4,
             per_device_train_batch_size=4,
@@ -186,8 +186,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", nargs="+", default=CANDIDATES)
     ap.add_argument("--skip-grpo", action="store_true", help="only run vLLM generate stage")
-    ap.add_argument("--out", default="/home/shil6647/attack-llm-judge/PREFLIGHT.md")
-    ap.add_argument("--json-out", default="/data/shil6647/attack-llm-judge/grpo_run/preflight_results.json")
+    ap.add_argument("--out", default="/home/max/attack-llm-judge/PREFLIGHT.md")
+    ap.add_argument("--json-out", default="/workspace/grpo_run/preflight_results.json")
     args = ap.parse_args()
 
     all_results = {}

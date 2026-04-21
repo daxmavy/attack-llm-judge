@@ -21,13 +21,13 @@ import sys
 import time
 from pathlib import Path
 
-for line in open("/home/shil6647/attack-llm-judge/.env"):
+for line in open("/home/max/attack-llm-judge/.env"):
     line = line.strip()
     if "=" in line and not line.startswith("#"):
         k, v = line.split("=", 1)
         os.environ[k] = v
-os.environ["HF_HOME"] = "/data/shil6647/attack-llm-judge/hf_cache"
-os.environ["VLLM_CACHE_ROOT"] = "/data/shil6647/attack-llm-judge/vllm_cache"
+os.environ["HF_HOME"] = "/workspace/hf_cache"
+os.environ["VLLM_CACHE_ROOT"] = "/workspace/vllm_cache"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["WANDB_PROJECT"] = "attack-llm-judge"
 os.environ["WANDB_ENTITY"] = "daxmavy-university-of-oxford"
@@ -37,7 +37,7 @@ from datasets import Dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import wandb
 
-sys.path.insert(0, "/data/shil6647/attack-llm-judge/grpo_run")
+sys.path.insert(0, "/workspace/grpo_run")
 from length_penalty import compute_length_penalty, word_count as _wc  # noqa: E402
 from run_manifest import capture_manifest  # noqa: E402
 
@@ -53,7 +53,7 @@ JUDGE_REGISTRY = {
     "gemma9b": ("judge_gemma9b", "google/gemma-2-9b-it"),
 }
 
-OUT_DIR = Path("/data/shil6647/attack-llm-judge/grpo_run")
+OUT_DIR = Path("/workspace/grpo_run")
 
 JUDGE_SYSTEM = ("You are a careful expert evaluator of short argumentative paragraphs. "
                 "You follow the rubric exactly, and you return your answer as valid JSON.")
@@ -185,7 +185,7 @@ class JudgeVLLM:
         self.name = name
         self.model_id = model_id
         self.hf_tok = AutoTokenizer.from_pretrained(
-            model_id, cache_dir="/data/shil6647/attack-llm-judge/hf_cache", token=os.environ.get("HF_TOKEN")
+            model_id, cache_dir="/workspace/hf_cache", token=os.environ.get("HF_TOKEN")
         )
         self.sys_ok = supports_system_role(self.hf_tok)
         self.llm = LLM(
@@ -194,7 +194,7 @@ class JudgeVLLM:
             gpu_memory_utilization=gpu_mem_util,
             max_model_len=max_model_len,
             enforce_eager=True,   # skip torch.compile to speed up setup
-            download_dir="/data/shil6647/attack-llm-judge/hf_cache",
+            download_dir="/workspace/hf_cache",
         )
         self.sp = SamplingParams(temperature=0.0, max_tokens=180)
 
@@ -224,7 +224,7 @@ class JudgeVLLM:
 
 
 def load_data():
-    conn = sqlite3.connect("/home/shil6647/attack-llm-judge/data/paragraphs.db")
+    conn = sqlite3.connect("/home/max/attack-llm-judge/data/paragraphs.db")
     rows = conn.execute("""
         SELECT document_id, proposition, text, word_count, human_mean_clarity
         FROM paragraphs
@@ -393,9 +393,9 @@ def main():
     if args.embed_sim:
         print(f"[{time.strftime('%H:%M:%S')}] loading embedder {args.embed_model}...", flush=True)
         from transformers import AutoModel
-        embedder_tok = AutoTokenizer.from_pretrained(args.embed_model, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
+        embedder_tok = AutoTokenizer.from_pretrained(args.embed_model, cache_dir="/workspace/hf_cache",
                                                      token=os.environ.get("HF_TOKEN"))
-        embedder_model = AutoModel.from_pretrained(args.embed_model, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
+        embedder_model = AutoModel.from_pretrained(args.embed_model, cache_dir="/workspace/hf_cache",
                                                     dtype=torch.bfloat16, device_map="cuda",
                                                     token=os.environ.get("HF_TOKEN"))
         embedder_model.eval()
@@ -620,13 +620,13 @@ def main():
 
     # Pre-eval: load rewriter as HF, generate, score with vLLM judges
     print(f"[{time.strftime('%H:%M:%S')}] pre-eval", flush=True)
-    rw_tok = AutoTokenizer.from_pretrained(REWRITER, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
+    rw_tok = AutoTokenizer.from_pretrained(REWRITER, cache_dir="/workspace/hf_cache",
                                             token=os.environ.get("HF_TOKEN"))
     if rw_tok.pad_token is None:
         rw_tok.pad_token = rw_tok.eos_token
     rw_tok.padding_side = "left"
     rw_model = AutoModelForCausalLM.from_pretrained(
-        REWRITER, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
+        REWRITER, cache_dir="/workspace/hf_cache",
         dtype=torch.bfloat16, device_map="cuda",
         token=os.environ.get("HF_TOKEN"),
     )
