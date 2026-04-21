@@ -17,10 +17,10 @@ def main():
     ap.add_argument("--criterion", required=True, choices=["clarity", "informativeness"])
     ap.add_argument("--rewriter", required=True)
     ap.add_argument("--held-out", required=True)
-    ap.add_argument("--db", default="/home/max/attack-llm-judge/data/paragraphs.db")
+    ap.add_argument("--db", default="/home/shil6647/attack-llm-judge/data/paragraphs.db")
     args = ap.parse_args()
 
-    eval_path = f"/workspace/grpo_run/pilot_grpo_{args.short}_fold{args.fold}_{args.criterion}/eval_summary.json"
+    eval_path = f"/data/shil6647/attack-llm-judge/grpo_run/pilot_grpo_{args.short}_fold{args.fold}_{args.criterion}/eval_summary.json"
     p = json.load(open(eval_path))
     doc_ids = p["eval_document_ids"]
     post = p["post_rewrites"]
