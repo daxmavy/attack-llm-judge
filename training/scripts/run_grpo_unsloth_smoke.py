@@ -117,6 +117,11 @@ def start_judge_server(wait_timeout_s: int = 600) -> subprocess.Popen:
     env["HF_HOME"] = "/data/resource/huggingface"
     env["VLLM_CACHE_ROOT"] = os.environ.get("VLLM_CACHE_ROOT",
                                             "/data/shil6647/attack-llm-judge/vllm_cache")
+    # The conda env's libstdc++ has CXXABI_1.3.15 required by libicui18n;
+    # without this, a fresh python3 -m vllm subprocess loads the system
+    # libstdc++ first and vllm's sqlite3 → diskcache import chain crashes.
+    conda_lib = str(Path(sys.executable).resolve().parent.parent / "lib")
+    env["LD_LIBRARY_PATH"] = conda_lib + os.pathsep + env.get("LD_LIBRARY_PATH", "")
     cmd = [
         sys.executable, "-m", "vllm.entrypoints.openai.api_server",
         "--model", JUDGE_MODEL,
