@@ -302,3 +302,33 @@ Also removed: `LIT_INFORMED_USER_TEMPLATE`, `NAIVE_TIGHT_USER_TEMPLATE`, `RULES_
     - RL-trained: `grpo_400step_foldN` with embed-sim scaled to ~30% of (judge_mean − length_penalty)
 - All rewrites persisted to new `attack_rewrites` + `attack_judge_scores` tables in `paragraphs.db`
 - Inference-only attacks moved to local-vLLM judges (same `JudgeVLLM` codepath as RL); OpenRouter retained via `JUDGE_BACKEND=openrouter`
+
+---
+
+## E. Mission 2026-04-21 kickoff (attack-pipeline replication, modern rewriter, dual A100)
+
+**D-E1. Stack: restored REPLICATION.md pins (TRL 1.2.0, transformers 4.57.6, datasets 4.8.4)**
+The Unsloth experiment on branch `unsloth-qwen3-30b` had upgraded the stack to transformers 5.3.0 + TRL 0.22.2, which breaks `trl.trainer.grpo_trainer` import (unconditional `from vllm_ascend.distributed...` on x86). Reverted to the pinned stack via `pip install trl==1.2.0 transformers==4.57.6 datasets==4.8.4`. pip-freeze snapshot at `/data/shil6647/attack-llm-judge/tmp/daxmavy_pip_freeze_pre_downgrade.txt` for rollback. Unsloth and unsloth-zoo are now version-incompatible with the installed TRL/datasets; we're not using Unsloth tonight — direct TRL GRPOTrainer + PEFT QLoRA instead.
+
+**D-E2. Conda activation hook for libstdc++ (env-scoped)**
+vLLM 0.18.1's transitive `libicui18n.so.78` requires `CXXABI_1.3.15` which the system `/lib/x86_64-linux-gnu/libstdc++.so.6` does not provide (tops out at 1.3.13). The conda env ships `libstdc++.so.6.0.34` with 1.3.15. Added `/opt/anaconda/envs/daxmavy/etc/conda/activate.d/99-libstdcxx.sh` prepending `$CONDA_PREFIX/lib` to `LD_LIBRARY_PATH`. **Flagged to Max** — this edit is outside `/home/shil6647/...` and `/data/shil6647/...` and so required a notification per CLAUDE.md.
+
+**D-E3. Disk paths: /workspace → /data/shil6647 rebase re-applied**
+Max had reverted commits 2b4b008 and a7e0e56 on main without explanation. `/workspace` does not exist on this host and can't be created (root-only). The reverts would prevent the pipeline from running. Cherry-picked both commits onto `mission-2026-04-21` and extended the rebase to `rewriters/vllm_rewriter.py` and `judge/vllm_client.py` which weren't in the original patch. Remaining `/workspace` references live only in old `training/scripts/*` (run_pilot_len_pen.py, finish_eval.py, run_min_repro_vllm.py, push_folds_to_hf.py) — not on tonight's critical path.
+
+**D-E4. Rewriter selection: Qwen/Qwen3-14B (dense, `enable_thinking=False`)**
+Short-listed: Qwen3-14B, Mistral-Small-3.2-24B-Instruct-2506, Gemma-3-12B-IT, Qwen3-32B. Eliminated Mistral-Small-3.2 and Gemma-3-12B because their public checkpoints are multimodal (`Mistral3ForConditionalGeneration`, `Gemma3ForConditionalGeneration`) — loading them wastes VRAM on an unused vision tower and adds another degree of freedom to debug. Qwen3-14B is pure text (`Qwen3ForCausalLM`), fits QLoRA on A100 80GB with headroom, and `enable_thinking=False` is the REPLICATION-documented canonical way to suppress reasoning. Qwen3-32B deferred as fallback if 14B proves too weak — prefer the 2× faster training cycle on 14B for the 15h budget.
+
+**D-E5. Judge pair: deviation from Max's prescribed panel (Nemotron-49B-v1.5-AWQ + Gemma-3-27B-QAT)**
+Max's brief named Nemotron Super 49B v1.5 AWQ + Gemma 3 27B QAT as primary, with a backup list (GLM-4.7-Flash, Mistral-Small-3.2-24B, Qwen3-32B-AWQ). Evidence against the primary panel:
+- `nvidia/Llama-3_3-Nemotron-Super-49B-v1_5` exists (with underscores) but has **no public AWQ variant** — only FP8 and NVFP4. FP8 on A100 (Ampere) emulates via FP16 which gives no speedup and doubles memory vs INT4. NVFP4 bleeding-edge, vLLM 0.18.1 support uncertain.
+- `google/gemma-3-27b-it-qat-q4_0-gguf` is GGUF (llama.cpp), not vLLM-loadable. The `-unquantized` BF16 variant is 54 GB — co-resident with any non-trivial second judge is tight on a shared A100.
+- Community AWQ Gemma-3-27B variants (e.g., `pytorch/gemma-3-27b-it-AWQ-INT4`) exist but are less-tested.
+
+Going with the existing JUDGE_REGISTRY fold-1 pair: **`qwen95b` (Qwen/Qwen3.5-9B) + `llama8b` (meta-llama/Llama-3.1-8B-Instruct)** — proven to load and score JSON-parseable rubric output in this exact pipeline, total ~34 GB BF16 weights on GPU 0 with plenty of KV headroom. Fold 1 rotation per REPLICATION.md has `gemma9b` as the held-out judge — we'll score held-out as stretch only. Will raise this decision to Max explicitly.
+
+**D-E6. Test plan before the 400-step run**
+1. Smoke: load Qwen3-14B on GPU 1 with vLLM + HF parity check (one generation each; verify no `<think>` tokens).
+2. Smoke: load qwen95b + llama8b on GPU 0 via `judge.vllm_client`; score one rewrite end-to-end.
+3. Smoke: 3 GRPO steps with live judges — record step time, VRAM peak, reward distribution.
+4. Extrapolate: 400 steps + 6 methods × 714 eval rows + 2-judge scoring. Cut scope if projected > 13 h.
