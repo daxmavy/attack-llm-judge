@@ -101,8 +101,22 @@ def call_judge(
     temperature: float = 0.0,
     retries: int = 3,
     timeout: int = 60,
+    prefer_local: bool = True,
 ) -> CallResult:
-    """One judge call. Returns CallResult with parsed score."""
+    """One judge call. Returns CallResult with parsed score.
+
+    `prefer_local=True` (default) routes to `judge.vllm_client.call_judge_local`
+    when the model's weights are in `/workspace/hf_cache` — that covers the
+    attack panel (Qwen-2.5-7B, Llama-3.1-8B, Gemma-2-9B). Gold-panel judges
+    aren't on disk and fall through to OpenRouter automatically. Pass
+    `prefer_local=False` to force the API path (useful for debugging / cost
+    comparison / when VRAM is tight).
+    """
+    if prefer_local:
+        from judge.vllm_client import is_local_available, call_judge_local
+        if is_local_available(model_id):
+            return call_judge_local(model_id, system_prompt, user_prompt,
+                                     max_tokens=max_tokens, temperature=temperature)
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",

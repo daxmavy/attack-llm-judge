@@ -21,6 +21,7 @@ def score_with_panel(
     panel_name: str = "attack",
     criteria: Iterable[str] = ("clarity",),
     max_workers: int = 5,
+    prefer_local: bool = True,
 ) -> dict:
     if judges is None:
         judges = get_panel(panel_name)
@@ -33,7 +34,8 @@ def score_with_panel(
     def _go(task):
         j, crit, prompt = task
         r = call_judge(j.model_id, JUDGE_SYSTEM, prompt, api_key,
-                       max_tokens=250, temperature=0.0)
+                       max_tokens=250, temperature=0.0,
+                       prefer_local=prefer_local)
         return (j.slug, crit, r)
 
     out: dict[str, dict[str, dict]] = {j.slug: {c: {"score": None, "reasoning": None}

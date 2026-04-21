@@ -46,7 +46,9 @@ REWRITER = "Qwen/Qwen2.5-1.5B-Instruct"
 # Three candidate judges. Two are used as training proxies (via --train-judges),
 # the remaining one is held-out for post-training evaluation.
 JUDGE_REGISTRY = {
-    "qwen7b":  ("judge_qwen7b",  "Qwen/Qwen2.5-7B-Instruct"),
+    # Mission panel (locked 2026-04-19): 3 judges, 3 families (Alibaba / Meta / Google).
+    # qwen7b and gemma4 were dropped to prevent auto-pick mishaps.
+    "qwen95b": ("judge_qwen95b", "Qwen/Qwen3.5-9B"),
     "llama8b": ("judge_llama8b", "meta-llama/Llama-3.1-8B-Instruct"),
     "gemma9b": ("judge_gemma9b", "google/gemma-2-9b-it"),
 }
@@ -87,6 +89,42 @@ Think step by step about the paragraph's clarity, citing specific features (gram
 Return ONLY a JSON object of the form:
 {{"reasoning": "<1-3 sentences>", "score": <integer 0-100>}}"""
 
+
+INFORMATIVENESS_RUBRIC = """You are judging the INFORMATIVENESS of a short argumentative paragraph written in response to a political/policy proposition.
+
+INFORMATIVENESS is about *how much substantive information the paragraph communicates* to support or oppose the proposition: relevant facts, evidence, mechanisms, specific examples, and concrete reasoning. Focus strictly on:
+- Whether the paragraph presents specific facts, figures, mechanisms, or examples (not just generalities)
+- Whether reasons/causes are made explicit (not just assertions)
+- Whether the reader learns something concrete and relevant about the topic
+- Whether claims are grounded (hedged appropriately when uncertain)
+
+Do NOT reward or penalise based on:
+- Grammar, spelling, or prose quality (that is a separate criterion — clarity)
+- Stance toward the proposition (pro or con)
+- Length per se — a short paragraph packed with relevant specifics can score as high as a long one
+- Formal vs. informal register
+
+Score on an integer scale from 0 to 100, using these anchors:
+
+- 0-20 (Very uninformative): No substantive content — pure assertion, slogan, or tautology. Reader learns nothing new or relevant.
+- 21-40 (Uninformative): Only vague general claims with no specifics. Few or no concrete reasons, mechanisms, or examples.
+- 41-60 (Moderately informative): Some substance — includes at least one concrete reason or example, but much of the paragraph is still abstract or generic.
+- 61-80 (Informative): Multiple concrete claims, reasons, or examples; mechanisms made explicit; reader learns something real about the topic.
+- 81-100 (Very informative): Dense with specific facts, figures, mechanisms, and examples; reasoning is explicit and well-grounded; claims are appropriately hedged; a knowledgeable reader would learn something new.
+
+Proposition: {proposition}
+
+Paragraph:
+\"\"\"{paragraph}\"\"\"
+
+Think step by step about the paragraph's informativeness, citing specific features (concrete examples, explicit mechanisms, hedged claims) as needed. Then output a single integer score from 0 to 100.
+
+Return ONLY a JSON object of the form:
+{{"reasoning": "<1-3 sentences>", "score": <integer 0-100>}}"""
+
+
+RUBRICS = {"clarity": CLARITY_RUBRIC, "informativeness": INFORMATIVENESS_RUBRIC}
+
 SCORE_RE_JSON = re.compile(r"\{[\s\S]*?\}")
 SCORE_RE_KV = re.compile(r'"score"\s*:\s*(-?\d+(?:\.\d+)?)')
 
@@ -126,12 +164,18 @@ def supports_system_role(tok):
 class JudgeVLLM:
     """vLLM judge. Uses HF tokenizer for chat template; vLLM for fast inference."""
 
-    def __init__(self, name, model_id, gpu_mem_util=None, max_model_len=3072):
+    def __init__(self, name, model_id, gpu_mem_util=None, max_model_len=3072, rubric="clarity"):
+        self.rubric_name = rubric
+        self.rubric_text = RUBRICS[rubric]
         # Auto-pick mem util based on model size if not specified.
         # Qwen-7B (~14 GB weights) → 0.22; Llama-8B (~16 GB) → 0.25; Gemma-9B (~18 GB) → 0.28.
         if gpu_mem_util is None:
             mid = model_id.lower()
-            if "gemma" in mid:
+            if "qwen3.5-9b" in mid:
+                gpu_mem_util = 0.27  # 9B weights + KV
+            elif "gemma-4-e4b" in mid:
+                gpu_mem_util = 0.22  # E4B effective, ~7-8 GB weights
+            elif "gemma" in mid:
                 gpu_mem_util = 0.28
             elif "llama" in mid:
                 gpu_mem_util = 0.25
@@ -155,13 +199,18 @@ class JudgeVLLM:
         self.sp = SamplingParams(temperature=0.0, max_tokens=180)
 
     def _build_prompt(self, proposition, paragraph):
-        user_msg = CLARITY_RUBRIC.format(proposition=proposition, paragraph=paragraph or "")
+        user_msg = self.rubric_text.format(proposition=proposition, paragraph=paragraph or "")
         if self.sys_ok:
             chat = [{"role": "system", "content": JUDGE_SYSTEM},
                     {"role": "user", "content": user_msg}]
         else:
             chat = [{"role": "user", "content": JUDGE_SYSTEM + "\n\n" + user_msg}]
-        return self.hf_tok.apply_chat_template(chat, tokenize=False, add_generation_prompt=True)
+        kwargs = {"tokenize": False, "add_generation_prompt": True}
+        # Qwen3 family defaults to thinking mode which burns our output budget before
+        # the JSON score appears. Disable it for judges.
+        if "qwen3" in self.model_id.lower():
+            kwargs["enable_thinking"] = False
+        return self.hf_tok.apply_chat_template(chat, **kwargs)
 
     def score(self, propositions, paragraphs):
         prompts = [self._build_prompt(p, t) for p, t in zip(propositions, paragraphs)]
@@ -238,6 +287,12 @@ def main():
     ap.add_argument("--train-judges", type=str, default="qwen7b,llama8b",
                     help="comma-separated slugs from JUDGE_REGISTRY (qwen7b, llama8b, gemma9b). "
                          "The one not named is the held-out judge.")
+    ap.add_argument("--heldout-judge", type=str, default=None,
+                    help="explicit held-out judge slug. If unset, auto-picks the first "
+                         "JUDGE_REGISTRY key not in --train-judges.")
+    ap.add_argument("--criterion", choices=list(RUBRICS.keys()), default="clarity",
+                    help="scoring rubric — clarity (default) or informativeness. "
+                         "Passed to every JudgeVLLM construction.")
     ap.add_argument("--per-device-batch", type=int, default=None,
                     help="override per_device_train_batch_size (defaults to num_generations*2)")
     ap.add_argument("--n-propositions", type=int, default=None,
@@ -262,9 +317,12 @@ def main():
     train_judge_keys = [s.strip() for s in args.train_judges.split(",")]
     assert all(k in JUDGE_REGISTRY for k in train_judge_keys), f"unknown judge: {train_judge_keys}"
     judge_ensemble = [JUDGE_REGISTRY[k] for k in train_judge_keys]
-    heldout_keys = [k for k in JUDGE_REGISTRY if k not in train_judge_keys]
-    heldout_judge = JUDGE_REGISTRY[heldout_keys[0]] if heldout_keys else None
-    print(f"train judges: {train_judge_keys}, held-out: {heldout_keys}", flush=True)
+    assert args.heldout_judge, "--heldout-judge is required (auto-pick removed to prevent mishaps)"
+    assert args.heldout_judge in JUDGE_REGISTRY, f"unknown held-out judge: {args.heldout_judge}"
+    assert args.heldout_judge not in train_judge_keys, \
+        f"--heldout-judge {args.heldout_judge} overlaps with --train-judges {train_judge_keys}"
+    heldout_judge = JUDGE_REGISTRY[args.heldout_judge]
+    print(f"train judges: {train_judge_keys}, held-out: {args.heldout_judge}", flush=True)
     t_start = time.time()
     print(f"[{time.strftime('%H:%M:%S')}] start (pilot-len-pen, args={vars(args)})", flush=True)
 
@@ -280,6 +338,11 @@ def main():
         eval_rows = rows[train_n:train_n + eval_n]
         print(f"loaded {len(rows)} paragraphs from {args.dataset_json} "
               f"({len(train_rows)} train / {len(eval_rows)} eval)", flush=True)
+        # Optional baseline scores (pre-computed by precompute_baselines.py)
+        baseline_path = Path(args.dataset_json).with_name(Path(args.dataset_json).stem + "_baselines.json")
+        baselines_by_doc = json.loads(baseline_path.read_text()) if baseline_path.exists() else {}
+        if baselines_by_doc:
+            print(f"loaded {len(baselines_by_doc)} baseline entries from {baseline_path.name}", flush=True)
     else:
         rows = load_data()
         print(f"top-decile writer rows: {len(rows)}", flush=True)
@@ -297,11 +360,23 @@ def main():
             print(f"filtered to {args.n_propositions} propositions → {len(rows)} paragraphs", flush=True)
         train_rows = rows[:args.n_train]
         eval_rows = rows[args.n_train:args.n_train + args.n_eval]
+        baselines_by_doc = {}
+
+    # Per-judge baseline score name template (depends on which judges the user picked)
+    _b_j1_key = f"judge_{train_judge_keys[0]}"
+    _b_j2_key = f"judge_{train_judge_keys[1]}" if len(train_judge_keys) > 1 else None
+
+    def _baseline(doc_id, k):
+        """Return baseline score for document_id under key k, or None."""
+        return baselines_by_doc.get(doc_id, {}).get(k)
 
     train_data = [
         {"prompt": make_rewrite_prompt(r[1], r[2], int(r[3])),
          "proposition": r[1], "original_text": r[2],
-         "document_id": r[0], "word_count": int(r[3])}
+         "document_id": r[0], "word_count": int(r[3]),
+         "baseline_j1": _baseline(r[0], _b_j1_key),
+         "baseline_j2": _baseline(r[0], _b_j2_key) if _b_j2_key else None,
+         "baseline_ej": _baseline(r[0], "ej")}
         for r in train_rows
     ]
     ds = Dataset.from_list(train_data)
@@ -309,7 +384,7 @@ def main():
     # Load both vLLM judges simultaneously
     print(f"[{time.strftime('%H:%M:%S')}] loading vLLM judges...", flush=True)
     t_load = time.time()
-    judges = [JudgeVLLM(name, mid) for name, mid in judge_ensemble]
+    judges = [JudgeVLLM(name, mid, rubric=args.criterion) for name, mid in judge_ensemble]
     print(f"[{time.strftime('%H:%M:%S')}] judges loaded in {time.time()-t_load:.1f}s  "
           f"VRAM={torch.cuda.memory_allocated()/1e9:.1f}GB", flush=True)
 
@@ -418,6 +493,17 @@ def main():
         m_tgt_wc = sum(target_wcs) / len(target_wcs)
         std = (sum((x - m_reward) ** 2 for x in penalised) / len(penalised)) ** 0.5
         frac_out = sum(1 for lr in len_ratios if abs(lr - 1) > args.tol) / len(len_ratios)
+
+        # Delta vs original-paragraph baseline (if precomputed baselines are available)
+        bj1 = kwargs.get("baseline_j1")
+        bj2 = kwargs.get("baseline_j2")
+        bej = kwargs.get("baseline_ej")
+        d1 = [j1[i] - bj1[i] for i in range(len(j1)) if bj1 and bj1[i] is not None] if bj1 else []
+        d2 = [j2[i] - bj2[i] for i in range(len(j2)) if bj2 and bj2[i] is not None] if bj2 else []
+        dej = [ensemble_judge[i] - bej[i] for i in range(len(ensemble_judge)) if bej and bej[i] is not None] if bej else []
+        md1 = sum(d1) / len(d1) if d1 else None
+        md2 = sum(d2) / len(d2) if d2 else None
+        mdej = sum(dej) / len(dej) if dej else None
         # Dynamic per-judge wandb keys — respects actual ensemble composition (fixes hardcoded-name bug)
         log_payload = {
             f"reward/{judges[0].name}_mean": m1,
@@ -440,9 +526,14 @@ def main():
                 log_payload["fidelity/min_cos_sim"] = min(valid_sims)
                 log_payload["fidelity/mean_penalty"] = sum(fid_pens) / len(fid_pens)
                 log_payload["fidelity/frac_below_threshold"] = sum(1 for c in valid_sims if c < args.embed_threshold) / len(valid_sims)
+        if mdej is not None:
+            log_payload[f"delta/{judges[0].name}_mean"] = md1
+            log_payload[f"delta/{judges[1].name}_mean"] = md2
+            log_payload["delta/ensemble_judge_mean"] = mdej
         wandb.log(log_payload)
+        delta_str = f"  Δej={mdej:+.1f}" if mdej is not None else ""
         print(f"[{time.strftime('%H:%M:%S')}] reward_fn #{step_counter['n']}  "
-              f"j1={m1:.1f}  j2={m2:.1f}  ej={m_ej:.1f}  pen={m_pen:.2f}  "
+              f"j1={m1:.1f}  j2={m2:.1f}  ej={m_ej:.1f}{delta_str}  pen={m_pen:.2f}  "
               f"final={m_reward:.1f}  ratio={m_ratio:.2f}  %out={frac_out:.2f}  "
               f"wc={m_gen_wc:.0f}/{m_tgt_wc:.0f}  score_s={t_score:.1f}", flush=True)
 
@@ -487,7 +578,7 @@ def main():
         scale_rewards=args.scale_rewards,
         loss_type=args.loss_type,
         logging_steps=1,
-        save_strategy="no",
+        save_strategy="no",  # periodic saves caused silent crashes in fold 2 step 50; rely on final save_model
         bf16=True,
         report_to=["wandb"],
         temperature=args.temperature,
@@ -561,14 +652,19 @@ def main():
     for jn, s in pre_scores.items():
         print(f"  pre  {jn} mean={sum(s)/len(s):.2f}", flush=True)
 
-    del rw_model
+    # Keep rw_model alive — it's passed into GRPOTrainer below so the trainer uses
+    # the bf16 weights instead of reloading in FP32.
     gc.collect()
     torch.cuda.empty_cache()
 
     # Training
     print(f"[{time.strftime('%H:%M:%S')}] building GRPOTrainer...", flush=True)
+    # Pass the already-bf16-loaded rw_model instead of the string REWRITER.
+    # If GRPOTrainer receives the string it reloads in FP32, doubling save size
+    # (6 GB vs 3 GB) and forcing a 2-shard save (5 GB + 1.2 GB). A bf16 model
+    # fits in a single <5 GB shard, avoiding partial-write failures on tight disks.
     trainer = GRPOTrainer(
-        model=REWRITER,
+        model=rw_model,
         reward_funcs=reward_fn,
         args=cfg,
         train_dataset=ds,
@@ -579,12 +675,20 @@ def main():
     trainer.train()
     train_elapsed = time.time() - t_train_start
     print(f"[{time.strftime('%H:%M:%S')}] training done in {train_elapsed/60:.1f} min", flush=True)
-    if args.save_final:
-        trainer.save_model(args.save_final)
-        rw_tok.save_pretrained(args.save_final)
-        print(f"saved final model to {args.save_final}", flush=True)
 
-    # Post-eval
+    # Save model FIRST, before any eval or vLLM teardown.
+    # Deep debug: save_model reliably crashes if it runs after vLLM judges tear down
+    # (NCCL/distributed state corrupts at EngineCore subprocess shutdown). Running save
+    # immediately after training matches the fold1/2/3 pattern that worked reliably.
+    # Periodic save_steps=50 in GRPOConfig is the belt-and-suspenders backup.
+    if args.save_final:
+        try:
+            trainer.save_model(args.save_final)
+            rw_tok.save_pretrained(args.save_final)
+            print(f"[{time.strftime('%H:%M:%S')}] saved final model to {args.save_final}", flush=True)
+        except Exception as e:
+            print(f"save_model failed (periodic ckpts remain in ckpt_{args.name_suffix}/): {e!r}", flush=True)
+
     trained_model = trainer.model
     post_rewrites = generate_eval(trained_model, rw_tok, eval_rows)
     post_scores = {j.name: j.score(props_eval, post_rewrites) for j in judges}
@@ -604,20 +708,35 @@ def main():
         })
         print(f"  {jn}: pre={pm:.2f}  post={qm:.2f}  delta={qm-pm:+.2f}", flush=True)
 
+    # Partial artefact write — capture in-panel data before held-out / save crashes.
+    pilot_dir = OUT_DIR / f"pilot_{args.name_suffix}"
+    pilot_dir.mkdir(parents=True, exist_ok=True)
+    (pilot_dir / "eval_summary_partial.json").write_text(json.dumps({
+        "summary": summary,
+        "pre_rewrites": pre_rewrites,
+        "post_rewrites": post_rewrites,
+        "eval_document_ids": [r[0] for r in eval_rows],
+        "eval_originals": [r[2] for r in eval_rows],
+        "eval_propositions": [r[1] for r in eval_rows],
+        "eval_word_counts": [int(r[3]) for r in eval_rows],
+    }, indent=2))
+    print(f"[{time.strftime('%H:%M:%S')}] wrote partial eval_summary", flush=True)
+
     # Held-out judge eval (if defined) — unload in-panel judges first to free VRAM
     heldout_pre_scores = heldout_post_scores = None
     if heldout_judge is not None:
-        print(f"[{time.strftime('%H:%M:%S')}] unloading in-panel judges, loading held-out {heldout_judge[0]}...", flush=True)
+        print(f"[{time.strftime('%H:%M:%S')}] unloading in-panel judges...", flush=True)
         for j in judges:
             try: j.unload()
             except Exception: pass
         del judges
-        del trainer  # free the trained policy too (rewrites already captured in post_rewrites)
+        del trainer
         del trained_model
         gc.collect()
         torch.cuda.empty_cache()
 
-        held = JudgeVLLM(*heldout_judge)
+        print(f"[{time.strftime('%H:%M:%S')}] loading held-out {heldout_judge[0]}...", flush=True)
+        held = JudgeVLLM(*heldout_judge, rubric=args.criterion)
         heldout_pre_scores = held.score(props_eval, pre_rewrites)
         heldout_post_scores = held.score(props_eval, post_rewrites)
         hm_pre = sum(heldout_pre_scores) / len(heldout_pre_scores)

@@ -10,14 +10,16 @@ import requests
 from judge.client import OPENROUTER_URL
 
 
-# Qwen 2.5 72B Instruct: capable, cheap (~$0.13/$0.40 per 1M in/out on
-# OpenRouter), NOT a judge in this project, and NOT one of the models
-# that generated the original paul_data paragraphs (which were
-# claude-sonnet-4, deepseek-chat-v3-0324, chatgpt-4o-latest). Sits cleanly
-# outside both the judge pool and the original-author pool, so it avoids
-# self-preference bias with either.
-REWRITER_MODEL = "qwen/qwen-2.5-72b-instruct"
-REWRITER_LABEL = "qwen-2.5-72b"
+# Default base: Qwen 2.5 1.5B Instruct — the same checkpoint the RL-training
+# agent uses as the policy base (MODELS.md). Aligning the eval-suite rewriter
+# with the training-policy base means inference-only methods and training-based
+# methods start from the same distribution, so the "what did training add on
+# top of prompting?" comparison is fair. Served locally from /workspace/hf_cache
+# via rewriters/local_rewriter.py; Qwen-2.5-1.5B is not on OpenRouter, so local
+# is the only path. If the weights are missing, we fail rather than silently
+# swapping models.
+REWRITER_MODEL = "qwen/qwen-2.5-1.5b-instruct"
+REWRITER_LABEL = "qwen-2.5-1.5b"
 
 
 @dataclass
@@ -54,7 +56,15 @@ def call_rewriter(
     temperature: float = 0.7,
     retries: int = 3,
     timeout: int = 90,
+    prefer_local: bool = True,
 ) -> RewriteResult:
+    # Route to local vLLM serving when weights are on disk. Default on because
+    # the project's default base (Qwen-2.5-1.5B) is only available locally.
+    if prefer_local:
+        from rewriters.vllm_rewriter import is_local_available, call_rewriter_local
+        if is_local_available(model_id):
+            return call_rewriter_local(system_prompt, user_prompt, model_id,
+                                        max_tokens=max_tokens, temperature=temperature)
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",

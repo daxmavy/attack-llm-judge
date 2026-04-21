@@ -1,9 +1,9 @@
 """Orchestrators for the non-trivial rewriter methods (ICIR, BoN, scaffolded).
 
-Simple methods (naive, lit_informed, naive_tight, lit_informed_tight,
-injection_leadin, rules_explicit, rubric_aware) are one call + at most
-one length retry; the existing `do_rewrites` loop in `run_rewrite.py`
-handles them.
+Simple methods (naive, lit_informed_tight, rubric_aware) are one call;
+`lit_informed_tight` no longer does length-based retry (operator
+decision, 2026-04-18); other simple methods retry once if out of the
+±10% length band.
 
 The three orchestrators here return the same contract: a dict with
 `text`, `ok`, `error`, token counts, a list of intermediate artefacts
@@ -29,6 +29,12 @@ from rewriters.rewriter_client import REWRITER_MODEL, call_rewriter
 
 TIGHT_TOL = 0.10
 
+# Methods that do NOT retry if the first draft is out of the length band.
+# lit_informed_tight: operator decision (2026-04-18) — the prompt suggests
+# a target length but does not enforce it; a wrong-length first draft is
+# kept as-is so the rewriter's preferred length distribution is measurable.
+NO_LENGTH_RETRY = {"lit_informed_tight"}
+
 
 def _in_range(text: str, lo: int, hi: int) -> bool:
     return lo <= len(text.split()) <= hi
@@ -37,12 +43,15 @@ def _in_range(text: str, lo: int, hi: int) -> bool:
 def _one_shot_with_retry(method: str, proposition: str, paragraph: str, api_key: str,
                          temperature: float, timeout: int = 45, retries: int = 2,
                          **kwargs) -> tuple:
-    """Runs one rewrite + at most one length-retry. Returns (final RewriteResult, retry_flag)."""
+    """Runs one rewrite + at most one length-retry (unless method is in NO_LENGTH_RETRY).
+    Returns (final RewriteResult, retry_flag)."""
     user = build_rewrite_prompt(method, proposition, paragraph, **kwargs)
     r = call_rewriter(REWRITER_SYSTEM, user, api_key, model_id=REWRITER_MODEL,
                       max_tokens=400, temperature=temperature,
                       timeout=timeout, retries=retries)
     if not r.ok or not r.text:
+        return r, False
+    if method in NO_LENGTH_RETRY:
         return r, False
     _, lo, hi = length_bounds(paragraph, TIGHT_TOL)
     if _in_range(r.text, lo, hi):
@@ -73,42 +82,6 @@ def run_simple(method: str, proposition: str, paragraph: str, api_key: str,
         "completion_tokens": r.completion_tokens,
         "retried": retried,
         "calls": 1 + int(retried),
-    }
-
-
-def run_injection_leadin(proposition: str, paragraph: str, api_key: str,
-                           rotation_index: int) -> dict:
-    """Cycle A/B/C lead-in variants round-robin."""
-    return run_simple("injection_leadin", proposition, paragraph, api_key,
-                      temperature=0.4, leadin_variant=rotation_index)
-
-
-def run_scaffolded(proposition: str, paragraph: str, api_key: str) -> dict:
-    """JSON-structured plan/draft/critique/final. Parse robustly; one-shot retry if needed."""
-    user = build_rewrite_prompt("scaffolded_cot_distill", proposition, paragraph)
-    r = call_rewriter(REWRITER_SYSTEM, user, api_key, model_id=REWRITER_MODEL,
-                      max_tokens=800, temperature=0.7)
-    parsed = extract_json(r.text) if r.text else None
-    final_text = parsed.get("final") if parsed else None
-    _, lo, hi = length_bounds(paragraph, TIGHT_TOL)
-    retried = False
-    if not final_text or not _in_range(final_text, lo, hi):
-        # Retry with a plain tight rewrite as the fallback "final".
-        r2, _ = _one_shot_with_retry("lit_informed_tight", proposition, paragraph, api_key,
-                                      temperature=0.5)
-        if r2.ok and r2.text:
-            final_text = r2.text
-            retried = True
-    return {
-        "method": "scaffolded_cot_distill",
-        "text": final_text,
-        "ok": bool(final_text),
-        "error": None if final_text else "scaffold parse/retry failed",
-        "prompt_tokens": r.prompt_tokens,
-        "completion_tokens": r.completion_tokens,
-        "retried": retried,
-        "calls": 1 + int(retried),
-        "artefacts": parsed,
     }
 
 
@@ -161,7 +134,7 @@ def run_icir_single(proposition: str, paragraph: str, api_key: str,
         def _go(j):
             jr = call_judge(j.model_id, JUDGE_SYSTEM, prompt, api_key,
                             max_tokens=250, temperature=0.0,
-                            timeout=30, retries=1)
+                            timeout=30, retries=1, prefer_local=True)
             return (j, jr)
         with cf.ThreadPoolExecutor(max_workers=max(len(panel_judges), 2)) as ex:
             results = list(ex.map(_go, panel_judges))
