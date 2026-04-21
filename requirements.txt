@@ -1,0 +1,39 @@
+# Pinned versions from the currently-running host (/workspace/pylocal, Python 3.11.10).
+# Install into a fresh venv on the replication host:
+#   python3.11 -m venv /workspace/pylocal && source /workspace/pylocal/bin/activate
+#   pip install -r requirements.txt
+#
+# Only the packages directly imported by the pipeline are listed — pip will
+# resolve transitive deps. If a version conflicts on the new host, the critical
+# pins are torch/vllm/trl/transformers (reward function + rollouts depend on
+# their exact behavior). Everything else has some slack.
+
+# Core training / RL / inference
+torch==2.10.0
+transformers==4.57.6
+trl==1.2.0
+vllm==0.18.1
+accelerate==1.13.0
+datasets==4.8.4
+tokenizers==0.22.2
+safetensors==0.7.0
+sentencepiece==0.2.1
+huggingface_hub==0.36.2
+hf_xet==1.4.3
+
+# Numerics / analysis
+numpy==2.2.6
+pandas==3.0.2
+pyarrow==23.0.1
+
+# Experiment tracking
+wandb==0.26.0
+
+# Utilities
+einops==0.8.2
+tqdm==4.67.3
+pydantic==2.13.2
+
+# Judge / API clients (out-of-panel judges, ad-hoc evaluations)
+openai==2.24.0
+anthropic==0.96.0

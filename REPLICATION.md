@@ -97,7 +97,14 @@ TRL version: 1.2.0. vLLM version used for judges + rewriter rollouts: **0.18.1**
 
 ## 5. Dataset
 
-`/workspace/grpo_run/controversial_40_3fold.json`:
+Shipped in this repo at `data/controversial_40_3fold.json` (1.9 MB, pinned in git — the build script in `scripts/build_controversial_subset.py` is for regeneration only and defaults to a 25-prop variant; do **not** regenerate, use the committed JSON).
+
+Pipeline scripts still load it from `/workspace/grpo_run/controversial_40_3fold.json` (hardcoded path). On the replication host, copy it over:
+```
+cp <repo>/data/controversial_40_3fold.json /workspace/grpo_run/controversial_40_3fold.json
+```
+
+Contents:
 
 ```
 {
@@ -139,7 +146,7 @@ All under `/workspace/grpo_run/`:
 5. **`run_pilot_len_pen.py --base-model HF_ID ...`** per fold × criterion — GRPO 400-step training with in-panel judges for reward, held-out judge for post-train eval. Saves final model to `/workspace/grpo_run/final_...`.
 6. **HF push + DB backfill**: `run_grpo_3fold_with_rewriter.sh <HF_ID> <short> <criterion>` chains all 3 GRPO folds + `api.upload_folder` to `daxmavy/grpo-{short}-fold{N}-{criterion}` + calls `/home/max/backfill_grpo_rewriter.py` to ingest `eval_summary.json` post-rewrites + held-out scores into `attack_rewrites` / `attack_judge_scores`.
 7. **Full mission-panel scoring**: `/home/max/score_all_missing.py` — scans `attack_rewrites`, finds cells missing (judge × criterion) scores, scores with vLLM judge models. Idempotent. Excludes `bon_candidate` by default (only panel winners need evaluation). For all 3 judges × 2 criteria on a new rewriter: ~1-1.5h.
-8. **Agreement-score regressor**: `/home/max/apply_agreement_score.py` — loads `/home/max/attack-llm-judge/agreement_model/runs/main/final` (DeBERTa-v3-base), scores every row in `attack_rewrites` not yet present in `attack_agreement_scores`. Very fast (~150 rows/s on single GPU).
+8. **Agreement-score regressor**: `scripts/apply_agreement_score.py` — loads a DeBERTa-v3-base regression head (single-logit, sigmoid → [0,1]) from `/home/max/attack-llm-judge/agreement_model/runs/main/final`. On a new host, `huggingface_hub.snapshot_download("daxmavy/attack-llm-judge-agreement-regressor", local_dir=...)` pulls it (712 MB, 4 files: `config.json`, `model.safetensors`, `tokenizer.json`, `tokenizer_config.json`). Scores every row in `attack_rewrites` not yet present in `attack_agreement_scores`. Very fast (~150 rows/s on single GPU, ~1 GB VRAM).
 
 **One command that runs steps 1-5 (generation side, not the final scoring pass)**:
 ```
@@ -151,15 +158,28 @@ This chains feedback_free → bon_generate → 3×bon_score → 3×icir (one sub
 
 ## 8. Versions currently in use
 
+Full pinned list in `requirements.txt` at repo root. Critical pins:
+
 ```
+torch         2.10.0
 vLLM          0.18.1
 TRL           1.2.0
-transformers  4.57.6 (system python3)
-torch         2.5+
-CUDA          12.x
+transformers  4.57.6
+accelerate    1.13.0
+datasets      4.8.4
+CUDA          12.x  (matches torch 2.10.0 cu128 wheel)
+Python        3.11.10
 ```
 
-The `transformers` version in `/workspace/pylocal/lib/python3.11/site-packages` is a newer branch that has a bug loading the DeBERTa tokenizer; for the agreement_score step, use the system `python3` (not `pylocal` PYTHONPATH).
+Install into a fresh venv:
+```
+python3.11 -m venv /workspace/pylocal && source /workspace/pylocal/bin/activate
+pip install -r requirements.txt
+```
+
+Dependencies are **not** managed by poetry/pdm/uv on this host — pure pip into a bare venv. The `agreement_model/train.py` and `agreement_model/run_experiments.py` additionally expect `scikit-learn` and `scipy` for metrics; add those if retraining the regressor (not needed for inference-only runs).
+
+The `transformers` version in the current venv has a known bug loading the DeBERTa tokenizer in *some* environments; if you see a tokenizer error during `apply_agreement_score.py`, fall back to the system `python3` with a plain `pip install transformers tokenizers` (not the pylocal PYTHONPATH).
 
 **vLLM compatibility notes observed:**
 - LFM2.5-1.2B-Instruct and Gemma-3-1b-it both work on vLLM 0.18.1 (pre-flight tested).

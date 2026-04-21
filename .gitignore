@@ -19,6 +19,9 @@ data/*.json
 data/analysis_main_20pct/
 data/run_report_*.json
 
+# but keep the canonical dataset split
+!data/controversial_40_3fold.json
+
 # paragraphs DB is large + contains derived results; use scripts + HF artifacts to reproduce
 data/paragraphs.db
 
