@@ -34,8 +34,8 @@ from judge.client import CallResult, _extract_json
 # Keep these in sync with the training script's env setup. These are
 # no-ops if already set. (Matches /home/max/attack-llm-judge/training/
 # scripts/heldout_only_eval.py lines 29-31.)
-os.environ.setdefault("HF_HOME", "/workspace/hf_cache")
-os.environ.setdefault("VLLM_CACHE_ROOT", "/workspace/vllm_cache")
+os.environ.setdefault("HF_HOME", "/data/shil6647/attack-llm-judge/hf_cache")
+os.environ.setdefault("VLLM_CACHE_ROOT", "/data/shil6647/attack-llm-judge/vllm_cache")
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 
 

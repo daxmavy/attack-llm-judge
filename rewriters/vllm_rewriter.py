@@ -1,7 +1,7 @@
 """Local rewriter serving via vLLM.
 
 **Mirrors `training/scripts/heldout_only_eval.py::JudgeVLLM` config exactly**
-(dtype=bf16, max_model_len=3072, enforce_eager=True, download_dir=/workspace/hf_cache).
+(dtype=bf16, max_model_len=3072, enforce_eager=True, download_dir=/data/shil6647/attack-llm-judge/hf_cache).
 The class is structurally the same — only the post-generation parse differs:
 rewriter calls return raw text (stripped of wrapper junk), judges parse JSON.
 
@@ -20,8 +20,8 @@ from pathlib import Path
 from rewriters.rewriter_client import RewriteResult, _strip_wrappers
 
 
-os.environ.setdefault("HF_HOME", "/workspace/hf_cache")
-os.environ.setdefault("VLLM_CACHE_ROOT", "/workspace/vllm_cache")
+os.environ.setdefault("HF_HOME", "/data/shil6647/attack-llm-judge/hf_cache")
+os.environ.setdefault("VLLM_CACHE_ROOT", "/data/shil6647/attack-llm-judge/vllm_cache")
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 
 
