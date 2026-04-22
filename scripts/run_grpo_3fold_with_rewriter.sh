@@ -22,10 +22,25 @@ COMMON_ARGS=(
   --base-model "$REWRITER"
 )
 
+# Fold rotation is resolved from config/models.py (single source of truth;
+# see the 2026-04-22 EXPERIMENT_NOTES.md entry on the model-stub refactor).
+# We emit the bash array declarations to a tempfile and source it so that a
+# require_config() failure inside the python block aborts the whole script
+# (set -e + eval can't see the non-zero exit when command substitution wraps
+# it).
 declare -A IN_PANEL HELD_OUT
-IN_PANEL[1]="qwen95b,llama8b";  HELD_OUT[1]="gemma9b"
-IN_PANEL[2]="qwen95b,gemma9b";  HELD_OUT[2]="llama8b"
-IN_PANEL[3]="llama8b,gemma9b";  HELD_OUT[3]="qwen95b"
+_FOLDS_SH=$(mktemp)
+trap "rm -f $_FOLDS_SH" EXIT
+env $COMMON_ENV python3 - >"$_FOLDS_SH" <<'PY'
+import sys
+sys.path.insert(0, "/home/shil6647/attack-llm-judge")
+from config.models import FOLDS, require_config
+require_config()
+for fold, spec in FOLDS.items():
+    print(f'IN_PANEL[{fold}]="{",".join(spec["in_panel"])}"')
+    print(f'HELD_OUT[{fold}]="{spec["held_out"]}"')
+PY
+source "$_FOLDS_SH"
 
 FOLDS=${FOLDS:-"1 2 3"}
 for FOLD in $FOLDS; do
