@@ -37,15 +37,10 @@ os.environ.setdefault("VLLM_CACHE_ROOT", "/data/shil6647/attack-llm-judge/vllm_c
 sys.path.insert(0, "/data/shil6647/attack-llm-judge/grpo_run")
 sys.path.insert(0, "/home/shil6647/attack-llm-judge")
 
+from config.models import REWRITER, FOLDS, require_config
+
 DB = "/home/shil6647/attack-llm-judge/data/paragraphs.db"
 DATASET = "/data/shil6647/attack-llm-judge/grpo_run/controversial_40_3fold.json"
-REWRITER = "Qwen/Qwen2.5-1.5B-Instruct"
-
-FOLDS = {
-    1: {"in_panel": ["qwen95b", "llama8b"], "held_out": "gemma9b"},
-    2: {"in_panel": ["qwen95b", "gemma9b"], "held_out": "llama8b"},
-    3: {"in_panel": ["llama8b", "gemma9b"], "held_out": "qwen95b"},
-}
 
 # Reuse the JSON pattern logic from run_pilot_len_pen.py but extract reasoning too.
 _SCORE_RE_JSON = re.compile(r"\{[^{}]*\"score\"\s*:\s*\d+(?:\.\d+)?[^{}]*\}", re.S)
@@ -81,6 +76,7 @@ def load_eval():
 
 
 def main():
+    require_config()
     ap = argparse.ArgumentParser()
     ap.add_argument("--folds", nargs="+", type=int, default=[1, 2, 3])
     ap.add_argument("--criteria", nargs="+", default=["clarity", "informativeness"])

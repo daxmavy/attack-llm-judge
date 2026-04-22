@@ -35,25 +35,15 @@ sys.path.insert(0, "/home/shil6647/attack-llm-judge")
 
 import sqlite3
 
+from config.models import REWRITER, FOLDS, rewriter_short_name, require_config
+
 DB = "/home/shil6647/attack-llm-judge/data/paragraphs.db"
 DATASET = "/data/shil6647/attack-llm-judge/grpo_run/controversial_40_3fold.json"
-REWRITER = "Qwen/Qwen2.5-1.5B-Instruct"
-
-FOLDS = {
-    1: {"in_panel": ["qwen95b", "llama8b"], "held_out": "gemma9b"},
-    2: {"in_panel": ["qwen95b", "gemma9b"], "held_out": "llama8b"},
-    3: {"in_panel": ["llama8b", "gemma9b"], "held_out": "qwen95b"},
-}
 
 
 def _rewriter_short_name(model_id: str) -> str:
-    """Short tag for a rewriter base model, used in rewrite_id and HF repo names."""
-    s = model_id.lower()
-    if "qwen2.5-1.5b" in s: return "qwen25-15b"
-    if "qwen3-14b" in s: return "qwen3-14b"
-    if "lfm2.5-1.2b" in s: return "lfm25-12b"
-    if "gemma-3-1b" in s: return "gemma3-1b"
-    return s.replace("/", "-").replace(".", "-")
+    """Thin shim around config.models.rewriter_short_name for back-compat."""
+    return rewriter_short_name(model_id)
 
 
 def _rewriter_vllm_mem_util(model_id: str) -> float:
@@ -331,6 +321,7 @@ def cmd_bon_score(args):
 
 
 def main():
+    require_config()
     ap = argparse.ArgumentParser()
     sp = ap.add_subparsers(dest="cmd", required=True)
 
