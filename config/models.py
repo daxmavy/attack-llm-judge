@@ -40,13 +40,14 @@ from typing import Tuple
 # Set this to the HF repo id of the rewriter base (e.g. "Qwen/Qwen3-14B").
 # Scripts that need the GRPO policy base / the inference rewriter read this.
 #
-# 2026-04-22 selection: Qwen3.5-9B dense (Unsloth docs confirm bf16 LoRA fits
-# in ~22GB on A100 80GB; no QLoRA because Unsloth explicitly warns against
-# 4-bit on Qwen3.5 variants). We use the upstream `Qwen/Qwen3.5-9B` repo
-# (weights already cached under /data/shil6647/attack-llm-judge/hf_cache);
-# Unsloth's reupload differs only by a ~60-byte chat-template patch, so the
-# upstream repo is fine for our GRPO + HF-generate rollout path.
-REWRITER: str | None = "Qwen/Qwen3.5-9B"
+# 2026-04-22 selection (revised pm): Qwen3-8B. The earlier pick of Qwen3.5-9B
+# was wrong — Qwen3.5 is Qwen's vision-language series (pipeline_tag=
+# image-text-to-text, arch Qwen3_5VisionModel), so Unsloth loads it as a VL
+# model and routes tokenizer calls through Qwen3VLProcessor, which fails on
+# text-only prompts. Qwen3-8B is text-only (Qwen3ForCausalLM, no vision_config),
+# same family, ~16 GB bf16 LoRA footprint → comfortable on one A100 under GRPO
+# with vLLM rollouts. See EXPERIMENT_NOTES.md B-N1 (2026-04-22 afternoon).
+REWRITER: str | None = "Qwen/Qwen3-8B"
 
 
 # -----------------------------------------------------------------------------
@@ -67,13 +68,21 @@ REWRITER: str | None = "Qwen/Qwen3.5-9B"
 #         "judgeC": ("judge_judgeC", "meta-llama/Llama-3.1-8B-Instruct"),
 #     }
 #
-# 2026-04-22 selection: three FP8-quantized judges from different model
-# families. FP8 keeps each engine small enough that any two fit on one
+# 2026-04-22 selection (revised pm): three FP8-quantized judges from different
+# model families. FP8 keeps each engine small enough that any two fit on one
 # 80 GB A100 with headroom for KV caches under the HTTP judge server. Weight
-# footprints (RedHatAI FP8 variants): Mistral-Small-3.2-24B ~25.8 GB,
-# Gemma-3-27B ~29.3 GB, Phi-4-14B ~15.7 GB. Pairwise totals 41-55 GB.
+# footprints (RedHatAI FP8 variants): Mistral-Small-24B ~25 GB, Gemma-3-27B
+# ~29 GB, Phi-4-14B ~15 GB. Pairwise totals verified empirically in the
+# 2026-04-22 cohost smoke: gemma27+phi4 peak 55.7 GB / 80 GB.
+#
+# mistral24 was originally Mistral-Small-3.2-24B-Instruct-2506-FP8 but that
+# repo ships Mistral-native format only (consolidated.safetensors + tekken.json,
+# Pixtral arch) — no tokenizer_config.json / chat_template, so HF-tokenizer
+# scoring crashes. The 2501 FP8-dynamic variant is the last pure-text Mistral
+# -Small-24B (MistralForCausalLM, text-only, ships tokenizer.json). See
+# EXPERIMENT_NOTES.md B-N2 (2026-04-22 afternoon).
 JUDGE_REGISTRY: dict[str, Tuple[str, str]] = {
-    "mistral24": ("judge_mistral24", "RedHatAI/Mistral-Small-3.2-24B-Instruct-2506-FP8"),
+    "mistral24": ("judge_mistral24", "RedHatAI/Mistral-Small-24B-Instruct-2501-FP8-dynamic"),
     "gemma27":   ("judge_gemma27",   "RedHatAI/gemma-3-27b-it-FP8-dynamic"),
     "phi4":      ("judge_phi4",      "RedHatAI/phi-4-FP8-dynamic"),
 }
@@ -141,6 +150,8 @@ def rewriter_short_name(model_id: str | None = None) -> str:
         ("qwen3.5-4b", "qwen35-4b"),
         ("qwen3-32b", "qwen3-32b"),
         ("qwen3-14b", "qwen3-14b"),
+        ("qwen3-8b", "qwen3-8b"),
+        ("qwen3-4b", "qwen3-4b"),
         ("qwen2.5-1.5b", "qwen25-15b"),
         ("qwen2.5-7b", "qwen25-7b"),
         ("lfm2.5-1.2b", "lfm25-12b"),
