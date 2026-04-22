@@ -66,7 +66,17 @@ REWRITER: str | None = "Qwen/Qwen3.5-9B"
 #         "judgeB": ("judge_judgeB", "google/gemma-3-27b-it"),
 #         "judgeC": ("judge_judgeC", "meta-llama/Llama-3.1-8B-Instruct"),
 #     }
-JUDGE_REGISTRY: dict[str, Tuple[str, str]] = {}
+#
+# 2026-04-22 selection: three FP8-quantized judges from different model
+# families. FP8 keeps each engine small enough that any two fit on one
+# 80 GB A100 with headroom for KV caches under the HTTP judge server. Weight
+# footprints (RedHatAI FP8 variants): Mistral-Small-3.2-24B ~25.8 GB,
+# Gemma-3-27B ~29.3 GB, Phi-4-14B ~15.7 GB. Pairwise totals 41-55 GB.
+JUDGE_REGISTRY: dict[str, Tuple[str, str]] = {
+    "mistral24": ("judge_mistral24", "RedHatAI/Mistral-Small-3.2-24B-Instruct-2506-FP8"),
+    "gemma27":   ("judge_gemma27",   "RedHatAI/gemma-3-27b-it-FP8-dynamic"),
+    "phi4":      ("judge_phi4",      "RedHatAI/phi-4-FP8-dynamic"),
+}
 
 
 # -----------------------------------------------------------------------------
@@ -76,9 +86,9 @@ JUDGE_REGISTRY: dict[str, Tuple[str, str]] = {}
 # panel scoring, ICIR feedback) vs held out (post-hoc transfer eval).
 # Every slug here MUST be a key in JUDGE_REGISTRY.
 FOLDS: dict[int, dict[str, object]] = {
-    1: {"in_panel": ["judgeA", "judgeB"], "held_out": "judgeC"},
-    2: {"in_panel": ["judgeA", "judgeC"], "held_out": "judgeB"},
-    3: {"in_panel": ["judgeB", "judgeC"], "held_out": "judgeA"},
+    1: {"in_panel": ["mistral24", "phi4"],   "held_out": "gemma27"},
+    2: {"in_panel": ["mistral24", "gemma27"], "held_out": "phi4"},
+    3: {"in_panel": ["gemma27",   "phi4"],    "held_out": "mistral24"},
 }
 
 
