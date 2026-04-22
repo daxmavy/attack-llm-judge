@@ -428,3 +428,34 @@ Going with the existing JUDGE_REGISTRY fold-1 pair: **`qwen95b` (Qwen/Qwen3.5-9B
 - Root cause: `scripts/run_icir.py` line 130 hardcoded `gpu_memory_utilization=0.18` — fine for the default Qwen2.5-1.5B rewriter but insufficient for 14B bf16 (~28 GB weights) which alone exceeds 0.18 × 80 GB = 14.4 GB budget. Same class of bug as B-11 (already fixed in run_mission_attacks.py via `_rewriter_vllm_mem_util`).
 - Fix: added an auto-picker to run_icir.py (0.45 for 14/13B, 0.25 for 7/8/9B, else 0.18). Relaunched at 03:22 as ICIR v2 (PID 3554970).
 - Post-fix budget on GPU 0 (co-located rewriter + 2 judges): rewriter 0.45 (36 GB) + judge qwen95b 0.27 (21.6 GB) + judge llama8b 0.25 (20 GB) = 0.97 of 80 GB. Rewriter loaded successfully (weights 27.52 GiB, KV 6.86 GiB). Judges loading now.
+
+### 2026-04-22 05:00 — ICIR v2 budget overcommit on fold-2 clarity (gemma9b panel)
+- Fold-1 clarity ICIR ran clean with the 0.45 rewriter budget (in-panel: qwen95b+llama8b). Fold-2 clarity crashed at 2nd judge init: `Free memory on device cuda:0 (22.11/79.15 GiB) on startup is less than desired GPU memory utilization (0.28, 22.16 GiB)` — off by ~50 MiB.
+- Root cause: JudgeVLLM's hardcoded `gpu_memory_utilization=0.28` (run_pilot_len_pen.py ~line 191) means the rewriter must fit below `1.0 - 2×0.28 = 0.44`. 0.45 overcommits by 0.05 at fold 2 where gemma9b was the in-panel judge.
+- Fix: lowered `_rew_mem_util` table to **0.38 for 14B/13B**, 0.22 for 7B/8B/9B, 0.18 else. Qwen3-14B bf16 = 28 GiB weights; 0.38 util (30.1 GiB) leaves ~2 GiB KV — enough for 8+ concurrent 3072-tok requests given GQA (40 layers × 8 KV heads × 128 head_dim → 160 KiB/token). Fold 2/3 clarity ICIR both ran clean after this edit.
+
+### 2026-04-22 07:15 — GRPO fold-1 clarity 100-step — MISSION §5 deliverable DONE
+- Wall: 308.4 min total (5h 8m), train 185.6 min, pre-eval 60 min, post-eval 61 min.
+- Eval on 714 fold-1 paragraphs (pre=baseline rewrites, post=GRPO rewrites):
+
+| Judge | Role | Pre | Post | Δ |
+|---|---|---|---|---|
+| qwen95b | in_panel | 10.41 | 66.85 | **+56.43** |
+| llama8b | in_panel | 79.18 | 74.79 | −4.39 |
+| gemma9b | held_out | 35.24 | 69.87 | **+34.64** |
+
+- **Held-out gemma9b Δ=+34.64 validates the transfer thesis** — GRPO-trained rewriter pleases a judge it was never trained against.
+- qwen95b pre=10.41 unusually low (matches 03:04 disagreement flag); post=66.85 suggests qwen95b *can* be pleased, so the pre-eval baseline is what looked like a floor. Worth a sanity check post-mission (dump 5 baseline rewrites + qwen95b reasoning).
+- **Length-penalty failure — RAISING**: `frac_outside_tol = 0.75` on post-eval. α=100 quadratic penalty did not hold length under Qwen3-14B's high-variance completions. Needs a length-matched baseline or bounded-generation variant before using these rewrites for cross-method comparison of length-sensitive metrics.
+
+### 2026-04-22 07:58 — Fold-1 informativeness bon_score ~4× slower than clarity (raise-don't-hide)
+- bon_score iterates 11,424 candidates × 2 judges sequentially (run_mission_attacks.py:290). Fold-1 clarity on qwen95b+llama8b: ~17 min total (~8.5 min/judge). Fold-1 informativeness on same panel: **qwen95b alone 31.5 min** — 3.8× slowdown per-judge.
+- Cause: informativeness rubric elicits longer judge reasoning (more output tokens per candidate × 11,424 → dominated by generation cost, not prefill).
+- Not a hang — GPU 0 at 99–100% util throughout, llama8b ramped up on schedule after qwen95b finished.
+- Budgeting implication: informativeness attack methods cost ~4× more wall time than clarity for the same fold × panel. Future stretch-goal queues should budget accordingly.
+
+### 2026-04-22 08:37 — HF push: daxmavy/qwen3-14b-grpo-fold1-clarity-100 (§10 DONE)
+- 138 MB adapter + tokenizer + eval_summary.json uploaded in 9.8 s (private repo).
+- Round-trip verified: downloaded `adapter_config.json` from HF, byte-exact match with local copy.
+- Script: `scripts/push_grpo_fold1_clarity_100_to_hf.py`.
+- MISSION.md §10 checkbox 3 (GRPO checkpoint push + round-trip) satisfied.
