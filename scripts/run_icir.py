@@ -44,9 +44,11 @@ sys.path.insert(0, "/home/shil6647/attack-llm-judge")
 
 from config.models import REWRITER, JUDGE_REGISTRY, FOLDS, require_config
 from judge.http_client import JudgeHTTP, spawn_judge_server
+from stop_signal import announce as stop_announce, check_stop_signal, clear_stop_file
 
 DB = "/home/shil6647/attack-llm-judge/data/paragraphs.db"
 DATASET = "/data/shil6647/attack-llm-judge/grpo_run/controversial_40_3fold.json"
+DEFAULT_STOP_DIR = "/data/shil6647/attack-llm-judge/grpo_run/stop_markers"
 
 
 def load_eval():
@@ -74,7 +76,19 @@ def main():
     ap.add_argument("--judge-port", type=int, default=8127)
     ap.add_argument("--judge-gpu", type=int, default=0,
                     help="Physical GPU for the spawned judge server.")
+    ap.add_argument("--stop-file", type=str, default=None,
+                    help="Graceful-stop marker path. Touching triggers a clean "
+                         "exit after the current (fold × criterion) loop body. "
+                         f"Default: {DEFAULT_STOP_DIR}/run_icir.STOP")
+    ap.add_argument("--resume-skip-existing", action="store_true",
+                    help="Skip (fold, criterion) combinations where --method-tag "
+                         "rewrites already exist for every eval-set document.")
     args = ap.parse_args()
+
+    stop_file = args.stop_file or f"{DEFAULT_STOP_DIR}/run_icir.STOP"
+    Path(stop_file).parent.mkdir(parents=True, exist_ok=True)
+    clear_stop_file(stop_file)
+    stop_announce(stop_file)
 
     from vllm import LLM, SamplingParams
     import torch
@@ -150,6 +164,16 @@ def main():
                              endpoint=judge_endpoint) for slug in in_panel]
 
         for cri in args.criteria:
+            if args.resume_skip_existing:
+                done_ids = set(r[0] for r in conn.execute(
+                    "SELECT DISTINCT source_doc_id FROM attack_rewrites "
+                    "WHERE method=? AND fold=? AND criterion=? AND rewriter_model=?",
+                    (args.method_tag, fold, cri, rewriter),
+                ).fetchall())
+                if len(done_ids) >= len(eval_rows):
+                    print(f"  skip-existing: fold {fold} × {cri} already complete "
+                          f"({len(done_ids)}/{len(eval_rows)})", flush=True)
+                    continue
             for j in judges:
                 if j.rubric_name != cri:
                     j.set_rubric(cri)
@@ -240,6 +264,11 @@ def main():
             dt = (time.time() - t_start) / 60
             print(f"  fold {fold} × {cri}: {len(eval_rows)} icir rewrites saved in {dt:.1f} min", flush=True)
 
+            if check_stop_signal(stop_file):
+                print(f"[{time.strftime('%H:%M:%S')}] STOP detected after fold {fold} × {cri} — "
+                      f"exiting. Re-run with --resume-skip-existing to continue.", flush=True)
+                break
+
         # Free judges server-side before moving to next fold so GPU 0 doesn't
         # accumulate engines when the next fold pulls different slugs.
         for j in judges:
@@ -250,6 +279,11 @@ def main():
         del judges
         gc.collect()
         torch.cuda.empty_cache()
+
+        if check_stop_signal(stop_file):
+            print(f"[{time.strftime('%H:%M:%S')}] STOP detected after fold {fold} — "
+                  f"exiting outer loop.", flush=True)
+            break
 
     del rew_llm
     gc.collect()
