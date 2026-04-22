@@ -484,3 +484,36 @@ Going with the existing JUDGE_REGISTRY fold-1 pair: **`qwen95b` (Qwen/Qwen3.5-9B
 - [x] No GPU leaks: GPU 0 / 1 both 0 MiB at 12:08 after regressor exit. Foreign process on GPU 3 is another user (`/opt/anaconda/envs/nlp2025/bin/python`, PID 3956169) — does not touch our GPUs.
 - [x] No /data overflow: 1.4 TB free on `/data` (85% used), our subtree 142 GB.
 - [x] §9 stretch: all 5 items done (clarity folds 2 & 3, informativeness fold 1, held-out eval via score_all_missing, agreement regressor).
+
+### 2026-04-22 — Post-mortem + refactor: model-stub source of truth & GRPO step-budget lock
+**Trigger.** Max invalidated the 2026-04-21 mission. Three failures:
+1. Wrong rewriter base — the HF id actually loaded at GRPO time didn't match what Max had intended to test.
+2. Wrong judge panel — `JUDGE_REGISTRY` had drifted between `training/scripts/run_pilot_len_pen.py`, `scripts/run_mission_attacks.py`, `scripts/run_icir.py`, `judge/vllm_client.py`, `scripts/score_all_missing.py`, and the HF push step. The model card pushed to `daxmavy/qwen3-14b-grpo-fold1-clarity-100` advertised a panel that didn't match the weights' actual reward source.
+3. Single-GPU co-location — rewriter + 2 judges all on one A100 at tight memory fractions; contributed to the length-penalty failure (`frac_outside_tol = 0.75` at fold-1 post-eval, §2026-04-22 07:15 above).
+
+**Fix — single source of truth.** New module **`config/models.py`** holds `REWRITER`, `JUDGE_REGISTRY`, `FOLDS`. Both ship as `None`/`{}` placeholders so stale defaults can't silently resurrect. `require_config()` is called at every entrypoint's `main()` and raises a clear `SystemExit` banner if not populated.
+
+Scripts refactored to import from `config.models` and drop their local copies:
+- `training/scripts/run_pilot_len_pen.py` (GRPO trainer) — also raised `--max-steps` default from 15 → **400** to match MISSION §7 and CLAUDE.md's new GRPO step-budget rule.
+- `scripts/run_mission_attacks.py` (feedback_free / bon_generate / bon_score).
+- `scripts/run_icir.py` (ICIR 4-iter attack).
+- `scripts/score_all_missing.py` (gap-filling post-hoc scorer).
+- `scripts/preflight_rewriter.py` (smoke tester).
+- `judge/vllm_client.py` — `LOCAL_MODEL_MAP` is now derived from `JUDGE_REGISTRY` instead of a hardcoded dict.
+- `scripts/run_grpo_3fold_with_rewriter.sh` — fold rotation now comes from Python, not a hardcoded bash array.
+
+**Shell-script subtlety worth remembering.** First attempt at the shell fix used `eval "$(python3 … FOLDS print …)"`. Under `set -e`, when Python raised `SystemExit` from `require_config()`, bash eval'd the empty stdout as no-op commands and silently continued into an undefined `${IN_PANEL[$FOLD]}`. Fix: write Python output to a `mktemp`'d tempfile, then `source` it — that keeps the non-zero Python exit visible to `set -e` and aborts before `source` runs. Reminder that command-substitution wraps the child's exit status and hides it from `set -e`.
+
+**Dual-GPU topology — CLAUDE.md rule added, architectural gap still open.** Added a "GPU topology rule" clause to CLAUDE.md mandating GPU 0 = judges / GPU 1 = rewriter on 2× A100 boxes, with `CUDA_DEVICE_ORDER=PCI_BUS_ID`. BUT: `run_pilot_len_pen.py::reward_fn` still instantiates `JudgeVLLM` in the same Python process as the GRPOTrainer, so on a 2-GPU host both still end up on a single `CUDA_VISIBLE_DEVICES`. A real split needs either a `multiprocessing.Process` for judges (preferred — less invasive) or a sibling HTTP judge server. Flagged as mandatory pre-launch work in REPLICATION.md §9 and MISSION.md reboot checklist. Not attempted yet — awaiting Max's model selection + scope-check before touching the reward-fn hot path.
+
+**Docs updated.**
+- `CLAUDE.md`: added Model-ID source-of-truth rule, GPU topology rule, GRPO step budget lock.
+- `MISSION.md`: 2026-04-21 section marked ARCHIVED/invalidated; new 2026-04-22 reboot header with pre-launch checklist; old mission text retained below for reference until the new panel is chosen.
+- `REPLICATION.md`: §0 + §1 + §7 now point at `config/models.py`; §9 reframed from "target setup" to mandatory topology with the open architectural gap called out.
+
+**Smoke verification.** Imported every refactored Python entrypoint in the `daxmavy` conda env — all import cleanly with placeholders. Each `require_config()` call raises the expected banner. The refactored shell script also fails fast (exits non-zero, arrays never populated) when models are unset. No runtime has been launched against live weights.
+
+**Known residual follow-ups.**
+- Out-of-process judge refactor (see above) — mandatory before next 400-step GRPO launch.
+- `config/models.py` still has placeholder values — Max to populate with the real panel before mission restart.
+- Old HF repo `daxmavy/qwen3-14b-grpo-fold1-clarity-100` advertises a panel that doesn't match reality; consider deleting or adding a README warning once the new mission produces a replacement. Not touched in this pass (user data, not to be destroyed without explicit ask).
