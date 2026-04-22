@@ -514,6 +514,29 @@ Scripts refactored to import from `config.models` and drop their local copies:
 **Smoke verification.** Imported every refactored Python entrypoint in the `daxmavy` conda env — all import cleanly with placeholders. Each `require_config()` call raises the expected banner. The refactored shell script also fails fast (exits non-zero, arrays never populated) when models are unset. No runtime has been launched against live weights.
 
 **Known residual follow-ups.**
-- Out-of-process judge refactor (see above) — mandatory before next 400-step GRPO launch.
+- Out-of-process judge refactor (see above) — mandatory before next 400-step GRPO launch. **Done 2026-04-22, see below.**
 - `config/models.py` still has placeholder values — Max to populate with the real panel before mission restart.
 - Old HF repo `daxmavy/qwen3-14b-grpo-fold1-clarity-100` advertises a panel that doesn't match reality; consider deleting or adding a README warning once the new mission produces a replacement. Not touched in this pass (user data, not to be destroyed without explicit ask).
+
+---
+
+## 2026-04-22 — HTTP judge server refactor (architectural gap closed)
+
+**Motivation.** The in-process judge pattern (`JudgeVLLM` instantiated inside `run_pilot_len_pen.py::reward_fn`, same for ICIR, BoN, gap-fill, preflight) meant the GRPOTrainer and both judges fought for a single `CUDA_VISIBLE_DEVICES` on a 2-GPU host. The 2026-04-21 run co-located 3 vLLM engines on a single A100 at `gpu_memory_utilization≈0.28` and silently overcommitted, contributing to the fold-1 `frac_outside_tol=0.75` length-penalty failure. Max's direction: "fix this, judge scoring should always be done from the http judge server."
+
+**What landed.**
+- **`judge/rubrics.py`** — extracted the rubric strings (`JUDGE_SYSTEM`, `CLARITY_RUBRIC`, `INFORMATIVENESS_RUBRIC`, `RUBRICS`), `SCORE_RE_*`, `parse_score_and_reasoning`, `supports_system_role` from `run_pilot_len_pen.py`. Shared between server and any legacy caller.
+- **`judge/server.py`** — stdlib `ThreadingHTTPServer`, one process per GPU. Endpoints: `/load`, `/score`, `/generate`, `/set_rubric`, `/unload`, `/health`, `/shutdown`. Loads HF tokenizer + vLLM `LLM` per slug, caches in `_STATE`, serialises concurrent generate calls with a per-judge lock. `_auto_gpu_mem_util()` picks sensible defaults for a dedicated GPU (0.45 for 7-14B, 0.70 for 27-32B, 0.90 for 49B+). Auto-loads on first `/score` or `/generate` if a rubric is supplied. Qwen3 family forces `enable_thinking=False` (preserved from old code).
+- **`judge/http_client.py`** — `JudgeHTTP` dataclass with the same public surface as the old `JudgeVLLM` (`name`, `model_id`, `wandb_name`, `rubric_name`, `rubric_text`, `score()`, `score_full()`, `set_rubric()`, `unload()`, `generate_raw()`). `spawn_judge_server(port, gpu, log_path)` subprocess helper that sets `CUDA_DEVICE_ORDER=PCI_BUS_ID` + `CUDA_VISIBLE_DEVICES` *before* Python import, polls `/health` with timeout, reuses an already-bound port if found.
+- **`judge/vllm_client.py`** — rewritten from "in-process vLLM per judge" to a thin passthrough. Public surface unchanged (`is_local_available`, `call_judge_local`, `call_judge_local_batch`); delegates to `JudgeHTTP.generate_raw`. Endpoint from `JUDGE_HTTP_ENDPOINT` env var (default 127.0.0.1:8127). No auto-spawn — callers bring the server up themselves.
+- **`training/scripts/run_pilot_len_pen.py`** — dropped the inlined `JudgeVLLM` class and rubric constants (they now live in `judge/rubrics.py`). Spawns a judge server at main-entry via `spawn_judge_server(gpu=args.judge_gpu)`, constructs `JudgeHTTP(name=slug, rubric=..., endpoint=endpoint)` per in-panel judge. wandb reward keys + `pre_scores`/`post_scores` dict keys migrated to `j.wandb_name` to preserve the `judge_<slug>` format the existing dashboards + DB `judge_slug` column expect. Held-out eval block explicitly `unload()`s the in-panel judges first, then loads the held-out slug on the same server.
+- **`scripts/run_icir.py`** — replaced hand-rolled `j._build_prompt()` + `j.llm.generate()` + regex parse with `j.score_full(props, rewrites, include_raw=False)`. `j.set_rubric(cri)` instead of mutating internal state. `_rew_mem_util` defaults raised (0.75 for 32B, 0.70 for 24B, 0.65 for 14B, …) because the rewriter now owns its GPU.
+- **`scripts/run_mission_attacks.py`** — `cmd_bon_score` routes through `JudgeHTTP`. DB writes continue to use `j.wandb_name` as `judge_slug` so existing aggregation queries don't break.
+- **`scripts/score_all_missing.py`** — same pattern; in-place rubric swap via `j.set_rubric()` between clarity and informativeness.
+- **`scripts/preflight_rewriter.py`** — spawns a judge server before the 1-step smoke so preflight exercises the same path as the real run.
+
+Every consumer accepts `--judge-endpoint` / `--judge-port` / `--judge-gpu` CLI flags, so one server can be shared across a preflight → GRPO → mission-attacks → scoring pipeline without reloading judge weights between stages.
+
+**Smoke.** All seven refactored modules import cleanly in the `daxmavy` env (`python -c "import judge.http_client, judge.server, judge.vllm_client; import run_pilot_len_pen; import run_icir; import run_mission_attacks; import score_all_missing; import preflight_rewriter"`). `python -m judge.server --help` parses. End-to-end server spawn is deferred to the first run with a populated `JUDGE_REGISTRY` (still blank by design — Max picks the panel).
+
+**Docs updated.** CLAUDE.md judge-inference rule now mandates the HTTP server path. MISSION.md reboot checklist marks the refactor complete. REPLICATION.md §9 rewritten from "architectural gap" to the live out-of-process architecture with endpoint list + consumer inventory.
