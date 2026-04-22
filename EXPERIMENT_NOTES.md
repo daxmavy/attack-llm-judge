@@ -540,3 +540,45 @@ Every consumer accepts `--judge-endpoint` / `--judge-port` / `--judge-gpu` CLI f
 **Smoke.** All seven refactored modules import cleanly in the `daxmavy` env (`python -c "import judge.http_client, judge.server, judge.vllm_client; import run_pilot_len_pen; import run_icir; import run_mission_attacks; import score_all_missing; import preflight_rewriter"`). `python -m judge.server --help` parses. End-to-end server spawn is deferred to the first run with a populated `JUDGE_REGISTRY` (still blank by design — Max picks the panel).
 
 **Docs updated.** CLAUDE.md judge-inference rule now mandates the HTTP server path. MISSION.md reboot checklist marks the refactor complete. REPLICATION.md §9 rewritten from "architectural gap" to the live out-of-process architecture with endpoint list + consumer inventory.
+
+---
+
+## 2026-04-22 (afternoon) — pilot-plan rewriter + judge picks partially invalidated by smoke
+
+Ran the planned cohost smoke + Unsloth load probe on the picks in `config/models.py`. Three problems surfaced, all traceable to picking HF repos without inspecting their architecture tags:
+
+### B-N1. Qwen/Qwen3.5-9B is a vision-language model, not text-only
+- `HfApi.model_info('Qwen/Qwen3.5-9B').pipeline_tag == 'image-text-to-text'`; `model_type=qwen3_5`, tags include `image-text-to-text`.
+- Unsloth loader banner confirmed: `Unsloth: Fast Qwen3_5 patching` → `Qwen3_5VisionModel`; `[unsloth_zoo|WARNING] get_input_embeddings not auto-handled for Qwen3_5VisionModel`.
+- `unsloth/Qwen3.5-9B` is the same thing (that's what Unsloth silently redirected our download to, eating ~12 min of XET downloads).
+- Load itself worked: 735s base load, 18.8 GB VRAM bf16, `get_peft_model` 7.4s → 51.0M trainable params (0.54% of 9461M). But `tok(prompt, return_tensors='pt')` crashes because Unsloth-zoo's `patched_call` in `tokenizer_utils.py:702` routes through `Qwen3VLProcessor.__call__`, which passes the text to `qwen2_vl.image_processing_qwen2_vl.preprocess()` as if it were an image URL → `binascii.Error: Incorrect padding` → `ValueError: Incorrect image source`.
+- The Unsloth notebook I was referencing (`Qwen3_5_4B_Vision_GRPO.ipynb`) is demoing the VL variant specifically — that's why `get_peft_model(target_modules='all-linear')` "worked" in the notebook. For a text-only rewriter, Qwen3.5 is the wrong series: there is no text-only Qwen3.5-9B repo.
+- **Fix:** swap `REWRITER` to a text-only model. Candidates (all `pipeline_tag=text-generation`):
+  - `Qwen/Qwen3-14B` — known-working on 2026-04-21 run (HF push succeeded, GRPO 100-step reached). Largest of the three; needs QLoRA for comfort on 1 A100 under GRPO — Unsloth supports this via `load_in_4bit=True`.
+  - `Qwen/Qwen3-8B` — same family, smaller, bf16 LoRA fits easily (~18 GB + optimizer).
+  - `Qwen/Qwen2.5-7B-Instruct` — older but rock-solid Unsloth + vLLM path.
+- The `--use-unsloth` branch I added to `run_pilot_len_pen.py` (commit 519c2f2) is still correct — it's just the model pick that was wrong. FastLanguageModel handles text-only Qwen/Llama fine.
+
+### B-N2. RedHatAI/Mistral-Small-3.2-24B-Instruct-2506-FP8 has no HF tokenizer
+- Repo file list: `['consolidated.safetensors', 'generation_config.json', 'params.json', 'SYSTEM_PROMPT.txt', 'tekken.json', 'README.md']`. No `tokenizer_config.json`, no `tokenizer.json`, no `chat_template.json`, no HF `config.json`.
+- vLLM can still load it (the cohost run did: `Resolved architecture: PixtralForConditionalGeneration`, 24 GiB model load, FLASH_ATTN backend, KV cache 27k tokens). But our judge server uses HF `AutoTokenizer` + `apply_chat_template` — vLLM downloads `tekken.json` at init and converts it, but the HF tokenizer object has no `chat_template` attribute, so scoring crashes:
+  > `ValueError: Cannot use chat template functions because tokenizer.chat_template is not set and no template argument was passed`
+- Also: Mistral-Small 3.2 (2506) is itself a Pixtral VLM, so even if we patched the tokenizer, rewards from a vision-conditioned judge on text-only inputs are not what we want.
+- **Fix:** swap `mistral24` hf_id to `RedHatAI/Mistral-Small-24B-Instruct-2501-FP8-dynamic`. Verified today via `HfApi`: `architectures=['MistralForCausalLM']`, `model_type=mistral`, no `vision_config`, ships `tokenizer_config.json` + `tokenizer.json`. The 3.1-2503 variant is also Pixtral; 2501 is the last pure-text Mistral-Small-24B.
+
+### B-N3. Flash-Attention 2 broken in daxmavy env after transformers 5.5.0 upgrade
+- Unsloth banner: `Unsloth: Your Flash Attention 2 installation seems to be broken. Using Xformers instead. No performance changes will be seen.`
+- `FA [Xformers = 0.0.35. FA2 = False]`.
+- Not blocking (Xformers backward works on Qwen text arches), but ~30% training-step regression vs FA2. Likely the `flash-attn` wheel pinned for transformers 4.57 doesn't satisfy transformers 5.5 / torch 2.10 / CUDA 12.8.
+- Investigation deferred until the rewriter / judge swaps above are locked in — no point reinstalling FA2 if we're about to re-pin the whole stack.
+
+### What's still-valid from today's smoke
+- **Cohost VRAM envelope verified.** Pair 1 (gemma27 + mistral24) loaded both judges on one A100 with peak GPU0 = **65.7 GB / 80 GB = 82%**. Two FP8 24-27B judges fit comfortably with gpu_memory_utilization=0.45/0.38. Auto-picks in `judge.server._auto_gpu_mem_util` (0.55/0.70/0.90) assume a dedicated GPU and overcommit when cohosting — the cohost script's explicit per-judge override (in `/data/shil6647/attack-llm-judge/tmp/pairwise_judge_cohost.py`) is the right pattern and should migrate into the production launchers.
+- **gemma27 scoring works end-to-end.** Sample scores on the 4 calibration items: `[90.0, 90.0, 95.0, 95.0]` — plausible and consistent across two cold loads (429.9s first load on fresh XET cache, 69.9s on pair 2 with cache warm; 16.0s / 7.6s per 4 items).
+- **vLLM picks TRITON_ATTN for gemma27 vit**, FLASH_ATTN for mistral24 text. Compute-side fine, logged for the record.
+
+### Immediate plan
+1. Get Max's sign-off on rewriter swap (likely `Qwen/Qwen3-14B` to match prior-mission known-good) and mistral24 swap (`RedHatAI/Mistral-Small-24B-Instruct-2501-FP8-dynamic`).
+2. Update `config/models.py`, re-run cohost pair 1 (gemma27 + new mistral24) to verify the chat-template fix; pair 2 (gemma27 + phi4) is already mid-flight and not affected.
+3. Re-run the load probe against the new rewriter (expect Qwen3-14B to load in ~3 min from warm cache, ~35 GB VRAM bf16 LoRA or ~12 GB QLoRA).
+4. Then the 5-step GRPO smoke.
