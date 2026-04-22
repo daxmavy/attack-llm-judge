@@ -282,6 +282,14 @@ def main():
                     choices=["grpo", "dapo", "dr_grpo", "bnpo"])
     ap.add_argument("--save-final", type=str, default=None,
                     help="if set, save final rewriter to this dir")
+    ap.add_argument("--base-model", type=str, default=None,
+                    help=f"override base rewriter HF id (default: {REWRITER}). "
+                         "For Qwen3-14B QLoRA runs, pass 'Qwen/Qwen3-14B' and --use-qlora.")
+    ap.add_argument("--use-qlora", action="store_true",
+                    help="Load base in 4-bit NF4 + double-quant and train LoRA adapters (q/k/v/o + gate/up/down). "
+                         "Required for 14B on a single 80GB A100 alongside the vLLM judge.")
+    ap.add_argument("--lora-r", type=int, default=16)
+    ap.add_argument("--lora-alpha", type=int, default=32)
     ap.add_argument("--n-train", type=int, default=200)
     ap.add_argument("--n-eval", type=int, default=50)
     ap.add_argument("--train-judges", type=str, default="qwen7b,llama8b",
@@ -596,6 +604,11 @@ def main():
             vllm_importance_sampling_cap=args.vllm_is_cap,
             vllm_importance_sampling_mode=args.vllm_is_mode,
         )
+    if args.use_qlora:
+        # gradient_checkpointing cuts activation memory ~3x for the 14B 4-bit base,
+        # which is what lets trainer + judge share one 80GB A100. bf16 stays on
+        # for matmul via bnb_4bit_compute_dtype=bfloat16.
+        cfg_kwargs["gradient_checkpointing"] = True
     cfg = GRPOConfig(**cfg_kwargs)
 
     # Capture manifest for reproducibility
@@ -620,16 +633,35 @@ def main():
 
     # Pre-eval: load rewriter as HF, generate, score with vLLM judges
     print(f"[{time.strftime('%H:%M:%S')}] pre-eval", flush=True)
-    rw_tok = AutoTokenizer.from_pretrained(REWRITER, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
+    rewriter_id = args.base_model or REWRITER
+    rw_tok = AutoTokenizer.from_pretrained(rewriter_id, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
                                             token=os.environ.get("HF_TOKEN"))
     if rw_tok.pad_token is None:
         rw_tok.pad_token = rw_tok.eos_token
     rw_tok.padding_side = "left"
-    rw_model = AutoModelForCausalLM.from_pretrained(
-        REWRITER, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
-        dtype=torch.bfloat16, device_map="cuda",
-        token=os.environ.get("HF_TOKEN"),
-    )
+    if args.use_qlora:
+        # 4-bit NF4 + double-quant for the 14B base so it fits on one 80GB A100
+        # alongside the ~22GB vLLM judge. LoRA adapters (q/k/v/o + gate/up/down)
+        # are the only trainable params; everything else is frozen 4-bit. Pattern
+        # validated in scripts/preflight_rewriter.py (smoke v6).
+        from transformers import BitsAndBytesConfig
+        bnb = BitsAndBytesConfig(
+            load_in_4bit=True, bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.bfloat16,
+            bnb_4bit_use_double_quant=True,
+        )
+        rw_model = AutoModelForCausalLM.from_pretrained(
+            rewriter_id, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
+            quantization_config=bnb, device_map={"": 0},
+            token=os.environ.get("HF_TOKEN"),
+        )
+        print(f"[{time.strftime('%H:%M:%S')}] rewriter loaded 4-bit QLoRA ({rewriter_id})", flush=True)
+    else:
+        rw_model = AutoModelForCausalLM.from_pretrained(
+            rewriter_id, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
+            dtype=torch.bfloat16, device_map="cuda",
+            token=os.environ.get("HF_TOKEN"),
+        )
 
     @torch.no_grad()
     def generate_eval(model_, tok_, eval_rows_, batch=8, max_new=260):
@@ -663,13 +695,23 @@ def main():
     # If GRPOTrainer receives the string it reloads in FP32, doubling save size
     # (6 GB vs 3 GB) and forcing a 2-shard save (5 GB + 1.2 GB). A bf16 model
     # fits in a single <5 GB shard, avoiding partial-write failures on tight disks.
-    trainer = GRPOTrainer(
+    trainer_kwargs = dict(
         model=rw_model,
         reward_funcs=reward_fn,
         args=cfg,
         train_dataset=ds,
         processing_class=rw_tok,
     )
+    if args.use_qlora:
+        from peft import LoraConfig
+        trainer_kwargs["peft_config"] = LoraConfig(
+            r=args.lora_r, lora_alpha=args.lora_alpha,
+            target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
+                             "gate_proj", "up_proj", "down_proj"],
+            lora_dropout=0.0, bias="none", task_type="CAUSAL_LM",
+        )
+        print(f"[{time.strftime('%H:%M:%S')}] LoRA r={args.lora_r} alpha={args.lora_alpha} on q/k/v/o + gate/up/down", flush=True)
+    trainer = GRPOTrainer(**trainer_kwargs)
     t_train_start = time.time()
     print(f"[{time.strftime('%H:%M:%S')}] starting GRPO training ({args.max_steps} steps)", flush=True)
     trainer.train()
