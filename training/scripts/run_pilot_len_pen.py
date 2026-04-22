@@ -38,20 +38,12 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import wandb
 
 sys.path.insert(0, "/data/shil6647/attack-llm-judge/grpo_run")
+sys.path.insert(0, "/home/shil6647/attack-llm-judge")
 from length_penalty import compute_length_penalty, word_count as _wc  # noqa: E402
 from run_manifest import capture_manifest  # noqa: E402
 
-
-REWRITER = "Qwen/Qwen2.5-1.5B-Instruct"
-# Three candidate judges. Two are used as training proxies (via --train-judges),
-# the remaining one is held-out for post-training evaluation.
-JUDGE_REGISTRY = {
-    # Mission panel (locked 2026-04-19): 3 judges, 3 families (Alibaba / Meta / Google).
-    # qwen7b and gemma4 were dropped to prevent auto-pick mishaps.
-    "qwen95b": ("judge_qwen95b", "Qwen/Qwen3.5-9B"),
-    "llama8b": ("judge_llama8b", "meta-llama/Llama-3.1-8B-Instruct"),
-    "gemma9b": ("judge_gemma9b", "google/gemma-2-9b-it"),
-}
+# Single source of truth for rewriter + judge IDs. See config/models.py.
+from config.models import REWRITER, JUDGE_REGISTRY, require_config  # noqa: E402
 
 OUT_DIR = Path("/data/shil6647/attack-llm-judge/grpo_run")
 
@@ -251,8 +243,9 @@ def make_rewrite_prompt(proposition, text, word_count):
 
 
 def main():
+    require_config()
     ap = argparse.ArgumentParser()
-    ap.add_argument("--max-steps", type=int, default=15)
+    ap.add_argument("--max-steps", type=int, default=400)
     ap.add_argument("--name-suffix", type=str, default="pilot")
     ap.add_argument("--alpha", type=float, default=100.0, help="length penalty weight")
     ap.add_argument("--tol", type=float, default=0.10, help="length penalty tolerance band (only for additive shape)")
