@@ -1,6 +1,7 @@
 """OpenRouter chat completion for the rewriter model."""
 from __future__ import annotations
 
+import re
 import time
 from dataclasses import dataclass
 from typing import Optional
@@ -31,8 +32,13 @@ class RewriteResult:
     completion_tokens: int = 0
 
 
+_THINK_BLOCK_RE = re.compile(r"^\s*<think>.*?</think>\s*", re.DOTALL)
+
+
 def _strip_wrappers(text: str) -> str:
-    t = text.strip()
+    # Strip any leading <think>...</think> block first — Qwen3 emits these even
+    # with /no_think in the user message (the block is empty, but still present).
+    t = _THINK_BLOCK_RE.sub("", text).strip()
     # Strip accidental leading "Here is the rewritten paragraph:" type lines.
     if "\n" in t:
         first, rest = t.split("\n", 1)

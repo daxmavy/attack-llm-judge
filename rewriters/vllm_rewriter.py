@@ -90,12 +90,22 @@ class _Rewriter:
         self._SamplingParams = SamplingParams
 
     def _build(self, system_prompt: str, user_prompt: str) -> str:
+        # Append /no_think so Qwen3 bases skip the reasoning preamble (soft switch;
+        # harmless for non-Qwen3 models). enable_thinking=False on the template is
+        # defense-in-depth for Qwen3-family tokenizers; the try/except keeps the
+        # path compatible with tokenizers whose chat template ignores that kwarg.
+        user_prompt = user_prompt.rstrip() + " /no_think"
         if self.sys_ok:
             chat = [{"role": "system", "content": system_prompt},
                     {"role": "user",   "content": user_prompt}]
         else:
             chat = [{"role": "user", "content": system_prompt + "\n\n" + user_prompt}]
-        return self.tok.apply_chat_template(chat, tokenize=False, add_generation_prompt=True)
+        try:
+            return self.tok.apply_chat_template(
+                chat, tokenize=False, add_generation_prompt=True, enable_thinking=False,
+            )
+        except TypeError:
+            return self.tok.apply_chat_template(chat, tokenize=False, add_generation_prompt=True)
 
     def generate(self, pairs: list[tuple[str, str]], max_tokens: int, temperature: float) -> list[str]:
         prompts = [self._build(s, u) for (s, u) in pairs]
