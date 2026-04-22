@@ -51,6 +51,12 @@ from judge.rubrics import RUBRICS  # noqa: E402
 from judge.http_client import (  # noqa: E402
     DEFAULT_ENDPOINT, JudgeHTTP, spawn_judge_server,
 )
+from stop_signal import (  # noqa: E402
+    announce as stop_announce,
+    build_trainer_callback,
+    clear_stop_file,
+    default_stop_file,
+)
 
 OUT_DIR = Path("/data/shil6647/attack-llm-judge/grpo_run")
 
@@ -128,6 +134,28 @@ def main():
                     choices=["grpo", "dapo", "dr_grpo", "bnpo"])
     ap.add_argument("--save-final", type=str, default=None,
                     help="if set, save final rewriter to this dir")
+    # Graceful stop + resume.
+    ap.add_argument("--save-steps", type=int, default=0,
+                    help="If >0, save a full trainer checkpoint every N steps "
+                         "(weights + optimizer + scheduler + RNG). Required for "
+                         "the resume-from path; 0 disables periodic checkpointing "
+                         "so only a --save-final write happens at the end.")
+    ap.add_argument("--save-total-limit", type=int, default=3,
+                    help="Keep at most this many periodic checkpoints on disk; "
+                         "older ones are rotated out. Only applies when --save-steps>0.")
+    ap.add_argument("--resume-from", type=str, default=None,
+                    help="Path to a checkpoint dir (e.g. ckpt_<suffix>/checkpoint-200) "
+                         "to resume training from. The trainer picks up optimizer + "
+                         "scheduler + RNG state and continues to --max-steps.")
+    ap.add_argument("--skip-pre-eval", action="store_true",
+                    help="Skip pre-training eval. If a pre_eval.json already exists "
+                         "in the run's output dir, it is loaded and reused for the "
+                         "summary; otherwise pre/post deltas are left null. Useful "
+                         "for resumes so the 14-min pre-eval isn't re-paid.")
+    ap.add_argument("--stop-file", type=str, default=None,
+                    help="Path to a filesystem marker. Touching this file during a "
+                         "run triggers a graceful save+exit at the next step boundary. "
+                         "Defaults to <run_dir>/STOP.")
     ap.add_argument("--base-model", type=str, default=None,
                     help=f"override base rewriter HF id (default: {REWRITER}). "
                          "For Qwen3-14B QLoRA runs, pass 'Qwen/Qwen3-14B' and --use-qlora.")
@@ -205,6 +233,14 @@ def main():
     print(f"train judges: {train_judge_keys}, held-out: {heldout_slug}", flush=True)
     t_start = time.time()
     print(f"[{time.strftime('%H:%M:%S')}] start (pilot-len-pen, args={vars(args)})", flush=True)
+
+    # Resolve graceful-stop marker. Compute now (before judge spawn) so the
+    # operator sees the path in the log tail while judges are still cold-loading.
+    pilot_dir = OUT_DIR / f"pilot_{args.name_suffix}"
+    pilot_dir.mkdir(parents=True, exist_ok=True)
+    stop_file = args.stop_file or default_stop_file(pilot_dir)
+    clear_stop_file(stop_file)
+    stop_announce(stop_file)
 
     if args.dataset_json:
         # Load from precomputed JSON (e.g. build_controversial_subset.py output)
@@ -487,7 +523,12 @@ def main():
         scale_rewards=args.scale_rewards,
         loss_type=args.loss_type,
         logging_steps=1,
-        save_strategy="no",  # periodic saves caused silent crashes in fold 2 step 50; rely on final save_model
+        # Default is no periodic save (fold-2 step-50 silent crash history); opt in via --save-steps
+        # for the stop/resume path. Periodic checkpoints are a belt-and-suspenders
+        # backup against mid-run interrupts in addition to the STOP-file trigger.
+        save_strategy="steps" if args.save_steps > 0 else "no",
+        save_steps=args.save_steps if args.save_steps > 0 else 500,  # save_steps must be positive even if unused
+        save_total_limit=args.save_total_limit if args.save_steps > 0 else None,
         bf16=True,
         report_to=["wandb"],
         temperature=args.temperature,
@@ -630,11 +671,38 @@ def main():
             outs.extend(tok_.batch_decode(gen, skip_special_tokens=True))
         return [strip_think_block(o) for o in outs]
 
-    pre_rewrites = generate_eval(rw_model, rw_tok, eval_rows)
     props_eval = [r[1] for r in eval_rows]
-    pre_scores = {j.wandb_name: j.score(props_eval, pre_rewrites) for j in judges}
-    for jn, s in pre_scores.items():
-        print(f"  pre  {jn} mean={sum(s)/len(s):.2f}", flush=True)
+    pre_eval_json = pilot_dir / "pre_eval.json"
+    if args.skip_pre_eval and pre_eval_json.exists():
+        _cached = json.loads(pre_eval_json.read_text())
+        pre_rewrites = _cached["pre_rewrites"]
+        pre_scores = _cached["pre_scores"]
+        print(f"[{time.strftime('%H:%M:%S')}] --skip-pre-eval: loaded cached pre-eval "
+              f"from {pre_eval_json}", flush=True)
+    elif args.skip_pre_eval:
+        # Refuse to skip silently — the use case is resume after a STOP, and
+        # at that point the original run should have persisted pre_eval.json.
+        # If no cache exists, it means pre-eval was never run; running post-eval
+        # alone produces pre/post deltas that are silently None, which would
+        # be easy to misread as "model got worse / same".
+        raise SystemExit(
+            f"--skip-pre-eval requires a cached {pre_eval_json}; run the first "
+            f"launch without --skip-pre-eval so it persists, then use "
+            f"--skip-pre-eval on subsequent resumes."
+        )
+    else:
+        pre_rewrites = generate_eval(rw_model, rw_tok, eval_rows)
+        pre_scores = {j.wandb_name: j.score(props_eval, pre_rewrites) for j in judges}
+        pre_eval_json.write_text(json.dumps({
+            "pre_rewrites": pre_rewrites,
+            "pre_scores": pre_scores,
+            "eval_document_ids": [r[0] for r in eval_rows],
+        }, indent=2))
+        print(f"[{time.strftime('%H:%M:%S')}] pre-eval cached to {pre_eval_json} "
+              f"(reusable via --skip-pre-eval on resume)", flush=True)
+    if pre_scores is not None:
+        for jn, s in pre_scores.items():
+            print(f"  pre  {jn} mean={sum(s)/len(s):.2f}", flush=True)
 
     # Keep rw_model alive — it's passed into GRPOTrainer below so the trainer uses
     # the bf16 weights instead of reloading in FP32.
@@ -673,10 +741,52 @@ def main():
         _mode = "QLoRA 4-bit" if args.use_qlora else "bf16 LoRA"
         print(f"[{time.strftime('%H:%M:%S')}] {_mode} r={args.lora_r} alpha={args.lora_alpha} on q/k/v/o + gate/up/down", flush=True)
     trainer = GRPOTrainer(**trainer_kwargs)
+    # Graceful-stop: at each step boundary, if the STOP marker exists, the
+    # trainer saves a checkpoint and exits cleanly instead of running to
+    # --max-steps. Pair with --save-steps so the stop-save produces a
+    # resumable checkpoint.
+    trainer.add_callback(build_trainer_callback(str(stop_file)))
     t_train_start = time.time()
-    print(f"[{time.strftime('%H:%M:%S')}] starting GRPO training ({args.max_steps} steps)", flush=True)
-    trainer.train()
+    resume_msg = f" (resume from {args.resume_from})" if args.resume_from else ""
+    print(f"[{time.strftime('%H:%M:%S')}] starting GRPO training "
+          f"({args.max_steps} steps{resume_msg})", flush=True)
+    trainer.train(resume_from_checkpoint=args.resume_from)
     train_elapsed = time.time() - t_train_start
+    stopped_early = trainer.state.global_step < args.max_steps
+    if stopped_early:
+        print(f"[{time.strftime('%H:%M:%S')}] training STOPPED EARLY at step "
+              f"{trainer.state.global_step}/{args.max_steps} "
+              f"(elapsed {train_elapsed/60:.1f} min) — checkpoint written by STOP callback", flush=True)
+        # Short-circuit: post-eval + held-out scoring would block both GPUs for
+        # ~20 more min, defeating the point of a graceful stop. The STOP-callback
+        # already wrote a resumable checkpoint under ckpt_<suffix>/. Tear down
+        # and exit. Resume with:
+        #   python run_pilot_len_pen.py ... --resume-from <ckpt> --skip-pre-eval
+        print(f"[{time.strftime('%H:%M:%S')}] skipping post-eval + held-out on early stop. "
+              f"Resume with --resume-from {cfg.output_dir}/checkpoint-{trainer.state.global_step} "
+              f"--skip-pre-eval", flush=True)
+        try:
+            wandb.log({"runtime/stopped_early_step": trainer.state.global_step,
+                       "runtime/train_min": train_elapsed / 60})
+            wandb.finish()
+        except Exception as e:
+            print(f"  warn: wandb.finish on early-stop failed: {e!r}", flush=True)
+        if judge_server_proc is not None:
+            try:
+                JudgeHTTP.request_shutdown(judge_endpoint, timeout=10.0)
+            except Exception:
+                try:
+                    judge_server_proc.terminate()
+                except Exception:
+                    pass
+            try:
+                judge_server_proc.wait(timeout=60)
+            except Exception:
+                try:
+                    judge_server_proc.kill()
+                except Exception:
+                    pass
+        return
     print(f"[{time.strftime('%H:%M:%S')}] training done in {train_elapsed/60:.1f} min", flush=True)
 
     # Save model FIRST, before any eval or vLLM teardown.
