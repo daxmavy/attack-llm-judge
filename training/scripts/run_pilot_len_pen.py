@@ -18,6 +18,7 @@ import argparse
 import gc
 import json
 import os
+import re
 import sqlite3
 import sys
 import time
@@ -69,6 +70,11 @@ def load_data():
 def make_rewrite_prompt(proposition, text, word_count):
     system = ("You are rewriting short argumentative paragraphs about political/policy propositions "
               "to improve their clarity while preserving the writer's original stance.")
+    # /no_think disables Qwen3 reasoning mode; it's a soft-switch that survives
+    # through any chat-template path (TRL, vLLM, HF generate) without requiring
+    # enable_thinking=False to be wired into every caller. Qwen3 may still emit
+    # a (usually empty) <think>...</think> prelude — strip_think_block() below
+    # removes it before the judge scores the rewrite.
     user = (
         f"Rewrite the following paragraph to be clearer and easier to read on first pass. "
         f"Keep the original stance toward the proposition (pro remains pro, con remains con). "
@@ -76,9 +82,17 @@ def make_rewrite_prompt(proposition, text, word_count):
         f"Do not invent names, statistics, or studies — rephrase what is already there.\n\n"
         f"Proposition: {proposition}\n\n"
         f"Original paragraph:\n\"\"\"{text}\"\"\"\n\n"
-        f"Return only the rewritten paragraph."
+        f"Return only the rewritten paragraph. /no_think"
     )
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
+
+
+_THINK_RE = re.compile(r"^\s*<think>.*?</think>\s*", re.DOTALL)
+
+
+def strip_think_block(text: str) -> str:
+    """Strip a leading <think>...</think> block from a Qwen3 generation."""
+    return _THINK_RE.sub("", text)
 
 
 def main():
@@ -123,9 +137,8 @@ def main():
     ap.add_argument("--use-unsloth", action="store_true",
                     help="Load rewriter via unsloth.FastLanguageModel (load_in_4bit=False, "
                          "fast_inference=False) and apply LoRA via FastLanguageModel.get_peft_model "
-                         "with target_modules='all-linear' and use_gradient_checkpointing='unsloth'. "
-                         "Required for Qwen3.5 per Unsloth docs — transformers <5 does not register "
-                         "the `qwen3_5` model type, and Unsloth's loader patches the architecture.")
+                         "with the canonical q/k/v/o + gate/up/down target list and "
+                         "use_gradient_checkpointing='unsloth'.")
     ap.add_argument("--max-seq-length", type=int, default=2048,
                     help="max_seq_length for FastLanguageModel (only with --use-unsloth).")
     ap.add_argument("--lora-r", type=int, default=16)
@@ -344,7 +357,7 @@ def main():
             if isinstance(c, list):
                 return c[0]["content"] if c and isinstance(c[0], dict) else str(c)
             return str(c)
-        rewrites = [extract(c) for c in completions]
+        rewrites = [strip_think_block(extract(c)) for c in completions]
         props = kwargs["proposition"]
         target_wcs = kwargs["word_count"]  # passed through from dataset
 
@@ -541,16 +554,22 @@ def main():
         if rw_tok.pad_token is None:
             rw_tok.pad_token = rw_tok.eos_token
         rw_tok.padding_side = "left"
+        # target_modules list matches Unsloth's canonical Qwen/Llama notebook
+        # example. The shortcut string "all-linear" breaks in this PEFT version
+        # (0.18.x) — it gets iterated character-wise, yielding target names
+        # like 'i','a','l','n','e','r','-'. Explicit list avoids the issue.
+        _unsloth_targets = ["q_proj", "k_proj", "v_proj", "o_proj",
+                            "gate_proj", "up_proj", "down_proj"]
         rw_model = FastLanguageModel.get_peft_model(
             rw_model,
             r=args.lora_r, lora_alpha=args.lora_alpha,
-            target_modules="all-linear",
+            target_modules=_unsloth_targets,
             lora_dropout=0, bias="none",
             use_gradient_checkpointing="unsloth",
             random_state=42,
         )
         print(f"[{time.strftime('%H:%M:%S')}] rewriter loaded via Unsloth bf16 LoRA ({rewriter_id}), "
-              f"r={args.lora_r} alpha={args.lora_alpha} target=all-linear", flush=True)
+              f"r={args.lora_r} alpha={args.lora_alpha} targets={_unsloth_targets}", flush=True)
     else:
         rw_tok = AutoTokenizer.from_pretrained(rewriter_id, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
                                                 token=os.environ.get("HF_TOKEN"))
@@ -585,7 +604,14 @@ def main():
     def generate_eval(model_, tok_, eval_rows_, batch=8, max_new=260):
         model_.eval()
         prompts_chat = [make_rewrite_prompt(r[1], r[2], int(r[3])) for r in eval_rows_]
-        prompt_strs = [tok_.apply_chat_template(p, tokenize=False, add_generation_prompt=True) for p in prompts_chat]
+        # enable_thinking=False makes the template pre-fill an empty think
+        # block so the model skips reasoning; pairs with /no_think in the user
+        # message (defense in depth against Qwen3 thinking-mode defaults).
+        _tpl_kwargs = dict(tokenize=False, add_generation_prompt=True)
+        try:
+            prompt_strs = [tok_.apply_chat_template(p, enable_thinking=False, **_tpl_kwargs) for p in prompts_chat]
+        except TypeError:
+            prompt_strs = [tok_.apply_chat_template(p, **_tpl_kwargs) for p in prompts_chat]
         outs = []
         for i in range(0, len(prompt_strs), batch):
             b = prompt_strs[i:i + batch]
@@ -594,7 +620,7 @@ def main():
                                 pad_token_id=tok_.pad_token_id or tok_.eos_token_id)
             gen = g[:, enc["input_ids"].shape[1]:]
             outs.extend(tok_.batch_decode(gen, skip_special_tokens=True))
-        return outs
+        return [strip_think_block(o) for o in outs]
 
     pre_rewrites = generate_eval(rw_model, rw_tok, eval_rows)
     props_eval = [r[1] for r in eval_rows]
