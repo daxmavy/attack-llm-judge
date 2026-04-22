@@ -126,8 +126,16 @@ def main():
             return False
     sys_ok = _sys_ok()
 
-    print(f"[{time.strftime('%H:%M:%S')}] loading rewriter {rewriter}", flush=True)
-    rew_llm = LLM(model=rewriter, dtype="bfloat16", gpu_memory_utilization=0.18,
+    def _rew_mem_util(mid: str) -> float:
+        s = mid.lower()
+        if "14b" in s or "13b" in s:
+            return 0.45
+        if "7b" in s or "8b" in s or "9b" in s:
+            return 0.25
+        return 0.18
+    rew_mu = _rew_mem_util(rewriter)
+    print(f"[{time.strftime('%H:%M:%S')}] loading rewriter {rewriter} (gpu_mem_util={rew_mu})", flush=True)
+    rew_llm = LLM(model=rewriter, dtype="bfloat16", gpu_memory_utilization=rew_mu,
                    max_model_len=3072, enforce_eager=True, download_dir="/data/shil6647/attack-llm-judge/hf_cache")
     rew_sp = SamplingParams(temperature=args.temperature, top_p=1.0, max_tokens=400, n=1)
 

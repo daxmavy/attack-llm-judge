@@ -579,7 +579,7 @@ def main():
         per_device_train_batch_size=args.per_device_batch if args.per_device_batch else args.num_generations * 2,
         gradient_accumulation_steps=4 if not args.per_device_batch else
             (args.num_generations * 2 * 4) // args.per_device_batch,
-        max_completion_length=260,
+        max_completion_length=400,
         learning_rate=args.lr,
         beta=args.beta,
         max_steps=args.max_steps,

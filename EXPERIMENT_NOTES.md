@@ -399,3 +399,32 @@ Going with the existing JUDGE_REGISTRY fold-1 pair: **`qwen95b` (Qwen/Qwen3.5-9B
 2. Smoke: load qwen95b + llama8b on GPU 0 via `judge.vllm_client`; score one rewrite end-to-end.
 3. Smoke: 3 GRPO steps with live judges — record step time, VRAM peak, reward distribution.
 4. Extrapolate: 400 steps + 6 methods × 714 eval rows + 2-judge scoring. Cut scope if projected > 13 h.
+
+### 2026-04-22 02:55 — GRPO pre-eval slowness anomaly (raise-don't-hide)
+- Qwen3-14B QLoRA GRPO on GPU 1: `[02:04:57] rewriter loaded 4-bit QLoRA` → no step=1 after 50 min.
+- Pmon: trainer PID 3375296 at 96 % sm; both local vLLM EngineCores (rollout, judges) idle. Wandb filestream advancing by 2 events / 15 s = system-stats only.
+- Interpretation: still in `generate_eval` HF-generate pre-eval loop (50 prompts × max_new=260 × bnb-4bit 14B). Expected ~6 min batched; observed ~50 min. ~8× slower than projection.
+- Root-cause candidates: (a) bnb-4bit NF4 generate is materially slower than expected at batch=8 (no FA2 for bnb?), (b) padding causing ~1024-token inputs when most are much shorter.
+- Revised cutoff: 03:10 BST (= 65 min pre-eval). Original 02:55 rule assumed free restart; actually killing forfeits the ~50 min already invested plus ~50 min to redo on relaunch, for ~100 min net loss. Training-step time uses vLLM rollouts not HF generate, so pre-eval slowness doesn't imply slow training.
+
+### 2026-04-22 03:04 — GRPO pre-eval judge disagreement (raise-don't-hide)
+- pre  judge_qwen95b mean=10.41
+- pre  judge_llama8b mean=78.80
+- 68-point gap on the SAME 50 baseline rewrites scored by both in-panel judges with the same clarity rubric.
+- Reward fn averages the two; skew means reward ≈ 45 with high between-judge variance → training gradient signal reflects "make llama8b happier without making qwen95b much worse" rather than a clean clarity signal. Noting for post-hoc analysis.
+- Hypotheses (deferred — not blocking the run): (a) qwen95b stricter on this domain, (b) parse failures coerced to 0 for qwen95b, (c) rubric prompt interaction with Qwen3.5 style. To be investigated if post-eval delta is unexpected.
+- Pre-eval wall time: 60 min (02:04:57 → 03:04:12) for 50 prompts × max_new=260 × bnb-4bit 14B batched at 8. 8× slower than projection (~6 min). Root cause unknown; does not affect training step time because training uses vLLM rollouts, not HF generate.
+
+### 2026-04-22 03:08 — GRPO 400-step kill + restart at 100 steps with 400-tok cap
+- Step 1 TRL output revealed broken config: completions/mean=min=max=260, clipped_ratio=1.0, mean_terminated_length=0.0, loss=0.0, grad_norm=0.083.
+- Root cause: `max_completion_length=260` (hardcoded GRPOConfig line 582) too tight for this rewriter — Qwen3-14B is verbose; 0/32 rollouts terminate naturally at 260. Length penalty is ~constant across the group → advantage=0 → no gradient signal.
+- Step 2 had loss=0.0298 only because ONE of 32 rollouts terminated at 96 (mean_terminated_length=96). 97% still clipped.
+- Step time 78 s/it × 400 = 8.7 h → blows remaining budget once ICIR + post-eval + HF push are stacked.
+- **Fix**: edited `max_completion_length` 260→400. Relaunching with `max_steps=100` (projected ~2 h training + 2 h eval = 4 h total from 03:10 → done ~07:10; leaves ~6 h for ICIR + post-eval + HF + ingestion).
+- Accepted cost: forfeit 60 min of pre-eval wall time + step-2 partial gradient.
+
+### 2026-04-22 03:22 — ICIR v1 crashed: hardcoded gpu_memory_utilization=0.18 for 14B rewriter
+- Symptom: `ValueError: No available memory for the cache blocks.` on vLLM LLM() init for Qwen3-14B. Engine core 3541979 exited, python PID 3541336 raised RuntimeError.
+- Root cause: `scripts/run_icir.py` line 130 hardcoded `gpu_memory_utilization=0.18` — fine for the default Qwen2.5-1.5B rewriter but insufficient for 14B bf16 (~28 GB weights) which alone exceeds 0.18 × 80 GB = 14.4 GB budget. Same class of bug as B-11 (already fixed in run_mission_attacks.py via `_rewriter_vllm_mem_util`).
+- Fix: added an auto-picker to run_icir.py (0.45 for 14/13B, 0.25 for 7/8/9B, else 0.18). Relaunched at 03:22 as ICIR v2 (PID 3554970).
+- Post-fix budget on GPU 0 (co-located rewriter + 2 judges): rewriter 0.45 (36 GB) + judge qwen95b 0.27 (21.6 GB) + judge llama8b 0.25 (20 GB) = 0.97 of 80 GB. Rewriter loaded successfully (weights 27.52 GiB, KV 6.86 GiB). Judges loading now.
