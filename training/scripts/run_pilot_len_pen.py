@@ -594,9 +594,15 @@ def main():
         )
         print(f"[{time.strftime('%H:%M:%S')}] rewriter loaded 4-bit QLoRA ({rewriter_id})", flush=True)
     elif not args.use_unsloth:
+        # attn_implementation="sdpa" forces PyTorch's scaled-dot-product path, which
+        # computes softmax in fp32 on A100 and is numerically stable in bf16.
+        # The alternative ("eager") and xformers both produced NaN gradients on
+        # Qwen3-8B in the 2026-04-22 smoke — flash-attn would be fastest but has
+        # no torch 2.10+cu128+cp311 wheel and source build fails in this env.
         rw_model = AutoModelForCausalLM.from_pretrained(
             rewriter_id, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
             dtype=torch.bfloat16, device_map="cuda",
+            attn_implementation="sdpa",
             token=os.environ.get("HF_TOKEN"),
         )
 
@@ -646,7 +652,15 @@ def main():
         train_dataset=ds,
         processing_class=rw_tok,
     )
-    if args.use_qlora:
+    if args.use_unsloth:
+        # Adapters already applied via FastLanguageModel.get_peft_model — do NOT
+        # pass peft_config to GRPOTrainer or the trainer tries to re-apply LoRA
+        # on top of an already-PEFT-wrapped model.
+        print(f"[{time.strftime('%H:%M:%S')}] Unsloth adapters already applied — skipping trainer peft_config", flush=True)
+    else:
+        # Both --use-qlora and vanilla bf16 paths attach LoRA here. QLoRA loaded a
+        # 4-bit base; bf16 loaded a full-precision base. In both cases we want
+        # adapter-only training via peft_config.
         from peft import LoraConfig
         trainer_kwargs["peft_config"] = LoraConfig(
             r=args.lora_r, lora_alpha=args.lora_alpha,
@@ -654,12 +668,8 @@ def main():
                              "gate_proj", "up_proj", "down_proj"],
             lora_dropout=0.0, bias="none", task_type="CAUSAL_LM",
         )
-        print(f"[{time.strftime('%H:%M:%S')}] LoRA r={args.lora_r} alpha={args.lora_alpha} on q/k/v/o + gate/up/down", flush=True)
-    elif args.use_unsloth:
-        # Adapters already applied via FastLanguageModel.get_peft_model — do NOT
-        # pass peft_config to GRPOTrainer or the trainer tries to re-apply LoRA
-        # on top of an already-PEFT-wrapped model.
-        print(f"[{time.strftime('%H:%M:%S')}] Unsloth adapters already applied — skipping trainer peft_config", flush=True)
+        _mode = "QLoRA 4-bit" if args.use_qlora else "bf16 LoRA"
+        print(f"[{time.strftime('%H:%M:%S')}] {_mode} r={args.lora_r} alpha={args.lora_alpha} on q/k/v/o + gate/up/down", flush=True)
     trainer = GRPOTrainer(**trainer_kwargs)
     t_train_start = time.time()
     print(f"[{time.strftime('%H:%M:%S')}] starting GRPO training ({args.max_steps} steps)", flush=True)
