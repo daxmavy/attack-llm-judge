@@ -39,7 +39,14 @@ from typing import Tuple
 # -----------------------------------------------------------------------------
 # Set this to the HF repo id of the rewriter base (e.g. "Qwen/Qwen3-14B").
 # Scripts that need the GRPO policy base / the inference rewriter read this.
-REWRITER: str | None = None
+#
+# 2026-04-22 selection: Qwen3.5-9B dense (Unsloth docs confirm bf16 LoRA fits
+# in ~22GB on A100 80GB; no QLoRA because Unsloth explicitly warns against
+# 4-bit on Qwen3.5 variants). We use the upstream `Qwen/Qwen3.5-9B` repo
+# (weights already cached under /data/shil6647/attack-llm-judge/hf_cache);
+# Unsloth's reupload differs only by a ~60-byte chat-template patch, so the
+# upstream repo is fine for our GRPO + HF-generate rollout path.
+REWRITER: str | None = "Qwen/Qwen3.5-9B"
 
 
 # -----------------------------------------------------------------------------
@@ -118,6 +125,10 @@ def rewriter_short_name(model_id: str | None = None) -> str:
     # Extend this table as new rewriters are adopted. Order matters — longer
     # / more-specific substrings first.
     table = [
+        ("qwen3.5-35b-a3b", "qwen35-35b-a3b"),
+        ("qwen3.5-27b", "qwen35-27b"),
+        ("qwen3.5-9b", "qwen35-9b"),
+        ("qwen3.5-4b", "qwen35-4b"),
         ("qwen3-32b", "qwen3-32b"),
         ("qwen3-14b", "qwen3-14b"),
         ("qwen2.5-1.5b", "qwen25-15b"),
