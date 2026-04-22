@@ -116,16 +116,17 @@ class JudgeState:
         if gpu_memory_utilization is None:
             gpu_memory_utilization = _auto_gpu_mem_util(hf_id)
 
-        tok_kwargs = dict(
-            cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
+        # NOTE: HF discussion #84 on Mistral-Small-3.1-24B recommends
+        # fix_mistral_regex=True on Mistral tokenizers, but under
+        # transformers 5.5.0 that kwarg triggers AttributeError:
+        # 'tokenizers.Tokenizer' object has no attribute 'backend_tokenizer'
+        # on RedHatAI/Mistral-Small-24B-Instruct-2501-FP8-dynamic. The regex
+        # warning is cosmetic — verify_mistral24_scoring.py passed end-to-end
+        # without the kwarg, so we leave it off until transformers fixes it.
+        tok = AutoTokenizer.from_pretrained(
+            hf_id, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
             token=os.environ.get("HF_TOKEN"),
         )
-        if "mistral" in hf_id.lower():
-            # Mistral tokenizers ship with a broken regex pattern on HF — see
-            # https://huggingface.co/mistralai/Mistral-Small-3.1-24B-Instruct-2503/discussions/84
-            # Opt into the fix; unused by non-Mistral tokenizers.
-            tok_kwargs["fix_mistral_regex"] = True
-        tok = AutoTokenizer.from_pretrained(hf_id, **tok_kwargs)
         sys_ok = supports_system_role(tok)
         llm = LLM(
             model=hf_id, dtype="bfloat16",
