@@ -505,10 +505,12 @@ def main():
             vllm_importance_sampling_cap=args.vllm_is_cap,
             vllm_importance_sampling_mode=args.vllm_is_mode,
         )
-    if args.use_qlora:
-        # gradient_checkpointing cuts activation memory ~3x for the 14B 4-bit base,
-        # which is what lets trainer + judge share one 80GB A100. bf16 stays on
-        # for matmul via bnb_4bit_compute_dtype=bfloat16.
+    # gradient_checkpointing cuts activation memory ~3x. Required for QLoRA 14B
+    # (trainer + judge must share one 80GB A100); also a good default for bf16
+    # LoRA paths (Qwen3-8B at per_device_batch=16 × seq ≤ 1400 is borderline on
+    # 80GB without it). Unsloth supplies its own "unsloth" checkpointing earlier,
+    # so we only wire it into GRPOConfig for non-Unsloth branches.
+    if args.use_qlora or not args.use_unsloth:
         cfg_kwargs["gradient_checkpointing"] = True
     cfg = GRPOConfig(**cfg_kwargs)
 
