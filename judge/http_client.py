@@ -219,7 +219,12 @@ class JudgeHTTP:
         }
         if self.gpu_memory_utilization is not None:
             payload["gpu_memory_utilization"] = self.gpu_memory_utilization
-        _post(self.endpoint, "/load", payload, timeout=self.request_timeout)
+        # /load is dominated by vLLM cold-starting the judge model (shard reads
+        # from /data, which is shared-FS and occasionally crawls to ~50 MB/s under
+        # other users' IO). A single 24B judge took >9 min on 2026-04-22. The
+        # inference-side request_timeout (default 600s) is too short for load;
+        # give load its own 30-min ceiling independent of the per-request budget.
+        _post(self.endpoint, "/load", payload, timeout=max(self.request_timeout, 1800.0))
 
     def _score(
         self, propositions: list[str], paragraphs: list[str], *, include_raw: bool
