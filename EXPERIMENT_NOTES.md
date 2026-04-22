@@ -612,3 +612,19 @@ Smoke run 2 (first TRL+SDPA attempt) crashed during judge load with `TimeoutErro
 - Activations (no gradient_checkpointing, `per_device_batch = num_generations*2 = 16`, seq ≤ ~1400): ~25-40 GB estimated
 - HF `generate()` KV cache during rollout (16 × 1400 × 36 layers × 4096 hidden × 2(K/V) × bf16): ~13 GB peak, released after generation
 - Peak estimate: **45-55 GB / 80 GB**. Probably fits but no margin. If OOM, fixes in order: (i) `cfg_kwargs["gradient_checkpointing"]=True` unconditionally, (ii) `--per-device-batch 8`.
+
+---
+
+## 2026-04-22 (evening) — graceful stop + resume across GRPO and attack-batch scripts
+
+**Motivation.** Both the 400-step GRPO (~5 h) and the ICIR / BoN pipelines (~30-90 min per fold × criterion) are too long to kill with `Ctrl-C` when another user needs the A100s. Pre-refactor, a kill lost a partial training step and forced a full pre-eval + n-step restart; attack scripts had no persistence between method boundaries.
+
+**What landed.**
+- **`stop_signal.py`** (new, commit **b427466**) — shared primitives: `default_stop_file(run_dir)`, `clear_stop_file`, `check_stop_signal`, `announce`, and `build_trainer_callback(stop_file)`. The HF `TrainerCallback` sets `control.should_save=True; control.should_training_stop=True` on `on_step_end` when the marker appears, so the next step boundary commits a checkpoint and exits `trainer.train()` cleanly.
+- **`training/scripts/run_pilot_len_pen.py`** (commit b427466) — `--save-steps` / `--save-total-limit` / `--resume-from` / `--skip-pre-eval` / `--stop-file` CLI flags. On stop the script prints `[STOP]`, teardowns the judge server, and exits 0 *without* running post-eval or held-out (saves ~20 min on the way out). Re-run with `--resume-from <ckpt>` + `--skip-pre-eval` to continue bit-exact.
+- **`scripts/run_mission_attacks.py`** (commit **96f7969**) — all three subcommands (`feedback_free`, `bon_generate`, `bon_score`) get `--stop-file` + `--resume-skip-existing`. Pre-load bail-out avoids firing the ~30-60 s vLLM cold start for an already-complete panel. BoN generation is now chunked (`--bon-chunk-size`, default 8) so a STOP can land between vLLM calls rather than waiting 5-10 min for one mega-batch.
+- **`scripts/run_icir.py`** (commit 96f7969) — per-(fold × criterion) skip-existing using `attack_rewrites` distinct-doc count vs `eval_rows`; STOP checks at fold-and-criterion boundaries (inner break) plus at fold boundaries (outer break). Because ICIR cannot interrupt mid-iteration without losing work (the K=4 iteration chain shares state across iters), the finest natural boundary is the end of a fold × criterion pass — ~10-20 min granularity.
+
+**Operator UX.** `touch /data/shil6647/attack-llm-judge/grpo_run/<run>/STOP` to stop. Re-run the same command with `--resume-skip-existing` (attacks) or `--resume-from <ckpt> --skip-pre-eval` (GRPO) to continue. Each script prints its STOP file path at startup and clears any stale marker on launch.
+
+---
