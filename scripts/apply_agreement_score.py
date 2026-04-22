@@ -61,7 +61,7 @@ def main():
         return
 
     print(f"[{time.strftime('%H:%M:%S')}] loading regressor from {MODEL_DIR}", flush=True)
-    tok = AutoTokenizer.from_pretrained(MODEL_DIR)
+    tok = AutoTokenizer.from_pretrained(MODEL_DIR, extra_special_tokens={})
     model = AutoModelForSequenceClassification.from_pretrained(MODEL_DIR)
     model.to(args.device).eval()
 
