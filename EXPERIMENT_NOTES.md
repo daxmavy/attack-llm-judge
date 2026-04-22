@@ -183,6 +183,61 @@ Successful GRPO runs earlier in the day showed +5–8 reward Δ on training judg
 **Attempted fixes.** `vllm_enable_sleep_mode=False` (test A): IS ratio *was* healthy at step 1 (0.97) but trainer OOM'd on step 2 — keeping the rewriter vLLM resident during optim step pushes trainer process to 40 GB alone (vs ~20 GB with sleep_mode). Didn't get to 5 steps to see if drift still happens.
 **Decision (D-14).** Skip further debugging of this TRL integration path for tonight. Fall back to the proven **vLLM judges + HF rewriter** path (`run_min_vllm.py`), which showed reward climb earlier today (+3.48 Qwen / +8.56 Llama on 25 steps).
 
+### B-11. vLLM V1 KV-cache budget excludes weights → Qwen3-14B OOM at `gpu_memory_utilization=0.18`
+**Date.** 2026-04-22 (mission prep). **Debug attempt #1 for Qwen3-14B rewriter.**
+**Symptom.** `ValueError: No available memory for the cache blocks. Try increasing gpu_memory_utilization when initializing the engine.` on Qwen3-14B (bf16, ~28 GB weights) with `gpu_memory_utilization=0.18`.
+**Diagnosis.** vLLM V1 counts model weights AGAINST the `gpu_memory_utilization` budget. 80 GB × 0.18 = 14.4 GB — insufficient for the 28 GB weights alone, so the KV-cache budget goes to 0 and engine init aborts.
+**Fix.** Bumped `gpu_memory_utilization` to 0.55 (44 GB budget) on the dedicated rewriter GPU — covers weights (27.5 GB) + KV (14.8 GB) + overhead comfortably. Added `_rewriter_vllm_mem_util()` in `scripts/run_mission_attacks.py` that auto-picks 0.55 for ≥13B, 0.35 for 7-8B, 0.20 for ≤2B so future rewriter swaps don't trip on the same thing.
+**Verification.** vLLM generate smoke for Qwen3-14B passed cleanly — weights loaded in 6.32 s, KV 96,832 tokens, `"AI is transforming industries across the globe."` returned at T=0.0.
+
+### B-12. Preflight GRPO stage: `TypeError: Object of type set is not JSON serializable` hid the real GRPO error
+**Date.** 2026-04-22 (mission prep). **Debug attempt #2 for Qwen3-14B rewriter.**
+**Symptom.** `scripts/preflight_rewriter.py` printed `grpo_step ok: False` and then crashed on `json.dumps(all_results)` with `TypeError: Object of type set is not JSON serializable` — BEFORE the markdown report was written, so the caught exception from the GRPO stage was lost.
+**Diagnosis.** `LoraConfig.target_modules` is stored as a `set` after PEFT's `__post_init__`, not a list. Storing it directly into `result["details"]` broke `json.dumps`. The bigger mistake was ordering JSON-write before MD-write in `main()`, so any encoder blowup destroys the whole report and the actual error from `check_grpo_step` never surfaces.
+**Fix.** Four small edits in `scripts/preflight_rewriter.py`:
+  - Cast `peft_config.target_modules` → `list()` before stashing in `result["details"]`.
+  - Swap report-write order: markdown first, JSON second.
+  - Add `default=str` to `json.dumps` as a belt-and-braces safety net for future untyped objects (dtypes, tensors, etc.).
+  - Print `grpo_step.error` and `.traceback` (and same for `vllm_generate.*`) inline whenever a stage fails, so a downstream write crash can never again swallow the diagnostic.
+**Meta.** This is an observability bug in the debugging tool itself. Worth an explicit entry because the same "silent-crashing reporter" pattern masked the underlying issue for an entire debug cycle — exactly the "raise-don't-hide" anti-pattern applied to my own scaffolding.
+
+### B-13. Preflight GRPO: 4-bit device check rejects `cuda:1` when `ACCELERATE_TORCH_DEVICE` is unset
+**Date.** 2026-04-22 (mission prep). **Debug attempt #4 for Qwen3-14B rewriter.**
+**Symptom.** With 4-bit Qwen3-14B loaded via `device_map={"":1}` and `torch.cuda.set_device(1)`, `GRPOTrainer(...)` construction raises `ValueError: You can't train a model that has been loaded in 8-bit or 4-bit precision on a different device than the one you're training on`. Happens even though the model is entirely on `cuda:1` and we never touched `cuda:0` for training.
+**Diagnosis.** `accelerate/accelerator.py:1847-1853` runs a 4-bit placement guard:
+```python
+elif torch.device(self.device.type, current_device_index) != self.device:
+    if (self.device.index is not None) or (current_device_index != 0):
+        raise ValueError(...)
+```
+`self.device` comes from `PartialState.__init__` (accelerate/state.py:182-183), which reads `ACCELERATE_TORCH_DEVICE` env at first-access and defaults to `torch.device("cuda")` — **index=None**. With `current_device_index=1` and `self.device.index=None`, the check exits via the second arm and raises.
+**Fix.** Set `os.environ["ACCELERATE_TORCH_DEVICE"] = f"cuda:{train_idx}"` **before any `trl`/`accelerate` import** (PartialState is a singleton — set too late and the default sticks). Moved this assignment to the very top of `check_grpo_step` in `scripts/preflight_rewriter.py`, before the `import torch`/`from trl`/`from run_pilot_len_pen` block.
+**Caveat.** This only unblocks the static placement check; it does NOT move TRL's in-process generation inputs to the training device — see B-14 for the runtime device-mismatch that still hits during the GRPO rollout. Both fixes are needed together for multi-GPU (judge on 0, trainer on 1) to work.
+
+### B-14. Preflight GRPO: `input_ids` land on `cuda:0` even with model on `cuda:1` → `index_select` device mismatch
+**Date.** 2026-04-22 (mission prep). **Debug attempt #5 for Qwen3-14B rewriter.**
+**Symptom.** After B-13 was fixed, GRPOTrainer's first step raises `RuntimeError: Expected all tensors to be on the same device, but got index is on cuda:0, different from other tensors on cuda:1 (when checking argument in method wrapper_CUDA__index_select)`. Traceback: `modeling_qwen3.py:371` → `embed_tokens(input_ids)` → `F.embedding`. Model params on `cuda:1`; `input_ids` on `cuda:0`.
+**Diagnosis.** During the GRPO rollout, TRL calls `model.generate(...)` / forward with input tensors that did not get forwarded through Accelerate's `_prepare_inputs` placement step (or placement fell back to `torch.cuda.current_device()` at tensor-creation time, which may not equal the model's device under our split-GPU setup). The 4-bit static check is no longer the problem — this is a runtime placement bug that surfaces per-batch.
+**Fix (workaround).** Install a root-level `forward_pre_hook` on the model that moves every tensor arg/kwarg to the model's actual device before each forward:
+```python
+_model_device = next(model.parameters()).device
+def _align(module, args, kwargs):
+    def mv(x): return x.to(_model_device, non_blocking=True) if torch.is_tensor(x) and x.device != _model_device else x
+    return tuple(mv(a) for a in args), {k: mv(v) for k, v in kwargs.items()}
+model.register_forward_pre_hook(_align, with_kwargs=True)
+```
+This is belt-and-suspenders; the root cause is somewhere in TRL's rollout-path device handling with split-GPU Accelerate, but paperwork over it is much cheaper than forking TRL. Verify with smoke v5.
+**Meta.** One more strike against "put the judge on a different GPU via `CUDA_VISIBLE_DEVICES=0,1` in-process" as a design. A cleaner long-term option is to split judge into its own subprocess with its own `CUDA_VISIBLE_DEVICES=0` env at spawn time, and run the trainer with `CUDA_VISIBLE_DEVICES=1` only — but that's a bigger refactor, and the hook approach should unblock tonight.
+
+### B-15. Preflight GRPO: abandoned cross-GPU and passed on **single-GPU co-location** (judge + trainer on GPU 1)
+**Date.** 2026-04-22 (mission prep). **Debug attempt #6 for Qwen3-14B rewriter — SUCCESS.**
+**Decision.** After 5 cross-GPU debug attempts papering over successive device-mismatch sites (static 4-bit check, embedding input_ids, TRL's `eos_idx` tensor in `grpo_trainer.py:1408`), abandoned the "judge on 0, trainer on 1" architecture entirely. Launched with `CUDA_VISIBLE_DEVICES="1"` so both the judge vLLM subprocess and the main-process trainer see a single GPU labeled `cuda:0` — all tensor creation defaults to the same device, and the whole class of `_prepare_inputs` / `eos_idx` / embedding mismatches disappears.
+**Result.** v6 preflight: `grpo_step ok=True`, use_qlora=true, step 1 train_runtime=136.82 s, peak trainer VRAM 15.07 GB, judge vLLM ~22 GB on the same GPU (total ~37 GB of 80 GB A100).
+**Budget math (critical).** 138 s/step × 400 steps = 920 min ≈ 15.3 hrs, which alone exceeds the 15-hr mission window. Either (a) scope GRPO down to ~100-150 steps, (b) enable TRL's `use_vllm=True` colocate mode to cut rollout time ~10x (at cost of more debug), or (c) accept that `grpo_400step` is the last method run and may not complete. Pilot timing probe with 3 RL steps needed to distinguish cold-start overhead from steady-state step time before committing.
+**Silent fallback flagged.** TRL defaults to `use_vllm=False` → rollout goes through `model.generate()` (HF), which is the bulk of the 138 s. Per CLAUDE.md raise-don't-hide rule: this is the "vLLM→HF generate" fallback engaging silently and is the single biggest step-time cost.
+**Step 1 zero-loss anomaly.** `train_loss=0.0, total_flos=0.0` at step 1. Consistent with GRPO's degenerate first-step (single-group reward, std→0, advantage→0). Flagged per rule but not blocking.
+**Cleanup debt.** The forward pre-hook (B-14) and the early-env-var assignment (B-13) are both now no-ops under single-GPU, but harmless; leaving in place.
+
 ### D-13. Length-penalty in reward (tolerance-band additive)
 **Formula.** `reward = mean(judge1, judge2) − α × max(0, |len_ratio − 1| − tol)` where `len_ratio = generated_wc / original_wc`. Defaults `α=25, tol=0.10`.
 **Intuition.** Inside ±10% tolerance no penalty; at ±40% deviation penalty is 7.5 points (≈ the length-driven gain seen in the HF run).

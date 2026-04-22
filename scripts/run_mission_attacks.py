@@ -50,9 +50,25 @@ def _rewriter_short_name(model_id: str) -> str:
     """Short tag for a rewriter base model, used in rewrite_id and HF repo names."""
     s = model_id.lower()
     if "qwen2.5-1.5b" in s: return "qwen25-15b"
+    if "qwen3-14b" in s: return "qwen3-14b"
     if "lfm2.5-1.2b" in s: return "lfm25-12b"
     if "gemma-3-1b" in s: return "gemma3-1b"
     return s.replace("/", "-").replace(".", "-")
+
+
+def _rewriter_vllm_mem_util(model_id: str) -> float:
+    """Auto-pick gpu_memory_utilization for rewriter vLLM based on model size.
+
+    Qwen2.5-1.5B (~3 GB bf16) → 0.15 budget easily fits weights+KV.
+    Qwen3-14B (~28 GB bf16) → 0.55 budget = 44 GB / 80 GB A100 covers
+    weights + KV headroom for the K=16 BoN rollout.
+    """
+    s = model_id.lower()
+    if "14b" in s or "13b" in s:
+        return 0.55
+    if "7b" in s or "8b" in s:
+        return 0.35
+    return 0.20
 
 
 def _supports_system_role(tok):
@@ -109,7 +125,8 @@ def cmd_feedback_free(args):
         tok.pad_token = tok.eos_token
 
     print(f"[{time.strftime('%H:%M:%S')}] loading vLLM rewriter {rewriter}", flush=True)
-    llm = LLM(model=rewriter, dtype="bfloat16", gpu_memory_utilization=0.20,
+    llm = LLM(model=rewriter, dtype="bfloat16",
+              gpu_memory_utilization=_rewriter_vllm_mem_util(rewriter),
               max_model_len=3072, enforce_eager=True, download_dir="/data/shil6647/attack-llm-judge/hf_cache")
 
     sys_ok = _supports_system_role(tok)
@@ -183,7 +200,8 @@ def cmd_bon_generate(args):
         tok.pad_token = tok.eos_token
 
     print(f"[{time.strftime('%H:%M:%S')}] loading vLLM rewriter for BoN K={K} ({rewriter})", flush=True)
-    llm = LLM(model=rewriter, dtype="bfloat16", gpu_memory_utilization=0.20,
+    llm = LLM(model=rewriter, dtype="bfloat16",
+              gpu_memory_utilization=_rewriter_vllm_mem_util(rewriter),
               max_model_len=3072, enforce_eager=True, download_dir="/data/shil6647/attack-llm-judge/hf_cache")
 
     sys_ok = _supports_system_role(tok)
