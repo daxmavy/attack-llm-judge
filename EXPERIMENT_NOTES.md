@@ -302,3 +302,6 @@ Also removed: `LIT_INFORMED_USER_TEMPLATE`, `NAIVE_TIGHT_USER_TEMPLATE`, `RULES_
     - RL-trained: `grpo_400step_foldN` with embed-sim scaled to ~30% of (judge_mean − length_penalty)
 - All rewrites persisted to new `attack_rewrites` + `attack_judge_scores` tables in `paragraphs.db`
 - Inference-only attacks moved to local-vLLM judges (same `JudgeVLLM` codepath as RL); OpenRouter retained via `JUDGE_BACKEND=openrouter`
+
+## 2026-04-22 — Gemma-3-1b inf fold 1: isolated grad-norm spike at step 394
+Step 394 of `grpo_gemma3-1b_fold1_informativeness`: `grad_norm=983040`, `loss=140.87`, `kl=14087` (vs neighbouring steps at ~5, ~0.01, ~0.9). Steps 395–400 recovered cleanly; final reward 80.2; final model saved OK. Likely a single degenerate rollout + KL outlier — the reward/penalty was still ~70 on that step, so it wasn't a judge-parse blow-up. Flag only; not blocking. If a similar event recurs on a later fold, investigate gradient clipping (not currently configured in the GRPO training args).
