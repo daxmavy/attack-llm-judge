@@ -45,12 +45,27 @@ DEFAULT_GPU_MEM_UTIL = float(os.environ.get("EVAL_VLLM_MEM_UTIL", "0.30"))
 DEFAULT_MAX_MODEL_LEN = int(os.environ.get("EVAL_VLLM_MAX_MODEL_LEN", "3072"))
 
 
-# OpenRouter slug -> HF model id. Extend when new local judges arrive.
-LOCAL_MODEL_MAP: dict[str, str] = {
-    "qwen/qwen-2.5-7b-instruct":        "Qwen/Qwen2.5-7B-Instruct",
-    "meta-llama/llama-3.1-8b-instruct": "meta-llama/Llama-3.1-8B-Instruct",
-    "google/gemma-2-9b-it":             "google/gemma-2-9b-it",
-}
+def _load_local_map() -> dict[str, str]:
+    """Derive the {slug: hf_id} map from config.models.JUDGE_REGISTRY.
+
+    This module used to ship its own hardcoded list, which drifted from the
+    training-side JUDGE_REGISTRY and caused the 2026-04-21 mission to push an
+    HF checkpoint whose model-card claimed a different judge panel than the
+    one actually used at training time. Now there is one source of truth.
+    """
+    import sys
+    sys.path.insert(0, "/home/shil6647/attack-llm-judge")
+    from config.models import JUDGE_REGISTRY
+    # Accept two lookup styles: the canonical HF id (so downstream callers can
+    # pass the raw HF id) AND the OpenRouter-style lowercase slug (legacy).
+    out: dict[str, str] = {}
+    for _slug, (_name, hf_id) in JUDGE_REGISTRY.items():
+        out[hf_id] = hf_id
+        out[hf_id.lower()] = hf_id
+    return out
+
+
+LOCAL_MODEL_MAP: dict[str, str] = _load_local_map()
 
 
 _LOCK = threading.Lock()

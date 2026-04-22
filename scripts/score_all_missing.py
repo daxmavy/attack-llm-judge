@@ -25,9 +25,13 @@ import sys
 import time
 
 sys.path.insert(0, "/data/shil6647/attack-llm-judge/grpo_run")
+sys.path.insert(0, "/home/shil6647/attack-llm-judge")
+
+from config.models import JUDGE_REGISTRY, require_config
 
 DB = "/home/shil6647/attack-llm-judge/data/paragraphs.db"
-JUDGE_KEYS = ["qwen95b", "llama8b", "gemma9b"]
+# Default to scoring with every judge in the canonical registry.
+JUDGE_KEYS = list(JUDGE_REGISTRY.keys())
 CRITERIA = ["clarity", "informativeness"]
 
 
@@ -40,9 +44,10 @@ def main():
     ap.add_argument("--methods", nargs="+", default=None,
                     help="restrict to specific methods (default: all except bon_candidate)")
     args = ap.parse_args()
+    require_config()
 
     import torch
-    from run_pilot_len_pen import JUDGE_REGISTRY, JudgeVLLM, RUBRICS
+    from run_pilot_len_pen import JudgeVLLM, RUBRICS
 
     conn = sqlite3.connect(DB)
     cur = conn.cursor()

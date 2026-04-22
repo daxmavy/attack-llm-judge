@@ -30,11 +30,11 @@ os.environ.setdefault("VLLM_CACHE_ROOT", "/data/shil6647/attack-llm-judge/vllm_c
 sys.path.insert(0, "/data/shil6647/attack-llm-judge/grpo_run")
 sys.path.insert(0, "/home/shil6647/attack-llm-judge")
 
+from config.models import REWRITER
 
-CANDIDATES = [
-    "LiquidAI/LFM2.5-1.2B-Instruct",
-    "google/gemma-3-1b-it",
-]
+# Preflight defaults to the canonical rewriter in config/models.py; override
+# with --models on the CLI to smoke-test alternatives before committing.
+CANDIDATES = [REWRITER] if REWRITER else []
 
 
 def check_vllm_generate(model_id: str):
@@ -126,7 +126,8 @@ def check_grpo_step(model_id: str, use_qlora: bool = False, train_device: str = 
         import torch
         from transformers import AutoTokenizer, AutoModelForCausalLM
         from trl import GRPOConfig, GRPOTrainer
-        from run_pilot_len_pen import JudgeVLLM, JUDGE_REGISTRY
+        from run_pilot_len_pen import JudgeVLLM
+        from config.models import JUDGE_REGISTRY
 
         tok = AutoTokenizer.from_pretrained(model_id, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
                                              token=os.environ.get("HF_TOKEN"))
@@ -137,7 +138,9 @@ def check_grpo_step(model_id: str, use_qlora: bool = False, train_device: str = 
         # Judge FIRST — vLLM spawns its EngineCore subprocess which picks visible
         # GPU 0 via CUDA_VISIBLE_DEVICES. Loading it before the trainer keeps the
         # two GPUs cleanly split (judge on physical GPU 0, trainer on GPU train_idx).
-        judge_spec = JUDGE_REGISTRY["qwen95b"]
+        # Use whichever judge is first in the registry (order is stable by insertion).
+        first_slug = next(iter(JUDGE_REGISTRY))
+        judge_spec = JUDGE_REGISTRY[first_slug]
         judge = JudgeVLLM(*judge_spec, rubric="clarity")
         result["details"]["judge_loaded"] = True
 
@@ -267,6 +270,8 @@ def check_grpo_step(model_id: str, use_qlora: bool = False, train_device: str = 
 
 
 def main():
+    from config.models import require_config
+    require_config()
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", nargs="+", default=CANDIDATES)
     ap.add_argument("--skip-grpo", action="store_true", help="only run vLLM generate stage")
