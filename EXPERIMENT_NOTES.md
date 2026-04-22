@@ -582,3 +582,33 @@ Ran the planned cohost smoke + Unsloth load probe on the picks in `config/models
 2. Update `config/models.py`, re-run cohost pair 1 (gemma27 + new mistral24) to verify the chat-template fix; pair 2 (gemma27 + phi4) is already mid-flight and not affected.
 3. Re-run the load probe against the new rewriter (expect Qwen3-14B to load in ~3 min from warm cache, ~35 GB VRAM bf16 LoRA or ~12 GB QLoRA).
 4. Then the 5-step GRPO smoke.
+
+---
+
+## 2026-04-22 (evening) — Qwen3-8B smoke: Unsloth/xformers NaN → TRL+SDPA pivot
+
+Smoke run 1 (`--use-unsloth` on `Qwen/Qwen3-8B`, judges mistral24+phi4 cohosted on GPU 0) crashed on step 2 with `RuntimeError: probability tensor contains either inf, nan or element < 0` inside `trl/trainer/grpo_trainer.py::_generate_single_turn → unsloth.unsloth_fast_generate → transformers.generation._sample`. Step-1 banner showed `grad_norm=nan`.
+
+### Root cause
+Unsloth banner: `Unsloth: Your Flash Attention 2 installation seems to be broken. Using Xformers instead.` — `FA [Xformers = 0.0.35. FA2 = False]`. `pip show flash-attn` returns "Package(s) not found". bf16 attention through Xformers' softmax overflows on Qwen3's attention pattern → NaN propagates into the generation distribution on step 2. (The bf16 softmax issue is well-known; FA2 and PyTorch SDPA both compute softmax in fp32 on A100 and are numerically safe.)
+
+### FA2 install attempts (per Rewriter swap rule: recording attempts for the retry log)
+1. **Prebuilt wheel, `pip install flash-attn`.** No wheel matching `torch 2.10.0+cu128 / cp311 / x86_64`. Only `v2.8.3` ships `torch2.9 cp312 cxx11abi TRUE` wheels.
+2. **Source build, `pip install flash-attn --no-build-isolation`.** Compiled ~72 `.o` files over 12 minutes; ninja failed mid-way on `Error compiling objects for extension` (full error truncated by `tail -40`; likely template-instantiation OOM on a big sm_80/sm_90 kernel with torch 2.10 headers).
+3. **Not attempted.** `flash-attn v3 / FA4 beta10` — beta is not a production choice for a smoke-then-400-step run.
+
+Verdict: FA2 is dead-end in the current daxmavy env. Max's directive: "If it doesn't work, switch to using TRL for training, rather than unsloth".
+
+### Pivot — drop Unsloth, keep pure TRL + HF bf16 + SDPA + PEFT
+- Commit **fb64d59** (`training: add bf16 LoRA branch + SDPA attn for non-Unsloth path`): when neither `--use-unsloth` nor `--use-qlora` is set, the trainer_kwargs block now attaches `peft_config=LoraConfig(...)` for the bf16 path. The HF load explicitly passes `attn_implementation="sdpa"` so softmax runs in fp32 on A100. (Before this commit, dropping `--use-unsloth` would have run full-param training with no adapters — not what we want.)
+- Launch: no `--use-unsloth` flag. Rewriter = `AutoModelForCausalLM.from_pretrained(Qwen3-8B, dtype=bf16, attn_implementation="sdpa")` + TRL `GRPOTrainer(..., peft_config=LoraConfig(r=16, α=16, target_modules=q/k/v/o+gate/up/down))`.
+
+### /load timeout fix
+Smoke run 2 (first TRL+SDPA attempt) crashed during judge load with `TimeoutError: timed out` from `urllib.request.urlopen`. `JudgeHTTP._load()` was using `request_timeout=600s` (default), but `/data` FS was crawling at 40-60 MB/s under other users' IO — mistral24's 24 GB load took 9+ minutes. Commit **2d472ca** (`judge/http_client: give /load a 30-min ceiling independent of request_timeout`): `_load()` now calls `_post(..., timeout=max(self.request_timeout, 1800.0))`. Inference timeouts stay at 600s; only cold-load gets the bigger budget.
+
+### Today's memory budget (Qwen3-8B bf16 LoRA, 1× A100 80GB)
+- Base weights bf16: ~16 GB
+- LoRA adapters + optimizer state (fp32 adapter copies only): <200 MB
+- Activations (no gradient_checkpointing, `per_device_batch = num_generations*2 = 16`, seq ≤ ~1400): ~25-40 GB estimated
+- HF `generate()` KV cache during rollout (16 × 1400 × 36 layers × 4096 hidden × 2(K/V) × bf16): ~13 GB peak, released after generation
+- Peak estimate: **45-55 GB / 80 GB**. Probably fits but no margin. If OOM, fixes in order: (i) `cfg_kwargs["gradient_checkpointing"]=True` unconditionally, (ii) `--per-device-batch 8`.
