@@ -120,6 +120,14 @@ def main():
     ap.add_argument("--use-qlora", action="store_true",
                     help="Load base in 4-bit NF4 + double-quant and train LoRA adapters (q/k/v/o + gate/up/down). "
                          "Required for 14B on a single 80GB A100 alongside the vLLM judge.")
+    ap.add_argument("--use-unsloth", action="store_true",
+                    help="Load rewriter via unsloth.FastLanguageModel (load_in_4bit=False, "
+                         "fast_inference=False) and apply LoRA via FastLanguageModel.get_peft_model "
+                         "with target_modules='all-linear' and use_gradient_checkpointing='unsloth'. "
+                         "Required for Qwen3.5 per Unsloth docs — transformers <5 does not register "
+                         "the `qwen3_5` model type, and Unsloth's loader patches the architecture.")
+    ap.add_argument("--max-seq-length", type=int, default=2048,
+                    help="max_seq_length for FastLanguageModel (only with --use-unsloth).")
     ap.add_argument("--lora-r", type=int, default=16)
     ap.add_argument("--lora-alpha", type=int, default=32)
     ap.add_argument("--n-train", type=int, default=200)
@@ -164,6 +172,13 @@ def main():
                     help="vllm_importance_sampling_mode: sequence_mask | sequence_truncate | ...")
     ap.add_argument("--vllm-is-cap", type=float, default=3.0)
     args = ap.parse_args()
+
+    if args.use_unsloth and args.use_qlora:
+        raise SystemExit("--use-unsloth is incompatible with --use-qlora "
+                         "(Unsloth docs explicitly warn against QLoRA on Qwen3.5).")
+    if args.use_unsloth and args.use_rewriter_vllm:
+        raise SystemExit("--use-unsloth is incompatible with --use-rewriter-vllm "
+                         "(Unsloth Qwen3.5 requires fast_inference=False — rollouts via HF generate).")
 
     train_judge_keys = [s.strip() for s in args.train_judges.split(",") if s.strip()]
     assert all(k in JUDGE_REGISTRY for k in train_judge_keys), f"unknown judge: {train_judge_keys}"
@@ -510,12 +525,39 @@ def main():
     # Pre-eval: load rewriter as HF, generate, score with vLLM judges
     print(f"[{time.strftime('%H:%M:%S')}] pre-eval", flush=True)
     rewriter_id = args.base_model or REWRITER
-    rw_tok = AutoTokenizer.from_pretrained(rewriter_id, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
-                                            token=os.environ.get("HF_TOKEN"))
-    if rw_tok.pad_token is None:
-        rw_tok.pad_token = rw_tok.eos_token
-    rw_tok.padding_side = "left"
-    if args.use_qlora:
+    if args.use_unsloth:
+        # Unsloth loader: required for Qwen3.5 (transformers <5 does not register
+        # the `qwen3_5` model_type; Unsloth's from_pretrained patches the architecture).
+        # load_in_4bit=False is bf16 LoRA (Unsloth docs explicitly warn against QLoRA
+        # on Qwen3.5 variants). fast_inference=False because vLLM does not yet
+        # support Qwen3.5 — rollouts fall back to HF generate.
+        from unsloth import FastLanguageModel
+        rw_model, rw_tok = FastLanguageModel.from_pretrained(
+            model_name=rewriter_id,
+            max_seq_length=args.max_seq_length,
+            load_in_4bit=False,
+            fast_inference=False,
+        )
+        if rw_tok.pad_token is None:
+            rw_tok.pad_token = rw_tok.eos_token
+        rw_tok.padding_side = "left"
+        rw_model = FastLanguageModel.get_peft_model(
+            rw_model,
+            r=args.lora_r, lora_alpha=args.lora_alpha,
+            target_modules="all-linear",
+            lora_dropout=0, bias="none",
+            use_gradient_checkpointing="unsloth",
+            random_state=42,
+        )
+        print(f"[{time.strftime('%H:%M:%S')}] rewriter loaded via Unsloth bf16 LoRA ({rewriter_id}), "
+              f"r={args.lora_r} alpha={args.lora_alpha} target=all-linear", flush=True)
+    else:
+        rw_tok = AutoTokenizer.from_pretrained(rewriter_id, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
+                                                token=os.environ.get("HF_TOKEN"))
+        if rw_tok.pad_token is None:
+            rw_tok.pad_token = rw_tok.eos_token
+        rw_tok.padding_side = "left"
+    if not args.use_unsloth and args.use_qlora:
         # 4-bit NF4 + double-quant for the 14B base so it fits on one 80GB A100
         # alongside the ~22GB vLLM judge. LoRA adapters (q/k/v/o + gate/up/down)
         # are the only trainable params; everything else is frozen 4-bit. Pattern
@@ -532,7 +574,7 @@ def main():
             token=os.environ.get("HF_TOKEN"),
         )
         print(f"[{time.strftime('%H:%M:%S')}] rewriter loaded 4-bit QLoRA ({rewriter_id})", flush=True)
-    else:
+    elif not args.use_unsloth:
         rw_model = AutoModelForCausalLM.from_pretrained(
             rewriter_id, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
             dtype=torch.bfloat16, device_map="cuda",
@@ -587,6 +629,11 @@ def main():
             lora_dropout=0.0, bias="none", task_type="CAUSAL_LM",
         )
         print(f"[{time.strftime('%H:%M:%S')}] LoRA r={args.lora_r} alpha={args.lora_alpha} on q/k/v/o + gate/up/down", flush=True)
+    elif args.use_unsloth:
+        # Adapters already applied via FastLanguageModel.get_peft_model — do NOT
+        # pass peft_config to GRPOTrainer or the trainer tries to re-apply LoRA
+        # on top of an already-PEFT-wrapped model.
+        print(f"[{time.strftime('%H:%M:%S')}] Unsloth adapters already applied — skipping trainer peft_config", flush=True)
     trainer = GRPOTrainer(**trainer_kwargs)
     t_train_start = time.time()
     print(f"[{time.strftime('%H:%M:%S')}] starting GRPO training ({args.max_steps} steps)", flush=True)
