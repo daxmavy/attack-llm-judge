@@ -1,26 +1,26 @@
 # Replication guide — 3-fold × 2-criteria attack experiment
 
-This document tells another agent how to replicate the experiment that is currently running on the single-A100 box. The target setup on the other server is **2× GPU** (dedicate one to judges, one to rewriter training), so some hyperparameters can be scaled up.
+This document tells another agent how to replicate the experiment. The target setup is **2× A100 80GB** — GPU 0 serves the 2 in-panel judges via vLLM, GPU 1 runs the rewriter (vLLM rollouts + QLoRA GRPOTrainer). Single-GPU co-location is a known-bad configuration (see §9); don't launch a full 400-step run there.
 
 ## 0. Executive summary
 
 - **Goal**: test how well different rewriter-side "attack" methods can lift LLM-judge scores on short argumentative paragraphs, for two judging criteria (clarity, informativeness), with held-out-judge transfer evaluated across 3 cross-validation folds.
-- **Attack methods under test** (6 total): `naive`, `lit_informed_tight`, `rubric_aware`, `bon_panel` (BoN K=16), `icir` (4-iteration iterative refinement), `grpo_400step` (GRPO RL for 400 steps).
-- **Judge panel**: 3 vLLM judges (`qwen95b`=Qwen/Qwen3.5-9B, `llama8b`=meta-llama/Llama-3.1-8B-Instruct, `gemma9b`=google/gemma-2-9b-it). Rotated per fold: 2 are in-panel training judges, 1 is held-out evaluator.
+- **Attack methods under test** (6 total): `naive`, `lit_informed_tight`, `rubric_aware`, `bon_panel` (BoN K=16), `icir` (4-iteration iterative refinement), `grpo_400step` (GRPO RL for **400 steps** — locked, CLAUDE.md GRPO step-budget rule).
+- **Judge panel**: 3 vLLM judges. Identities and fold rotation live in **`config/models.py`** (`JUDGE_REGISTRY` and `FOLDS`). Rotated per fold: 2 are in-panel training judges, 1 is held-out evaluator. Do not re-declare judge IDs anywhere else — see §7 and EXPERIMENT_NOTES.md §2026-04-22 refactor.
+- **Rewriter base**: also lives in `config/models.py` (`REWRITER`). Historical rewriters previously tested (for reference): `Qwen/Qwen2.5-1.5B-Instruct`, `LiquidAI/LFM2.5-1.2B-Instruct`, `google/gemma-3-1b-it`, `Qwen/Qwen3-14B`. The pipeline is agnostic to the rewriter choice so long as it works in vLLM and fits on one A100 under QLoRA.
 - **Dataset**: 40 controversial political/policy propositions, stratified 1091 train / 714 eval. Same split across all folds. Stratification is 3×3 on (human-labelled clarity tertile × human-stance-agreement tertile) to equalise difficulty across folds.
-- **Rewriter base**: currently tested three models — `Qwen/Qwen2.5-1.5B-Instruct`, `LiquidAI/LFM2.5-1.2B-Instruct`, `google/gemma-3-1b-it`. The same pipeline should work for any instruction-tuned base.
 
 ---
 
 ## 1. Fold rotation
 
-All 3 mission judges are used in every fold, but the role rotates:
+All 3 mission judges are used in every fold, but the role rotates. The authoritative mapping lives in `config/models.py::FOLDS` — the table below is illustrative shape only (slugs depend on whatever `JUDGE_REGISTRY` currently holds):
 
 | fold | in-panel training judges (reward signal) | held-out eval judge |
 |------|------------------------------------------|---------------------|
-| 1    | `qwen95b` + `llama8b`                     | `gemma9b`           |
-| 2    | `qwen95b` + `gemma9b`                     | `llama8b`           |
-| 3    | `llama8b` + `gemma9b`                     | `qwen95b`           |
+| 1    | `judgeA` + `judgeB`                       | `judgeC`            |
+| 2    | `judgeA` + `judgeC`                       | `judgeB`            |
+| 3    | `judgeB` + `judgeC`                       | `judgeA`            |
 
 The **reward signal at training time is the mean of the two in-panel judges**, minus a length penalty, minus a fidelity (embedding-similarity) penalty. At eval time the held-out judge scores the 714 post-rewrites to measure out-of-distribution transfer.
 
@@ -86,7 +86,7 @@ From `run_3fold_grpo.sh`:
 --train-judges {fold's 2 in-panel judge slugs}
 --heldout-judge {fold's held-out slug}
 --dataset-json /workspace/grpo_run/controversial_40_3fold.json
---base-model {HF id}  (optional; defaults to hardcoded REWRITER const)
+--base-model {HF id}  (optional; falls back to config.models.REWRITER)
 ```
 
 Defaults to `save_strategy="no"` (periodic step-50 saves caused silent failures when disk quota was tight).
@@ -136,6 +136,8 @@ The underlying documents live in `data/paragraphs.db`, table `paragraphs`, keyed
 ---
 
 ## 7. Pipeline scripts (run in this order per rewriter × criterion)
+
+**Before launching anything**: populate `config/models.py` with `REWRITER`, `JUDGE_REGISTRY`, `FOLDS` and confirm `python3 -c "from config.models import require_config; require_config()"` exits 0. Every pipeline script below calls `require_config()` at entry and will abort with a clear error if placeholders remain. Do NOT hardcode model ids or fold rotation inside any script or shell wrapper — the 2026-04-22 refactor centralises this so one edit propagates to every downstream tool (postmortem: EXPERIMENT_NOTES.md §2026-04-22 refactor).
 
 All under `/workspace/grpo_run/`:
 
@@ -188,25 +190,31 @@ The `transformers` version in the current venv has a known bug loading the DeBER
 
 ---
 
-## 9. Two-GPU adaptation (target setup)
+## 9. Two-GPU topology (mandatory; architectural gap still open)
 
-On the target server with 2× A100 80GB (or equivalent), the straightforward mapping:
+The pipeline is designed to run on **2× A100 80GB** (CLAUDE.md GPU-topology rule). The mapping:
 
-- **GPU 0 (judges)**: put both `JudgeVLLM` instances on this GPU. In vLLM this means `CUDA_VISIBLE_DEVICES=0` when spawning the judge processes. The existing `JudgeVLLM.__init__` auto-picks `gpu_memory_utilization` based on model id; with a dedicated GPU you can bump to 0.45-0.50 per judge (up from current 0.22-0.28). A 14B-class judge (e.g., Qwen2.5-14B-Instruct) fits comfortably; 2 × 14B ≈ 60GB total.
-- **GPU 1 (rewriter)**: GRPO trainer + rollout vLLM. With a dedicated 80GB you have headroom for **~3-4B full bf16 RL**, or **~15-30B with LoRA**, or **30-70B with QLoRA**. Empirically the 1.5B run uses ~30GB (not 70GB — the current 70GB is judges + rewriter co-located).
+- **GPU 0 (judges)**: both `JudgeVLLM` instances live here, pinned via `CUDA_VISIBLE_DEVICES=0`. With a dedicated GPU, `gpu_memory_utilization` can go to 0.45-0.50 per judge (up from the co-located 0.22-0.28). A 14B-class judge fits comfortably; 2 × 14B ≈ 60 GB total.
+- **GPU 1 (rewriter)**: GRPOTrainer + rollout vLLM, pinned via `CUDA_VISIBLE_DEVICES=1`. With a dedicated 80 GB you have headroom for **~3-4B full bf16 RL**, or **~15-30B with LoRA**, or **30-70B with QLoRA**. The historical single-A100 runs showed ~30 GB on a 1.5B; the 2026-04-21 14B co-located run consumed all 80 GB because judges shared the device.
 
-### Concrete changes needed
+Set `CUDA_DEVICE_ORDER=PCI_BUS_ID` in every launch script to avoid nvidia-smi/CUDA index drift on mixed compute-capability hosts. Co-locating rewriter + judges on a single A100 is a **known-bad configuration**: the 2026-04-21 run was forced to rewriter≈0.38 + judges≈0.28 each, which silently overcommits when the judge panel rotates and which contributed to the length-penalty failure in fold 1 (`frac_outside_tol = 0.75`).
 
-1. **`run_pilot_len_pen.py`** currently instantiates `JudgeVLLM(...)` in the same Python process as the GRPO trainer. To split: either (a) spawn a separate vLLM-server process on GPU 0 with an HTTP endpoint, and have the reward_fn call that endpoint; or (b) use `multiprocessing.Process` to run judges on their own CUDA device while the trainer runs on another. Option (b) is less invasive — set `CUDA_VISIBLE_DEVICES` per process at spawn time.
-2. **`CUDA_VISIBLE_DEVICES`**: explicit per-process. Example for a 2-GPU split:
-   ```
-   CUDA_VISIBLE_DEVICES=0 python3 judge_server.py --judges qwen95b,llama8b --port 8123 &
-   CUDA_VISIBLE_DEVICES=1 python3 run_pilot_len_pen.py --judge-endpoint http://localhost:8123 ...
-   ```
-   This refactor is small but unavoidable. Keep the same JSON parsing (`parse_score`).
-3. **Judge batch size**: with a dedicated judge GPU, bump `gpu_memory_utilization` to 0.45 and raise `max_model_len` to 4096 or 6144. That roughly doubles the KV-cache concurrency and cuts wall time per scoring call by ~30-40%.
+### Architectural gap (not yet closed as of 2026-04-22)
+
+`training/scripts/run_pilot_len_pen.py::reward_fn` still instantiates `JudgeVLLM(...)` in the **same Python process** as the GRPOTrainer. All downstream pipeline scripts (`run_icir.py`, `run_mission_attacks.py`, `score_all_missing.py`) follow the same single-process pattern. That means that on a 2-GPU host today, both judges and the rewriter still compete for a single `CUDA_VISIBLE_DEVICES` by default — the repo does not yet have a real split.
+
+To actually execute the dual-GPU topology, one of these refactors is required (pick (a), it's less invasive):
+
+1. **(a) Multiprocessing**: spawn judges in a child `multiprocessing.Process` with `CUDA_VISIBLE_DEVICES=0` set *before* torch/vLLM import, keep the trainer in the parent with `CUDA_VISIBLE_DEVICES=1`. IPC via `multiprocessing.Queue` for prompts / score tuples. Keep the same JSON parsing (`parse_score`).
+2. **(b) HTTP judge server**: spawn `CUDA_VISIBLE_DEVICES=0 python3 judge_server.py --judges … --port 8123` as a sibling process, and have `reward_fn` call that endpoint. More code, more failure modes (port conflicts, startup race), but isolates the trainer Python env so the judge server can stay on a pinned vLLM version if the trainer wants a newer one.
+
+Either way, flag it at launch — running 400-step GRPO under co-location is a mission-invalidating mistake.
+
+### Other two-GPU tuning knobs
+
+3. **Judge batch size**: with a dedicated judge GPU, bump `gpu_memory_utilization` to 0.45 and raise `max_model_len` to 4096 or 6144. That roughly doubles the KV-cache concurrency and cuts wall time per scoring call by ~30-40%. `JudgeVLLM.__init__` auto-picks the budget; override via the `EVAL_VLLM_MEM_UTIL` env var.
 4. **Rewriter size bump**: if using a 3-4B base with full bf16, raise `--per-device-batch` to 16 (`2 × G = 16` at G=8, or 8 at G=4), and keep `--num-generations 4`. If going to LoRA/QLoRA with a bigger base, reduce G to 2 to control rollout KV.
-5. **vLLM version**: if the target server needs a newer vLLM (0.19+) to support specific rewriter architectures (e.g., Gemma-4), isolate the trainer's Python environment so the judge-server's vLLM stays on 0.18.1. Qwen3.5-9B can be finicky with vLLM version changes. Pre-flight smoke-test any rewriter base with `/home/max/preflight_rewriter.py`.
+5. **vLLM version**: if the judge or rewriter architecture needs a newer vLLM than 0.18.1, isolate the two processes' Python environments so one doesn't force a break of the other. Pre-flight smoke-test any rewriter base with `scripts/preflight_rewriter.py`.
 
 ---
 

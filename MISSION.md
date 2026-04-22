@@ -1,4 +1,33 @@
-# Mission — 2026-04-21
+# Mission — 2026-04-22 (reboot)
+
+The 2026-04-21 attempt (below) is **invalidated**. Three failures made the run unusable:
+
+1. **Wrong rewriter base** — model chosen was not the one Max intended to test; the "Qwen3-14B" label was applied to weights that came from a different stub.
+2. **Wrong judge panel** — `JUDGE_REGISTRY` drifted between `run_pilot_len_pen.py`, `run_mission_attacks.py`, `run_icir.py`, `judge/vllm_client.py`, and the HF-push step. The model card pushed to `daxmavy/qwen3-14b-grpo-fold1-clarity-100` advertised a panel that does not match the one the GRPOTrainer actually optimised against.
+3. **Single-GPU co-location** — all 3 vLLM engines (2 judges + rewriter) were crammed onto one A100 at tight memory fractions (rewriter 0.38, judges 0.28 each), producing throughput-starved training and contributing to the length-penalty failure (`frac_outside_tol = 0.75` on the fold-1 post-eval).
+
+The mission restarts tonight. Model IDs are TBD pending Max's selection — the workspace has been refactored so that once Max fills in `config/models.py`, every downstream script picks up the new panel from a single source of truth.
+
+## Reboot: what changed in the repo (2026-04-22)
+
+- **`config/models.py`** is the single source of truth for `REWRITER`, `JUDGE_REGISTRY`, and `FOLDS`. `require_config()` fails fast with a clear error if the placeholders are still set. See EXPERIMENT_NOTES.md §2026-04-22 refactor for the postmortem.
+- All scripts (`training/scripts/run_pilot_len_pen.py`, `scripts/run_mission_attacks.py`, `scripts/run_icir.py`, `scripts/score_all_missing.py`, `scripts/preflight_rewriter.py`, `judge/vllm_client.py`, `scripts/run_grpo_3fold_with_rewriter.sh`) now import from `config.models` and call `require_config()` at `main()` entry.
+- GRPO `--max-steps` default raised from `15` to **`400`** (CLAUDE.md GRPO step-budget rule).
+- Dual-GPU topology is now mandatory — see §1 Hardware assignment and §9b for the architectural gap that still needs to be closed before a full 400-step run can launch on 2 GPUs.
+
+## Reboot: pre-launch checklist
+
+Before running anything heavier than a smoke test on the new mission:
+
+- [ ] Max has populated `config/models.py` with the intended `REWRITER` + `JUDGE_REGISTRY` + `FOLDS`.
+- [ ] `python3 -c "from config.models import require_config; require_config()"` exits 0.
+- [ ] `nvidia-smi` shows both A100s idle (0 MiB) or has an explicit carve-out.
+- [ ] `scripts/preflight_rewriter.py` passes for the new rewriter (vLLM load + 1 GRPO step).
+- [ ] The out-of-process judge refactor in §9b is either complete or explicitly deferred with Max's sign-off.
+
+---
+
+# Mission — 2026-04-21 (ARCHIVED — invalidated, see reboot notes above)
 
 Goal: replicate the full `attack-llm-judge` attack pipeline on a fresh, modern rewriter, on the hardware we have tonight, and land a minimum-viable cross-comparison dataset within 15 hours.
 

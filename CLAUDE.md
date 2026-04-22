@@ -1,12 +1,11 @@
 # Project instructions
 DO NOT EDIT FILES OUTSIDE OF /home/shil6647/attack-llm-judge/* or /data/shil6647/* EVER!!!!!!
-IF YOU THINK YOU HAVE TO, ASK MAX (HUMAN OPERATOR) FIRST!
 DO NOT REMOVE OR DELETE DATA IN THE DATABASE!
 
 You are on a shared environment: don't add additional GPU usage without asking Max. Before launching any job, `nvidia-smi` to confirm the GPUs you plan to use are idle — another user on the box will block CUDA graph capture or OOM you if you pile on.
 
 - Make small, focused git commits for the changes you make. Prefer many small commits over one large one.
-- Push all commits to Github remote, so that if this server is lost for some reason I can recover the code.
+- Push all commits to Github remote branch, so that if this server is lost for some reason I can recover the code.
 - Add experiment notes (design decisions, bugfixes, etc) to EXPERIMENT_NOTES.md
 - Literature review is at LITERATURE.md
 - Current mission brief lives in MISSION.md — read it before deciding what to work on
@@ -37,5 +36,11 @@ The test: "Would Max notice this from the SMOKE DONE line alone?" If no, raise i
 **Judge inference rule.** Never run judge models via HF `model.generate()` — it's too slow for our per-step / per-eval scoring volumes. Judge inference must go through vLLM. If vLLM doesn't support a given judge model, downgrade to a worse judge the current vLLM does support rather than falling back to HF generate. (Applies to both training-time scoring and held-out eval scoring.)
 
 **Rewriter swap rule.** When debugging a rewriter candidate that is failing in vLLM, GRPO, or both, give yourself **~10 genuine debug attempts** before declaring the candidate dead and switching to the next one on the backup list. A "genuine attempt" is a distinct root-cause hypothesis plus a targeted fix — reinstalling the same version of the same package four times counts as one attempt. Record each attempt (symptom, hypothesis, fix tried, result) in EXPERIMENT_NOTES.md so the next retry doesn't repeat work. Switching rewriters is cheaper than losing the whole night to one stuck candidate.
+
+**Model-ID source-of-truth rule.** The rewriter HF id, the judge panel (`JUDGE_REGISTRY`), and the fold rotation (`FOLDS`) all live in **`config/models.py`** and nowhere else. Never hardcode a model id or a fold rotation inside a script, shell script, or model card — import from `config.models` and call `require_config()` at the top of every `main()`. The 2026-04-21 mission was invalidated because three scripts kept drifted local copies; the HF checkpoint ended up advertising a different judge panel than was actually used at training time. If you need a new rewriter or judge, edit `config/models.py` once and every downstream script picks it up. When reading a model id back out in a log banner, HF commit message, or model-card, always source it from `config.models.REWRITER` / `JUDGE_REGISTRY` so the written record matches the weights that were actually loaded.
+
+**GPU topology rule.** The production pipeline targets **2× A100 80GB**: GPU 0 serves the 2 in-panel judges via vLLM, GPU 1 runs the rewriter (vLLM rollouts + QLoRA GRPOTrainer). Set `CUDA_DEVICE_ORDER=PCI_BUS_ID` and pin each process with `CUDA_VISIBLE_DEVICES`. Co-locating all three vLLM engines on a single A100 (the 2026-04-21 pattern) is a known-bad configuration — it forces JudgeVLLM down to `gpu_memory_utilization≈0.28` and corners the rewriter into `≤0.38`, which silently overcommits when the judge panel rotates. If you have only one GPU available (another user on the box, or the host is truly single-A100), stop and flag it to Max rather than falling back to co-location.
+
+**GRPO step budget.** GRPO runs are locked at **400 steps** (MISSION.md §7 + REPLICATION.md §4). Shorter runs (e.g. a 100-step probe) are acceptable for smoke/debug only — never report them as a mission deliverable without Max's explicit sign-off.
 
 ---
