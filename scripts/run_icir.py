@@ -128,10 +128,13 @@ def main():
 
     def _rew_mem_util(mid: str) -> float:
         s = mid.lower()
+        # Budget share on an 80 GiB GPU when co-resident with 2 judge vLLMs
+        # each at JudgeVLLM's 0.28 util (=2*22.2=44.4 GiB). Rewriter must fit
+        # below (1.0 - 0.56) with margin, else the 2nd judge fails to init.
         if "14b" in s or "13b" in s:
-            return 0.45
+            return 0.38
         if "7b" in s or "8b" in s or "9b" in s:
-            return 0.25
+            return 0.22
         return 0.18
     rew_mu = _rew_mem_util(rewriter)
     print(f"[{time.strftime('%H:%M:%S')}] loading rewriter {rewriter} (gpu_mem_util={rew_mu})", flush=True)
