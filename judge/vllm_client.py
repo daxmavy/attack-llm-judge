@@ -1,39 +1,37 @@
-"""Local judge serving via vLLM.
+"""Local judge serving — thin HTTP client over `judge.server`.
 
-**Mirrors `training/scripts/heldout_only_eval.py::JudgeVLLM` as closely as
-possible.** Same config values (dtype=bf16, max_model_len=3072, enforce_eager=True),
-same prompt-building flow (HF tokenizer `apply_chat_template` → vLLM `generate`),
-same JSON-parse fallback. Kept as a local copy rather than imported from the
-training script so the training script stays untouched even if the eval suite
-evolves.
+Historically this module ran vLLM in-process, keeping one `LLM` object per
+judge alive inside whichever script imported it. That was the 2026-04-21
+co-location pattern that forced judges down to `gpu_memory_utilization≈0.28`
+and silently overcommitted the KV cache during rotation.
 
-The public interface (`call_judge_local`) accepts an already-formatted system+user
-prompt pair (built by `judge.rubrics.build_prompt` upstream), so the rubric text
-and system prompt are not hardcoded here — this lets the eval suite's existing
-prompt pipeline flow through unchanged.
+As of 2026-04-22 this module is a thin client that forwards to the
+out-of-process judge server (see `judge.http_client` + `judge.server`). The
+public surface is unchanged — `is_local_available`, `call_judge_local`,
+`call_judge_local_batch` — so callers (`judge.client` fallback path, the
+held-out eval suite) continue to work.
 
-Models are loaded lazily and cached. A single generation lock serialises calls
-into `llm.generate` to avoid issues when multiple eval threads share one vLLM
-engine. For bulk use, call `call_judge_local_batch` directly — vLLM's continuous
-batching is only useful when many prompts are submitted together.
-
-**VRAM caveat:** `gpu_memory_utilization=0.30` matches training's post-hoc eval
-setting. Three attack judges at 0.30 each ≈ 0.90 of an 80 GB A100 — do not run
-this alongside an active training job. If a training job is live, either lower
-`DEFAULT_GPU_MEM_UTIL` (env var `EVAL_VLLM_MEM_UTIL`) or defer the eval run.
+Connection policy
+-----------------
+- The server endpoint is read from `JUDGE_HTTP_ENDPOINT` env var, falling back
+  to `http://127.0.0.1:8127`.
+- No automatic spawn here. The calling script is expected to bring up a
+  judge server via `judge.http_client.spawn_judge_server` before the first
+  call. If the server is not reachable, every call returns a CallResult with
+  `ok=False` and an explanatory error string (matching the previous semantics
+  when vLLM itself failed to load).
 """
 from __future__ import annotations
 
 import os
-import threading
+import sys
 from pathlib import Path
 
 from judge.client import CallResult, _extract_json
 
+sys.path.insert(0, "/home/shil6647/attack-llm-judge")
 
-# Keep these in sync with the training script's env setup. These are
-# no-ops if already set. (Matches /home/max/attack-llm-judge/training/
-# scripts/heldout_only_eval.py lines 29-31.)
+
 os.environ.setdefault("HF_HOME", "/data/shil6647/attack-llm-judge/hf_cache")
 os.environ.setdefault("VLLM_CACHE_ROOT", "/data/shil6647/attack-llm-judge/vllm_cache")
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
@@ -41,23 +39,14 @@ os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 
 HF_CACHE = Path(os.environ["HF_HOME"])
 
-DEFAULT_GPU_MEM_UTIL = float(os.environ.get("EVAL_VLLM_MEM_UTIL", "0.30"))
-DEFAULT_MAX_MODEL_LEN = int(os.environ.get("EVAL_VLLM_MAX_MODEL_LEN", "3072"))
-
 
 def _load_local_map() -> dict[str, str]:
-    """Derive the {slug: hf_id} map from config.models.JUDGE_REGISTRY.
+    """Map lookup names (both HF id and lower-case slug) → HF id.
 
-    This module used to ship its own hardcoded list, which drifted from the
-    training-side JUDGE_REGISTRY and caused the 2026-04-21 mission to push an
-    HF checkpoint whose model-card claimed a different judge panel than the
-    one actually used at training time. Now there is one source of truth.
+    Accepts either the canonical HF id or the slug as a lookup key so existing
+    callers (which pass the HF id into `call_judge_local`) work unchanged.
     """
-    import sys
-    sys.path.insert(0, "/home/shil6647/attack-llm-judge")
     from config.models import JUDGE_REGISTRY
-    # Accept two lookup styles: the canonical HF id (so downstream callers can
-    # pass the raw HF id) AND the OpenRouter-style lowercase slug (legacy).
     out: dict[str, str] = {}
     for _slug, (_name, hf_id) in JUDGE_REGISTRY.items():
         out[hf_id] = hf_id
@@ -65,12 +54,17 @@ def _load_local_map() -> dict[str, str]:
     return out
 
 
+def _lookup_slug(hf_id: str) -> str | None:
+    """Reverse-lookup slug from HF id — the server addresses judges by slug,
+    not by HF id."""
+    from config.models import JUDGE_REGISTRY
+    for slug, (_name, fid) in JUDGE_REGISTRY.items():
+        if fid == hf_id:
+            return slug
+    return None
+
+
 LOCAL_MODEL_MAP: dict[str, str] = _load_local_map()
-
-
-_LOCK = threading.Lock()
-_GEN_LOCK = threading.Lock()
-_CACHE: dict[str, "_Judge"] = {}
 
 
 def _hf_dir(hf_id: str) -> Path:
@@ -78,6 +72,14 @@ def _hf_dir(hf_id: str) -> Path:
 
 
 def is_local_available(slug: str) -> bool:
+    """True if the judge's weights are on local disk.
+
+    Same semantics as the pre-refactor version — the caller uses this to
+    decide whether to route through the local vLLM path or fall back to
+    OpenRouter. Network reachability to the judge server is *not* checked
+    here; if weights exist but the server is down, the subsequent
+    `call_judge_local` returns a non-ok CallResult with a clear error.
+    """
     hf_id = LOCAL_MODEL_MAP.get(slug)
     if not hf_id:
         return False
@@ -85,72 +87,8 @@ def is_local_available(slug: str) -> bool:
     return d.exists() and any(d.rglob("*.safetensors"))
 
 
-def _supports_system_role(tok) -> bool:
-    try:
-        tok.apply_chat_template(
-            [{"role": "system", "content": "x"}, {"role": "user", "content": "y"}],
-            tokenize=False, add_generation_prompt=True,
-        )
-        return True
-    except Exception:
-        return False
-
-
-class _Judge:
-    """Direct port of training/scripts/heldout_only_eval.py::JudgeVLLM.
-
-    Differences from the training class:
-    - Accepts the full (system, user) prompt pair at call time rather than
-      formatting from CLARITY_RUBRIC (so the eval suite's own rubric/prompt
-      pipeline flows through unchanged).
-    - Adds a batch entry point that maps 1:1 onto vLLM's `llm.generate`.
-    """
-
-    def __init__(self, hf_id: str, gpu_mem_util: float = DEFAULT_GPU_MEM_UTIL,
-                 max_model_len: int = DEFAULT_MAX_MODEL_LEN):
-        from transformers import AutoTokenizer
-        from vllm import LLM, SamplingParams
-        self.hf_id = hf_id
-        self.tok = AutoTokenizer.from_pretrained(
-            hf_id, cache_dir=str(HF_CACHE), token=os.environ.get("HF_TOKEN"),
-        )
-        self.sys_ok = _supports_system_role(self.tok)
-        self.llm = LLM(
-            model=hf_id,
-            dtype="bfloat16",
-            gpu_memory_utilization=gpu_mem_util,
-            max_model_len=max_model_len,
-            enforce_eager=True,
-            download_dir=str(HF_CACHE),
-        )
-        self._SamplingParams = SamplingParams
-
-    def _build(self, system_prompt: str, user_prompt: str) -> str:
-        if self.sys_ok:
-            chat = [{"role": "system", "content": system_prompt},
-                    {"role": "user",   "content": user_prompt}]
-        else:
-            chat = [{"role": "user", "content": system_prompt + "\n\n" + user_prompt}]
-        return self.tok.apply_chat_template(chat, tokenize=False, add_generation_prompt=True)
-
-    def generate(self, pairs: list[tuple[str, str]], max_tokens: int, temperature: float) -> list[str]:
-        prompts = [self._build(s, u) for (s, u) in pairs]
-        sp = self._SamplingParams(
-            temperature=max(float(temperature), 0.0),
-            max_tokens=int(max_tokens),
-        )
-        with _GEN_LOCK:
-            outs = self.llm.generate(prompts, sp, use_tqdm=False)
-        return [o.outputs[0].text for o in outs]
-
-
-def _get(hf_id: str) -> _Judge:
-    with _LOCK:
-        if hf_id in _CACHE:
-            return _CACHE[hf_id]
-        j = _Judge(hf_id)
-        _CACHE[hf_id] = j
-        return j
+def _endpoint() -> str:
+    return os.environ.get("JUDGE_HTTP_ENDPOINT", "http://127.0.0.1:8127")
 
 
 def _parse(raw: str) -> CallResult:
@@ -166,35 +104,50 @@ def _parse(raw: str) -> CallResult:
                        raw, None, 0, 0)
 
 
+def _generate(slug: str, pairs: list[tuple[str, str]], *,
+               max_tokens: int, temperature: float) -> list[str]:
+    """Forward (system, user) pairs to the server's /generate endpoint."""
+    from judge.http_client import JudgeHTTP
+    # The HTTP client's generate_raw() is a thin passthrough; using it here
+    # keeps one place responsible for the endpoint wire format.
+    judge = JudgeHTTP(
+        name=slug,
+        rubric="clarity",          # unused by /generate, but required by dataclass
+        endpoint=_endpoint(),
+        auto_load=False,            # server auto-loads on first /generate call
+    )
+    return judge.generate_raw(pairs, max_tokens=max_tokens, temperature=temperature)
+
+
 def call_judge_local(model_id: str, system_prompt: str, user_prompt: str,
                       max_tokens: int = 250, temperature: float = 0.0) -> CallResult:
     hf_id = LOCAL_MODEL_MAP.get(model_id)
     if not hf_id:
         return CallResult(False, None, None, "", f"no local mapping for {model_id}")
+    slug = _lookup_slug(hf_id)
+    if not slug:
+        return CallResult(False, None, None, "",
+                           f"no registry slug for hf_id={hf_id}")
     try:
-        judge = _get(hf_id)
+        texts = _generate(slug, [(system_prompt, user_prompt)],
+                           max_tokens=max_tokens, temperature=temperature)
     except Exception as e:
-        return CallResult(False, None, None, "", f"local load failed: {e}")
-    try:
-        texts = judge.generate([(system_prompt, user_prompt)],
-                                max_tokens=max_tokens, temperature=temperature)
-        return _parse(texts[0])
-    except Exception as e:
-        return CallResult(False, None, None, "", f"local gen failed: {e}")
+        return CallResult(False, None, None, "", f"judge server call failed: {e}")
+    return _parse(texts[0])
 
 
 def call_judge_local_batch(model_id: str, pairs: list[tuple[str, str]],
                              max_tokens: int = 250, temperature: float = 0.0) -> list[CallResult]:
-    """Batched variant — send N prompts to vLLM in one call. Preserves order."""
+    """Batched variant — sends N prompts to the server in one call. Preserves order."""
     hf_id = LOCAL_MODEL_MAP.get(model_id)
     if not hf_id:
         return [CallResult(False, None, None, "", f"no local mapping for {model_id}")] * len(pairs)
+    slug = _lookup_slug(hf_id)
+    if not slug:
+        return [CallResult(False, None, None, "",
+                             f"no registry slug for hf_id={hf_id}")] * len(pairs)
     try:
-        judge = _get(hf_id)
+        texts = _generate(slug, pairs, max_tokens=max_tokens, temperature=temperature)
     except Exception as e:
-        return [CallResult(False, None, None, "", f"local load failed: {e}")] * len(pairs)
-    try:
-        texts = judge.generate(pairs, max_tokens=max_tokens, temperature=temperature)
-        return [_parse(t) for t in texts]
-    except Exception as e:
-        return [CallResult(False, None, None, "", f"local gen failed: {e}")] * len(pairs)
+        return [CallResult(False, None, None, "", f"judge server call failed: {e}")] * len(pairs)
+    return [_parse(t) for t in texts]
