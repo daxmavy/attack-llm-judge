@@ -1,21 +1,23 @@
-"""Minimum GRPO run, but with vLLM for the 2 training judges instead of HF transformers.
-All other params identical to run_min.py so the timing is directly comparable.
+"""GRPO rewriter training with HTTP-backed judge panel.
 
-Memory layout on A100-80GB:
-- Rewriter training (Qwen1.5B bf16 + AdamW fp32 + grads + acts): ~20 GB
-- Ref policy (bf16): ~3 GB
-- vLLM judge 1 (Qwen-7B) weights+KV: ~17 GB (gpu_mem_util=0.08 for KV)
-- vLLM judge 2 (Llama-8B) weights+KV: ~19 GB
-- Total: ~59 GB
+Hardware topology (post 2026-04-22 reboot):
+- GPU 0 — judge server subprocess (vLLM, 2 judges co-resident with dedicated VRAM).
+- GPU 1 — this process: rewriter + GRPOTrainer (+ optional TRL vLLM colocate).
 
-Skips held-out Gemma during training; we re-run the full 3-judge eval with finish_eval.py style fix.
+Invoke with `CUDA_VISIBLE_DEVICES=1` so the rewriter process only sees GPU 1.
+`spawn_judge_server(gpu=0)` overrides CUDA_VISIBLE_DEVICES in the subprocess env
+so the judge sees physical GPU 0 regardless of what the parent process inherits.
+
+The old in-process JudgeVLLM class was removed on 2026-04-22 — all judge scoring
+now goes through `judge.http_client.JudgeHTTP`. See REPLICATION.md §9 for the
+architectural rationale (the co-located pattern silently overcommitted KV cache
+during judge rotation on the 2026-04-21 fold-1 run).
 """
 from __future__ import annotations
 import argparse
 import gc
 import json
 import os
-import re
 import sqlite3
 import sys
 import time
@@ -44,175 +46,12 @@ from run_manifest import capture_manifest  # noqa: E402
 
 # Single source of truth for rewriter + judge IDs. See config/models.py.
 from config.models import REWRITER, JUDGE_REGISTRY, require_config  # noqa: E402
+from judge.rubrics import RUBRICS  # noqa: E402
+from judge.http_client import (  # noqa: E402
+    DEFAULT_ENDPOINT, JudgeHTTP, spawn_judge_server,
+)
 
 OUT_DIR = Path("/data/shil6647/attack-llm-judge/grpo_run")
-
-JUDGE_SYSTEM = ("You are a careful expert evaluator of short argumentative paragraphs. "
-                "You follow the rubric exactly, and you return your answer as valid JSON.")
-CLARITY_RUBRIC = """You are judging the CLARITY of a short argumentative paragraph written in response to a political/policy proposition.
-
-CLARITY is about *how well the paragraph is written*, not whether you agree with it, not how persuasive it is, and not how much information it contains. Focus strictly on:
-- Grammar, spelling, and punctuation
-- Sentence structure and readability
-- Logical flow between sentences
-- Whether the main point is expressed in a way a general reader can understand on first read
-
-Do NOT reward or penalise based on:
-- Stance toward the proposition (pro or con)
-- Amount or quality of evidence (that is a separate criterion)
-- Length (a short, clear paragraph can score as high as a long one)
-- Formal vs. informal register, as long as the meaning is clear
-
-Score on an integer scale from 0 to 100, using these anchors:
-
-- 0-20 (Very unclear): Pervasive grammar/spelling errors, broken sentences, or jumbled ideas that obstruct understanding. A reader would struggle to extract the point.
-- 21-40 (Unclear): Frequent errors, awkward phrasing, or disorganised reasoning. The main point is recoverable only with effort.
-- 41-60 (Moderately clear): Noticeable errors or some confusing sentences, but the main idea comes through on a normal read.
-- 61-80 (Clear): Well-written with at most minor errors or mild awkwardness. Easy to follow.
-- 81-100 (Very clear): Polished, essentially error-free prose with well-organised, fluent sentences. Smooth first-read comprehension.
-
-Proposition: {proposition}
-
-Paragraph:
-\"\"\"{paragraph}\"\"\"
-
-Think step by step about the paragraph's clarity, citing specific features (grammar, structure, flow) as needed. Then output a single integer score from 0 to 100.
-
-Return ONLY a JSON object of the form:
-{{"reasoning": "<1-3 sentences>", "score": <integer 0-100>}}"""
-
-
-INFORMATIVENESS_RUBRIC = """You are judging the INFORMATIVENESS of a short argumentative paragraph written in response to a political/policy proposition.
-
-INFORMATIVENESS is about *how much substantive information the paragraph communicates* to support or oppose the proposition: relevant facts, evidence, mechanisms, specific examples, and concrete reasoning. Focus strictly on:
-- Whether the paragraph presents specific facts, figures, mechanisms, or examples (not just generalities)
-- Whether reasons/causes are made explicit (not just assertions)
-- Whether the reader learns something concrete and relevant about the topic
-- Whether claims are grounded (hedged appropriately when uncertain)
-
-Do NOT reward or penalise based on:
-- Grammar, spelling, or prose quality (that is a separate criterion — clarity)
-- Stance toward the proposition (pro or con)
-- Length per se — a short paragraph packed with relevant specifics can score as high as a long one
-- Formal vs. informal register
-
-Score on an integer scale from 0 to 100, using these anchors:
-
-- 0-20 (Very uninformative): No substantive content — pure assertion, slogan, or tautology. Reader learns nothing new or relevant.
-- 21-40 (Uninformative): Only vague general claims with no specifics. Few or no concrete reasons, mechanisms, or examples.
-- 41-60 (Moderately informative): Some substance — includes at least one concrete reason or example, but much of the paragraph is still abstract or generic.
-- 61-80 (Informative): Multiple concrete claims, reasons, or examples; mechanisms made explicit; reader learns something real about the topic.
-- 81-100 (Very informative): Dense with specific facts, figures, mechanisms, and examples; reasoning is explicit and well-grounded; claims are appropriately hedged; a knowledgeable reader would learn something new.
-
-Proposition: {proposition}
-
-Paragraph:
-\"\"\"{paragraph}\"\"\"
-
-Think step by step about the paragraph's informativeness, citing specific features (concrete examples, explicit mechanisms, hedged claims) as needed. Then output a single integer score from 0 to 100.
-
-Return ONLY a JSON object of the form:
-{{"reasoning": "<1-3 sentences>", "score": <integer 0-100>}}"""
-
-
-RUBRICS = {"clarity": CLARITY_RUBRIC, "informativeness": INFORMATIVENESS_RUBRIC}
-
-SCORE_RE_JSON = re.compile(r"\{[\s\S]*?\}")
-SCORE_RE_KV = re.compile(r'"score"\s*:\s*(-?\d+(?:\.\d+)?)')
-
-
-def parse_score(text):
-    if not text:
-        return None
-    m = SCORE_RE_JSON.search(text)
-    if m:
-        try:
-            obj = json.loads(m.group(0))
-            if "score" in obj:
-                return float(obj["score"])
-        except Exception:
-            pass
-    m = SCORE_RE_KV.search(text)
-    if m:
-        try:
-            return float(m.group(1))
-        except Exception:
-            pass
-    return None
-
-
-def supports_system_role(tok):
-    try:
-        tok.apply_chat_template(
-            [{"role": "system", "content": "x"},
-             {"role": "user", "content": "y"}],
-            tokenize=False, add_generation_prompt=True,
-        )
-        return True
-    except Exception:
-        return False
-
-
-class JudgeVLLM:
-    """vLLM judge. Uses HF tokenizer for chat template; vLLM for fast inference."""
-
-    def __init__(self, name, model_id, gpu_mem_util=None, max_model_len=3072, rubric="clarity"):
-        self.rubric_name = rubric
-        self.rubric_text = RUBRICS[rubric]
-        # Auto-pick mem util based on model size if not specified.
-        # Qwen-7B (~14 GB weights) → 0.22; Llama-8B (~16 GB) → 0.25; Gemma-9B (~18 GB) → 0.28.
-        if gpu_mem_util is None:
-            mid = model_id.lower()
-            if "qwen3.5-9b" in mid:
-                gpu_mem_util = 0.27  # 9B weights + KV
-            elif "gemma-4-e4b" in mid:
-                gpu_mem_util = 0.22  # E4B effective, ~7-8 GB weights
-            elif "gemma" in mid:
-                gpu_mem_util = 0.28
-            elif "llama" in mid:
-                gpu_mem_util = 0.25
-            else:
-                gpu_mem_util = 0.22
-        from vllm import LLM, SamplingParams
-        self.name = name
-        self.model_id = model_id
-        self.hf_tok = AutoTokenizer.from_pretrained(
-            model_id, cache_dir="/data/shil6647/attack-llm-judge/hf_cache", token=os.environ.get("HF_TOKEN")
-        )
-        self.sys_ok = supports_system_role(self.hf_tok)
-        self.llm = LLM(
-            model=model_id,
-            dtype="bfloat16",
-            gpu_memory_utilization=gpu_mem_util,
-            max_model_len=max_model_len,
-            enforce_eager=True,   # skip torch.compile to speed up setup
-            download_dir="/data/shil6647/attack-llm-judge/hf_cache",
-        )
-        self.sp = SamplingParams(temperature=0.0, max_tokens=180)
-
-    def _build_prompt(self, proposition, paragraph):
-        user_msg = self.rubric_text.format(proposition=proposition, paragraph=paragraph or "")
-        if self.sys_ok:
-            chat = [{"role": "system", "content": JUDGE_SYSTEM},
-                    {"role": "user", "content": user_msg}]
-        else:
-            chat = [{"role": "user", "content": JUDGE_SYSTEM + "\n\n" + user_msg}]
-        kwargs = {"tokenize": False, "add_generation_prompt": True}
-        # Qwen3 family defaults to thinking mode which burns our output budget before
-        # the JSON score appears. Disable it for judges.
-        if "qwen3" in self.model_id.lower():
-            kwargs["enable_thinking"] = False
-        return self.hf_tok.apply_chat_template(chat, **kwargs)
-
-    def score(self, propositions, paragraphs):
-        prompts = [self._build_prompt(p, t) for p, t in zip(propositions, paragraphs)]
-        outs = self.llm.generate(prompts, self.sp, use_tqdm=False)
-        scores = []
-        for o in outs:
-            t = o.outputs[0].text
-            s = parse_score(t)
-            scores.append(float(s) if s is not None else 50.0)
-        return scores
 
 
 def load_data():
@@ -293,7 +132,18 @@ def main():
                          "JUDGE_REGISTRY key not in --train-judges.")
     ap.add_argument("--criterion", choices=list(RUBRICS.keys()), default="clarity",
                     help="scoring rubric — clarity (default) or informativeness. "
-                         "Passed to every JudgeVLLM construction.")
+                         "Passed to every JudgeHTTP construction.")
+    ap.add_argument("--judge-endpoint", type=str, default=None,
+                    help="If set, use an already-running judge server at this URL "
+                         "(e.g. http://127.0.0.1:8127). If unset, spawn a fresh "
+                         "server pinned to --judge-gpu.")
+    ap.add_argument("--judge-port", type=int, default=8127,
+                    help="Port for the spawned judge server (ignored if "
+                         "--judge-endpoint is set).")
+    ap.add_argument("--judge-gpu", type=int, default=0,
+                    help="Physical GPU index for the spawned judge server. This is "
+                         "applied via CUDA_VISIBLE_DEVICES in the subprocess env and "
+                         "is independent of whatever GPU this parent process sees.")
     ap.add_argument("--per-device-batch", type=int, default=None,
                     help="override per_device_train_batch_size (defaults to num_generations*2)")
     ap.add_argument("--n-propositions", type=int, default=None,
@@ -315,15 +165,16 @@ def main():
     ap.add_argument("--vllm-is-cap", type=float, default=3.0)
     args = ap.parse_args()
 
-    train_judge_keys = [s.strip() for s in args.train_judges.split(",")]
+    train_judge_keys = [s.strip() for s in args.train_judges.split(",") if s.strip()]
     assert all(k in JUDGE_REGISTRY for k in train_judge_keys), f"unknown judge: {train_judge_keys}"
-    judge_ensemble = [JUDGE_REGISTRY[k] for k in train_judge_keys]
+    judge_ensemble = [JUDGE_REGISTRY[k] for k in train_judge_keys]  # [(wandb_name, hf_id), ...]
     assert args.heldout_judge, "--heldout-judge is required (auto-pick removed to prevent mishaps)"
     assert args.heldout_judge in JUDGE_REGISTRY, f"unknown held-out judge: {args.heldout_judge}"
     assert args.heldout_judge not in train_judge_keys, \
         f"--heldout-judge {args.heldout_judge} overlaps with --train-judges {train_judge_keys}"
-    heldout_judge = JUDGE_REGISTRY[args.heldout_judge]
-    print(f"train judges: {train_judge_keys}, held-out: {args.heldout_judge}", flush=True)
+    heldout_slug = args.heldout_judge
+    heldout_wandb_name, heldout_hf_id = JUDGE_REGISTRY[heldout_slug]
+    print(f"train judges: {train_judge_keys}, held-out: {heldout_slug}", flush=True)
     t_start = time.time()
     print(f"[{time.strftime('%H:%M:%S')}] start (pilot-len-pen, args={vars(args)})", flush=True)
 
@@ -382,12 +233,34 @@ def main():
     ]
     ds = Dataset.from_list(train_data)
 
-    # Load both vLLM judges simultaneously
-    print(f"[{time.strftime('%H:%M:%S')}] loading vLLM judges...", flush=True)
+    # Judge server: spawn a subprocess pinned to a dedicated GPU (or reuse
+    # an external one if --judge-endpoint was supplied). Each JudgeHTTP then
+    # registers itself on first /score call.
+    if args.judge_endpoint:
+        judge_endpoint = args.judge_endpoint
+        judge_server_proc = None
+        print(f"[{time.strftime('%H:%M:%S')}] reusing judge server at {judge_endpoint}",
+              flush=True)
+    else:
+        log_path = str(OUT_DIR / f"pilot_{args.name_suffix}" / "judge_server.log")
+        Path(log_path).parent.mkdir(parents=True, exist_ok=True)
+        judge_server_proc, judge_endpoint = spawn_judge_server(
+            port=args.judge_port, gpu=args.judge_gpu, log_path=log_path,
+        )
+        print(f"[{time.strftime('%H:%M:%S')}] judge server spawned on GPU "
+              f"{args.judge_gpu}, endpoint={judge_endpoint}, "
+              f"log={log_path}", flush=True)
+
+    print(f"[{time.strftime('%H:%M:%S')}] loading {len(train_judge_keys)} "
+          f"judges via HTTP...", flush=True)
     t_load = time.time()
-    judges = [JudgeVLLM(name, mid, rubric=args.criterion) for name, mid in judge_ensemble]
+    judges = [
+        JudgeHTTP(name=slug, rubric=args.criterion, endpoint=judge_endpoint)
+        for slug in train_judge_keys
+    ]
     print(f"[{time.strftime('%H:%M:%S')}] judges loaded in {time.time()-t_load:.1f}s  "
-          f"VRAM={torch.cuda.memory_allocated()/1e9:.1f}GB", flush=True)
+          f"(rewriter-side VRAM={torch.cuda.memory_allocated()/1e9:.1f}GB)",
+          flush=True)
 
     # Optional embedding-similarity backbone (e5-large-v2 by default)
     embedder_tok = embedder_model = None
@@ -425,11 +298,16 @@ def main():
         group="mission_20260418",
         config={
             "rewriter": REWRITER,
-            "train_judges": [m for _, m in judge_ensemble],
-            "judge_backend": "vllm",
+            "train_judge_slugs": train_judge_keys,
+            "train_judges": [mid for _, mid in judge_ensemble],
+            "heldout_judge_slug": heldout_slug,
+            "heldout_judge_hf_id": heldout_hf_id,
+            "judge_backend": "http",
+            "judge_endpoint": judge_endpoint,
+            "judge_gpu": args.judge_gpu if not args.judge_endpoint else None,
             "n_train_prompts": len(train_data),
             "n_eval_prompts": len(eval_rows),
-            "criterion": "clarity",
+            "criterion": args.criterion,
             "length_penalty_alpha": args.alpha,
             "length_penalty_tol": args.tol,
             "cli_args": vars(args),
@@ -505,10 +383,12 @@ def main():
         md1 = sum(d1) / len(d1) if d1 else None
         md2 = sum(d2) / len(d2) if d2 else None
         mdej = sum(dej) / len(dej) if dej else None
-        # Dynamic per-judge wandb keys — respects actual ensemble composition (fixes hardcoded-name bug)
+        # Dynamic per-judge wandb keys — respects actual ensemble composition (fixes hardcoded-name bug).
+        # Use the wandb_name attribute (e.g. "judge_<slug>") so dashboards keyed
+        # off the old in-process JudgeVLLM names continue to render.
         log_payload = {
-            f"reward/{judges[0].name}_mean": m1,
-            f"reward/{judges[1].name}_mean": m2,
+            f"reward/{judges[0].wandb_name}_mean": m1,
+            f"reward/{judges[1].wandb_name}_mean": m2,
             "reward/ensemble_judge_mean": m_ej,
             "reward/penalty_mean": m_pen,
             "reward/final_mean": m_reward,
@@ -528,8 +408,8 @@ def main():
                 log_payload["fidelity/mean_penalty"] = sum(fid_pens) / len(fid_pens)
                 log_payload["fidelity/frac_below_threshold"] = sum(1 for c in valid_sims if c < args.embed_threshold) / len(valid_sims)
         if mdej is not None:
-            log_payload[f"delta/{judges[0].name}_mean"] = md1
-            log_payload[f"delta/{judges[1].name}_mean"] = md2
+            log_payload[f"delta/{judges[0].wandb_name}_mean"] = md1
+            log_payload[f"delta/{judges[1].wandb_name}_mean"] = md2
             log_payload["delta/ensemble_judge_mean"] = mdej
         wandb.log(log_payload)
         delta_str = f"  Δej={mdej:+.1f}" if mdej is not None else ""
@@ -611,8 +491,11 @@ def main():
             script_path=__file__,
             grpo_config=cfg,
             extra={
-                "judges_train": [m for _, m in judge_ensemble],
-                "judge_backend": "vLLM (JudgeVLLM class, 2 engines colocate)",
+                "judges_train_slugs": train_judge_keys,
+                "judges_train": [mid for _, mid in judge_ensemble],
+                "heldout_judge_slug": heldout_slug,
+                "heldout_judge_hf_id": heldout_hf_id,
+                "judge_backend": f"HTTP (judge.server subprocess, endpoint={judge_endpoint})",
                 "rewriter_backend": "HF transformers generate (TRL default, no use_vllm)",
                 "reward_formula": f"mean(judge1,judge2) - length_penalty(alpha={args.alpha}, tol={args.tol})",
                 "data": f"top-decile writers rows[0:{args.n_train}] / [{args.n_train}:{args.n_train+args.n_eval}]",
@@ -673,7 +556,7 @@ def main():
 
     pre_rewrites = generate_eval(rw_model, rw_tok, eval_rows)
     props_eval = [r[1] for r in eval_rows]
-    pre_scores = {j.name: j.score(props_eval, pre_rewrites) for j in judges}
+    pre_scores = {j.wandb_name: j.score(props_eval, pre_rewrites) for j in judges}
     for jn, s in pre_scores.items():
         print(f"  pre  {jn} mean={sum(s)/len(s):.2f}", flush=True)
 
@@ -726,7 +609,7 @@ def main():
 
     trained_model = trainer.model
     post_rewrites = generate_eval(trained_model, rw_tok, eval_rows)
-    post_scores = {j.name: j.score(props_eval, post_rewrites) for j in judges}
+    post_scores = {j.wandb_name: j.score(props_eval, post_rewrites) for j in judges}
     for jn, s in post_scores.items():
         print(f"  post {jn} mean={sum(s)/len(s):.2f}", flush=True)
 
@@ -757,33 +640,43 @@ def main():
     }, indent=2))
     print(f"[{time.strftime('%H:%M:%S')}] wrote partial eval_summary", flush=True)
 
-    # Held-out judge eval (if defined) — unload in-panel judges first to free VRAM
+    # Held-out judge eval — unload the in-panel judges server-side first to free
+    # the GPU-0 VRAM before loading the held-out engine. Rewriter VRAM on GPU 1
+    # is freed via the local deletes + empty_cache below.
     heldout_pre_scores = heldout_post_scores = None
-    if heldout_judge is not None:
-        print(f"[{time.strftime('%H:%M:%S')}] unloading in-panel judges...", flush=True)
+    if heldout_slug is not None:
+        print(f"[{time.strftime('%H:%M:%S')}] unloading in-panel judges server-side...",
+              flush=True)
         for j in judges:
-            try: j.unload()
-            except Exception: pass
+            try:
+                j.unload()
+            except Exception as e:
+                print(f"  warn: unload({j.name}) failed: {e!r}", flush=True)
         del judges
         del trainer
         del trained_model
         gc.collect()
         torch.cuda.empty_cache()
 
-        print(f"[{time.strftime('%H:%M:%S')}] loading held-out {heldout_judge[0]}...", flush=True)
-        held = JudgeVLLM(*heldout_judge, rubric=args.criterion)
+        print(f"[{time.strftime('%H:%M:%S')}] loading held-out {heldout_slug} "
+              f"({heldout_hf_id}) via HTTP...", flush=True)
+        held = JudgeHTTP(name=heldout_slug, rubric=args.criterion,
+                          endpoint=judge_endpoint)
         heldout_pre_scores = held.score(props_eval, pre_rewrites)
         heldout_post_scores = held.score(props_eval, post_rewrites)
         hm_pre = sum(heldout_pre_scores) / len(heldout_pre_scores)
         hm_post = sum(heldout_post_scores) / len(heldout_post_scores)
-        summary[heldout_judge[0]] = {"pre_mean": hm_pre, "post_mean": hm_post,
-                                       "delta": hm_post - hm_pre, "role": "held_out"}
+        summary[heldout_wandb_name] = {
+            "pre_mean": hm_pre, "post_mean": hm_post,
+            "delta": hm_post - hm_pre, "role": "held_out",
+        }
         wandb.log({
-            f"eval/{heldout_judge[0]}_pre_mean": hm_pre,
-            f"eval/{heldout_judge[0]}_post_mean": hm_post,
-            f"eval/{heldout_judge[0]}_delta": hm_post - hm_pre,
+            f"eval/{heldout_wandb_name}_pre_mean": hm_pre,
+            f"eval/{heldout_wandb_name}_post_mean": hm_post,
+            f"eval/{heldout_wandb_name}_delta": hm_post - hm_pre,
         })
-        print(f"  [HELD-OUT] {heldout_judge[0]}: pre={hm_pre:.2f}  post={hm_post:.2f}  delta={hm_post-hm_pre:+.2f}", flush=True)
+        print(f"  [HELD-OUT] {heldout_slug}: pre={hm_pre:.2f}  "
+              f"post={hm_post:.2f}  delta={hm_post-hm_pre:+.2f}", flush=True)
 
     (OUT_DIR / f"pilot_{args.name_suffix}" / "eval_summary.json").write_text(json.dumps({
         "summary": summary,
@@ -810,6 +703,28 @@ def main():
                "runtime/train_min": train_elapsed / 60,
                "runtime/total_scoring_min": step_counter["t_total_score"] / 60})
     wandb.finish()
+
+    # Judge server teardown — only the spawned variant; an externally-provided
+    # endpoint is left running (caller owns its lifecycle).
+    if judge_server_proc is not None:
+        print(f"[{time.strftime('%H:%M:%S')}] shutting down judge server "
+              f"(pid={judge_server_proc.pid})...", flush=True)
+        try:
+            JudgeHTTP.request_shutdown(judge_endpoint, timeout=10.0)
+        except Exception as e:
+            print(f"  warn: /shutdown failed: {e!r}; falling back to SIGTERM",
+                  flush=True)
+            try:
+                judge_server_proc.terminate()
+            except Exception:
+                pass
+        try:
+            judge_server_proc.wait(timeout=60)
+        except Exception:
+            try:
+                judge_server_proc.kill()
+            except Exception:
+                pass
 
 
 if __name__ == "__main__":
