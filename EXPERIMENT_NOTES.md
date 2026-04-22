@@ -238,6 +238,18 @@ This is belt-and-suspenders; the root cause is somewhere in TRL's rollout-path d
 **Step 1 zero-loss anomaly.** `train_loss=0.0, total_flos=0.0` at step 1. Consistent with GRPO's degenerate first-step (single-group reward, std→0, advantage→0). Flagged per rule but not blocking.
 **Cleanup debt.** The forward pre-hook (B-14) and the early-env-var assignment (B-13) are both now no-ops under single-GPU, but harmless; leaving in place.
 
+### B-16. Mission launch landed on L40S instead of A100 — CUDA device ordering was FASTEST_FIRST
+**Date.** 2026-04-22 (mission exec, ~01:55 UTC).
+**Symptom.** After launching GRPO on `CUDA_VISIBLE_DEVICES=1` and feedback_free on `CUDA_VISIBLE_DEVICES=0`, `nvidia-smi --query-gpu` reported GPUs 0/1 at 4 MiB used while GPUs 2/3 (L40S, 48 GB each) had 32 GB and 23 GB respectively. vLLM then crashed both engine cores with `ValueError: No available memory for the cache blocks` (feedback_free at `gpu_memory_utilization=0.70`, GRPO judge during warmup). vLLM also printed `WARNING: Detected different devices in the system... Please make sure to set CUDA_DEVICE_ORDER=PCI_BUS_ID to avoid unexpected behavior.`
+**Diagnosis.** Host has 2× A100 80GB (indices 0,1) and 2× L40S 48GB (indices 2,3). CUDA's default ordering is `FASTEST_FIRST`, which ranks by compute capability first: **L40S CC 8.9 outranks A100 CC 8.0**, so unmasked `CUDA_VISIBLE_DEVICES=0` resolves to the first L40S (physical GPU 2), not the A100 (physical GPU 0). Confirmed by mapping `nvidia-smi --query-compute-apps=pid,gpu_uuid` UUIDs against `--query-gpu=index,name,uuid`:
+  - vLLM engine core PID 3370317 was on `GPU-67a9d512-…` = L40S GPU 2
+  - GRPO judge PID 3363620 was on `GPU-81580d1a-…` = L40S GPU 3
+  - Both "A100" launches actually took L40S devices.
+**Consequence.** Ran the prior 6 preflight smokes (v5/v6/v7) on L40S too — the "41 s/step A100 steady-state" from v7 was really 41 s/step on an L40S. The real A100 step time will differ (plausibly faster with more compute; possibly slower if the judge vLLM on CC 8.0 is less efficient). All prior budget math must be re-validated once the A100 launch settles.
+**Fix.** Set `CUDA_DEVICE_ORDER=PCI_BUS_ID` in the launch env alongside `CUDA_VISIBLE_DEVICES`. Under PCI_BUS_ID the mapping matches `nvidia-smi` output exactly: `CUDA_VISIBLE_DEVICES=0` → physical GPU 0 (A100), `CUDA_VISIBLE_DEVICES=1` → physical GPU 1 (A100). Relaunched both jobs with the updated env at ~01:57 UTC.
+**Leaked VRAM.** Killing the vLLM EngineCore subprocesses via SIGTERM left ~32 GB orphaned on GPU 2; no owner process, driver-side reclaim (known vLLM/Triton idiom). Not blocking since the new launches are on GPUs 0/1.
+**Actionable convention going forward.** Every launch script in this repo that uses `CUDA_VISIBLE_DEVICES` on a host with mixed compute capability MUST also set `CUDA_DEVICE_ORDER=PCI_BUS_ID`. Added to the post-mortem as an auto-test item for future mission prep.
+
 ### D-13. Length-penalty in reward (tolerance-band additive)
 **Formula.** `reward = mean(judge1, judge2) − α × max(0, |len_ratio − 1| − tol)` where `len_ratio = generated_wc / original_wc`. Defaults `α=25, tol=0.10`.
 **Intuition.** Inside ±10% tolerance no penalty; at ±40% deviation penalty is 7.5 points (≈ the length-driven gain seen in the HF run).

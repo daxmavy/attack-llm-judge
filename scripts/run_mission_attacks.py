@@ -60,12 +60,15 @@ def _rewriter_vllm_mem_util(model_id: str) -> float:
     """Auto-pick gpu_memory_utilization for rewriter vLLM based on model size.
 
     Qwen2.5-1.5B (~3 GB bf16) → 0.15 budget easily fits weights+KV.
-    Qwen3-14B (~28 GB bf16) → 0.55 budget = 44 GB / 80 GB A100 covers
-    weights + KV headroom for the K=16 BoN rollout.
+    Qwen3-14B (~28 GB bf16) → 0.70 budget = 56 GB / 80 GB A100 covers
+    weights + overhead + KV headroom for the K=16 BoN rollout
+    (0.55 → 44 GB left only ~16 GB for KV after weights + CUDA buffers,
+    which caused vLLM "No available memory for cache blocks" at
+    max_model_len=3072 in the first attempt).
     """
     s = model_id.lower()
     if "14b" in s or "13b" in s:
-        return 0.55
+        return 0.70
     if "7b" in s or "8b" in s:
         return 0.35
     return 0.20
