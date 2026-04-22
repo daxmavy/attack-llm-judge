@@ -459,3 +459,28 @@ Going with the existing JUDGE_REGISTRY fold-1 pair: **`qwen95b` (Qwen/Qwen3.5-9B
 - Round-trip verified: downloaded `adapter_config.json` from HF, byte-exact match with local copy.
 - Script: `scripts/push_grpo_fold1_clarity_100_to_hf.py`.
 - MISSION.md §10 checkbox 3 (GRPO checkpoint push + round-trip) satisfied.
+
+### 2026-04-22 09:54 — §10 checkbox 2 gap discovered: `attack_judge_scores` missing all non-BoN rewrites (raise-don't-hide)
+- At the end of the fold-1 informativeness stretch (§9.3), audit showed `attack_judge_scores` contained only 34,272 `bon_candidate` rows across 3 judges × 2 criteria — zero scores for `naive` / `lit_informed_tight` / `rubric_aware` / `bon_panel` / `icir` rewrites. §10 checkbox 2 was technically unmet.
+- Root cause: `run_mission_attacks.py` scores BoN candidates (it's mandatory for selection), but feedback_free + bon_panel + ICIR rewrites are written to `attack_rewrites` without a scoring pass. Held-out eval (§9.4) also needed these cells populated.
+- Remediation: `scripts/score_all_missing.py` — excludes `bon_candidate`, scores the remaining 9,282 × 3 judges × 2 criteria = 55,692 cells in one pass. Loads judges sequentially (qwen95b → llama8b → gemma9b), swaps rubric in-place between clarity and informativeness, writes via `INSERT OR REPLACE` (idempotent).
+- Wall time 1h 17m total (launched 09:53, done 11:10):
+  - qwen95b: 26.6 min clarity + 26.5 min informativeness (5.8/s both — rubric length-bound)
+  - llama8b: 10.4 min clarity (14.8/s) + 12.0 min informativeness (12.9/s)
+  - gemma9b: 17.0 min clarity (9.1/s) + 20.5 min informativeness (7.6/s)
+- Final coverage (non-bon_candidate): all 9,282 rows × 3 judges × 2 criteria. Expected skew: `bon_candidate × informativeness × gemma9b` = 0 because gemma9b wasn't on fold-1 informativeness BoN panel — that cell is not needed for §10 or §9.4 held-out eval on selected rewrites; filling it would cost ~25 min GPU if analysis later needs "held-out on raw candidates".
+
+### 2026-04-22 12:08 — §9.5 agreement-score regressor re-application
+- Re-applied DeBERTa-v3-base regressor (`agreement_model/runs/main/final`) to all 32,130 rewrites in `attack_rewrites`. New table `attack_agreement_scores` populated: range [0.110, 1.0], mean 0.495.
+- Throughput 200 rows/s on single A100 (above docstring 150/s estimate); GPU 0 peak 3.68 GiB. Total wall time 2.7 min.
+- **Bug found and fixed**: `tokenizer_config.json` stores `extra_special_tokens` as a list `["[PAD]", "[CLS]", "[SEP]"]` (older transformers format); transformers 4.57.6 expects a dict, crashes with `AttributeError: 'list' object has no attribute 'keys'` in `_set_model_specific_special_tokens`. Patched `scripts/apply_agreement_score.py:64` to pass `extra_special_tokens={}` as kwarg (non-invasive; tokens already present via top-level `pad_token` / `cls_token` / `sep_token` keys). REPLICATION.md line 182 had pre-warned about this class of issue.
+
+### 2026-04-22 — Mission §10 end-state (fold 1 rewriter replication)
+- [x] `attack_rewrites` cohort: 6 methods × 714 eval rows × fold 1 for `Qwen/Qwen3-14B` rewriter.
+- [x] `attack_judge_scores`: 2-judge (in-panel) scores for every new rewrite; held-out gemma9b coverage for selected rewrites (non-bon_candidate).
+- [x] `attack_agreement_scores`: all 32,130 rewrites scored by DeBERTa regressor.
+- [x] GRPO 100-step checkpoint on HF `daxmavy/qwen3-14b-grpo-fold1-clarity-100`, round-trip verified.
+- [x] EXPERIMENT_NOTES.md updated with rewriter choice, smoke, timing, debug attempts.
+- [x] No GPU leaks: GPU 0 / 1 both 0 MiB at 12:08 after regressor exit. Foreign process on GPU 3 is another user (`/opt/anaconda/envs/nlp2025/bin/python`, PID 3956169) — does not touch our GPUs.
+- [x] No /data overflow: 1.4 TB free on `/data` (85% used), our subtree 142 GB.
+- [x] §9 stretch: all 5 items done (clarity folds 2 & 3, informativeness fold 1, held-out eval via score_all_missing, agreement regressor).
