@@ -169,9 +169,15 @@ def check_grpo_step(model_id: str, use_qlora: bool = False, train_device: str = 
                 token=os.environ.get("HF_TOKEN"),
             )
         else:
+            # attn_implementation="sdpa" forces PyTorch's scaled-dot-product path,
+            # which computes softmax in fp32 on A100 (numerically stable in bf16).
+            # flash-attn has no torch 2.10+cu128+cp311 wheel in this env and the
+            # source build fails, so we pin SDPA rather than let HF pick "eager"
+            # (which overflows the same way xformers did on Qwen3-8B).
             model = AutoModelForCausalLM.from_pretrained(
                 model_id, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
                 dtype=torch.bfloat16, device_map={"": train_idx},
+                attn_implementation="sdpa",
                 token=os.environ.get("HF_TOKEN"),
             )
         result["details"]["hf_load_time_s"] = round(time.time() - t0, 1)
