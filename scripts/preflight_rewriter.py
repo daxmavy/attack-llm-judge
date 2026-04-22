@@ -122,12 +122,13 @@ def check_grpo_step(model_id: str, use_qlora: bool = False, train_device: str = 
     elif isinstance(train_device, int):
         train_idx = train_device
     os.environ["ACCELERATE_TORCH_DEVICE"] = f"cuda:{train_idx}"
+    judge_server_proc = None
     try:
         import torch
         from transformers import AutoTokenizer, AutoModelForCausalLM
         from trl import GRPOConfig, GRPOTrainer
-        from run_pilot_len_pen import JudgeVLLM
         from config.models import JUDGE_REGISTRY
+        from judge.http_client import JudgeHTTP, spawn_judge_server
 
         tok = AutoTokenizer.from_pretrained(model_id, cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
                                              token=os.environ.get("HF_TOKEN"))
@@ -135,14 +136,18 @@ def check_grpo_step(model_id: str, use_qlora: bool = False, train_device: str = 
             tok.pad_token = tok.eos_token
         tok.padding_side = "left"
 
-        # Judge FIRST — vLLM spawns its EngineCore subprocess which picks visible
-        # GPU 0 via CUDA_VISIBLE_DEVICES. Loading it before the trainer keeps the
-        # two GPUs cleanly split (judge on physical GPU 0, trainer on GPU train_idx).
-        # Use whichever judge is first in the registry (order is stable by insertion).
+        # Judge FIRST — spawn the judge server subprocess pinned to physical
+        # GPU 0 (train_idx points to the trainer's GPU). Keeping judges out of
+        # this process lets the trainer fully own `train_idx`'s VRAM.
         first_slug = next(iter(JUDGE_REGISTRY))
-        judge_spec = JUDGE_REGISTRY[first_slug]
-        judge = JudgeVLLM(*judge_spec, rubric="clarity")
+        log_path = "/data/shil6647/attack-llm-judge/grpo_run/preflight_judge_server.log"
+        judge_server_proc, judge_endpoint = spawn_judge_server(
+            port=8127, gpu=0, log_path=log_path,
+        )
+        judge = JudgeHTTP(name=first_slug, rubric="clarity", endpoint=judge_endpoint)
         result["details"]["judge_loaded"] = True
+        result["details"]["judge_slug"] = first_slug
+        result["details"]["judge_endpoint"] = judge_endpoint
 
         # Pin current device so torch.cuda.current_device() matches device_map
         # for the 4-bit/8-bit model load (accelerate validates placement).
@@ -266,6 +271,23 @@ def check_grpo_step(model_id: str, use_qlora: bool = False, train_device: str = 
     except Exception as e:
         result["error"] = f"{type(e).__name__}: {e}"
         result["traceback"] = traceback.format_exc()[-3000:]
+    finally:
+        if judge_server_proc is not None:
+            try:
+                from judge.http_client import JudgeHTTP as _JudgeHTTP
+                _JudgeHTTP.request_shutdown(judge_endpoint, timeout=10.0)
+            except Exception:
+                try:
+                    judge_server_proc.terminate()
+                except Exception:
+                    pass
+            try:
+                judge_server_proc.wait(timeout=60)
+            except Exception:
+                try:
+                    judge_server_proc.kill()
+                except Exception:
+                    pass
     return result
 
 

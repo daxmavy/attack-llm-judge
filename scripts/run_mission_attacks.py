@@ -6,7 +6,8 @@ Subcommands:
     bon_score FOLD      score stored bon_candidate rewrites with FOLD's 2 in-panel judges; pick argmax → bon_panel/foldN
 
 All output goes to paragraphs.db tables `attack_rewrites` and `attack_judge_scores`.
-Uses local vLLM via the same `JudgeVLLM` class as RL training (run_pilot_len_pen.py).
+Uses the out-of-process judge server for all scoring (judge.http_client.JudgeHTTP)
+so BoN panel scoring stays consistent with the RL training threat model.
 """
 from __future__ import annotations
 
@@ -35,7 +36,8 @@ sys.path.insert(0, "/home/shil6647/attack-llm-judge")
 
 import sqlite3
 
-from config.models import REWRITER, FOLDS, rewriter_short_name, require_config
+from config.models import REWRITER, JUDGE_REGISTRY, FOLDS, rewriter_short_name, require_config
+from judge.http_client import JudgeHTTP, spawn_judge_server
 
 DB = "/home/shil6647/attack-llm-judge/data/paragraphs.db"
 DATASET = "/data/shil6647/attack-llm-judge/grpo_run/controversial_40_3fold.json"
@@ -245,8 +247,6 @@ def cmd_bon_generate(args):
 def cmd_bon_score(args):
     """For the given fold, score stored bon_candidate rows with that fold's 2 in-panel judges,
     pick argmax per source paragraph, save as method='bon_panel' fold=FOLD."""
-    from run_pilot_len_pen import JUDGE_REGISTRY, JudgeVLLM
-
     fold = args.fold
     fold_spec = FOLDS[fold]
     in_panel_keys = fold_spec["in_panel"]
@@ -268,20 +268,39 @@ def cmd_bon_score(args):
         print(f"  no candidates for criterion={args.criterion} × rewriter={rewriter}! run bon_generate first", flush=True)
         return
 
-    judges = []
-    for k in in_panel_keys:
-        spec = JUDGE_REGISTRY[k]
-        print(f"  loading judge {spec[0]} (rubric={args.criterion})", flush=True)
-        judges.append(JudgeVLLM(*spec, rubric=args.criterion))
+    # Judge server — spawn or reuse.
+    if args.judge_endpoint:
+        judge_endpoint = args.judge_endpoint
+        judge_server_proc = None
+        print(f"  reusing judge server at {judge_endpoint}", flush=True)
+    else:
+        log_path = "/data/shil6647/attack-llm-judge/grpo_run/bon_judge_server.log"
+        judge_server_proc, judge_endpoint = spawn_judge_server(
+            port=args.judge_port, gpu=args.judge_gpu, log_path=log_path,
+        )
+
+    judges = [
+        JudgeHTTP(name=slug, rubric=args.criterion, endpoint=judge_endpoint)
+        for slug in in_panel_keys
+    ]
 
     props = [r[3] for r in rows]
     texts = [r[2] for r in rows]
     score_per_judge = {}
-    for j in judges:
-        t0 = time.time()
-        s = j.score(props, texts)
-        print(f"  {j.name} scored {len(s)} in {(time.time()-t0)/60:.1f} min", flush=True)
-        score_per_judge[j.name] = s
+    try:
+        for j in judges:
+            t0 = time.time()
+            s = j.score(props, texts)
+            print(f"  {j.wandb_name} scored {len(s)} in {(time.time()-t0)/60:.1f} min",
+                  flush=True)
+            score_per_judge[j.wandb_name] = s
+    finally:
+        # Always unload server-side to free VRAM, even if scoring failed.
+        for j in judges:
+            try:
+                j.unload()
+            except Exception:
+                pass
 
     # Save per-judge scores to DB (use current criterion)
     for i, r in enumerate(rows):
@@ -317,6 +336,22 @@ def cmd_bon_score(args):
         saved += 1
     conn.commit()
     conn.close()
+
+    if judge_server_proc is not None:
+        try:
+            JudgeHTTP.request_shutdown(judge_endpoint, timeout=10.0)
+        except Exception:
+            try:
+                judge_server_proc.terminate()
+            except Exception:
+                pass
+        try:
+            judge_server_proc.wait(timeout=60)
+        except Exception:
+            try:
+                judge_server_proc.kill()
+            except Exception:
+                pass
     print(f"[{time.strftime('%H:%M:%S')}] bon_score fold {fold} done; saved {saved} winners", flush=True)
 
 
@@ -347,6 +382,11 @@ def main():
     p_bs.add_argument("fold", type=int, choices=[1, 2, 3])
     common_criterion(p_bs)
     common_rewriter(p_bs)
+    p_bs.add_argument("--judge-endpoint", type=str, default=None,
+                       help="Reuse an already-running judge server.")
+    p_bs.add_argument("--judge-port", type=int, default=8127)
+    p_bs.add_argument("--judge-gpu", type=int, default=0,
+                       help="Physical GPU for the spawned judge server.")
     p_bs.set_defaults(func=cmd_bon_score)
 
     args = ap.parse_args()
