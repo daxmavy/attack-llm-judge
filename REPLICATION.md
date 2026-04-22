@@ -190,31 +190,38 @@ The `transformers` version in the current venv has a known bug loading the DeBER
 
 ---
 
-## 9. Two-GPU topology (mandatory; architectural gap still open)
+## 9. Two-GPU topology (HTTP judge server, live as of 2026-04-22)
 
-The pipeline is designed to run on **2× A100 80GB** (CLAUDE.md GPU-topology rule). The mapping:
+The pipeline runs on **2× A100 80GB** (CLAUDE.md GPU-topology rule). The mapping:
 
-- **GPU 0 (judges)**: both `JudgeVLLM` instances live here, pinned via `CUDA_VISIBLE_DEVICES=0`. With a dedicated GPU, `gpu_memory_utilization` can go to 0.45-0.50 per judge (up from the co-located 0.22-0.28). A 14B-class judge fits comfortably; 2 × 14B ≈ 60 GB total.
-- **GPU 1 (rewriter)**: GRPOTrainer + rollout vLLM, pinned via `CUDA_VISIBLE_DEVICES=1`. With a dedicated 80 GB you have headroom for **~3-4B full bf16 RL**, or **~15-30B with LoRA**, or **30-70B with QLoRA**. The historical single-A100 runs showed ~30 GB on a 1.5B; the 2026-04-21 14B co-located run consumed all 80 GB because judges shared the device.
+- **GPU 0 (judges)**: `judge/server.py` is spawned as a subprocess with `CUDA_VISIBLE_DEVICES=0` *before* vLLM import. It hosts both in-panel judges in one vLLM-capable Python process, swaps rubrics in-place without reloading the engine, and unloads between folds. With a dedicated GPU the per-judge `gpu_memory_utilization` auto-picks 0.45-0.55 for 7-14B judges and 0.70 for 27-32B (see `_auto_gpu_mem_util` in `judge/server.py`).
+- **GPU 1 (rewriter)**: GRPOTrainer + rollout vLLM, pinned via `CUDA_VISIBLE_DEVICES=1`. With a dedicated 80 GB you have headroom for **~3-4B full bf16 RL**, **~15-30B with LoRA**, or **30-70B with QLoRA**.
 
-Set `CUDA_DEVICE_ORDER=PCI_BUS_ID` in every launch script to avoid nvidia-smi/CUDA index drift on mixed compute-capability hosts. Co-locating rewriter + judges on a single A100 is a **known-bad configuration**: the 2026-04-21 run was forced to rewriter≈0.38 + judges≈0.28 each, which silently overcommits when the judge panel rotates and which contributed to the length-penalty failure in fold 1 (`frac_outside_tol = 0.75`).
+Set `CUDA_DEVICE_ORDER=PCI_BUS_ID` in every launch script to avoid nvidia-smi/CUDA index drift. Co-locating rewriter + judges on a single A100 is a **known-bad configuration** and is what invalidated the 2026-04-21 run (rewriter≈0.38 + judges≈0.28 each silently overcommitted, `frac_outside_tol = 0.75` on the length penalty).
 
-### Architectural gap (not yet closed as of 2026-04-22)
+### Out-of-process judge architecture
 
-`training/scripts/run_pilot_len_pen.py::reward_fn` still instantiates `JudgeVLLM(...)` in the **same Python process** as the GRPOTrainer. All downstream pipeline scripts (`run_icir.py`, `run_mission_attacks.py`, `score_all_missing.py`) follow the same single-process pattern. That means that on a 2-GPU host today, both judges and the rewriter still compete for a single `CUDA_VISIBLE_DEVICES` by default — the repo does not yet have a real split.
+`judge/server.py` — stdlib `ThreadingHTTPServer` with endpoints:
+- `POST /load`, `POST /score`, `POST /generate`, `POST /set_rubric`, `POST /unload`, `GET /health`, `POST /shutdown`.
+- vLLM is imported only in the subprocess, after `CUDA_VISIBLE_DEVICES` is pinned, so the trainer process never sees the judge weights.
 
-To actually execute the dual-GPU topology, one of these refactors is required (pick (a), it's less invasive):
+`judge/http_client.py` — `JudgeHTTP` dataclass that exposes the same public surface the old in-process `JudgeVLLM` did (`score()`, `score_full()`, `set_rubric()`, `unload()`, `generate_raw()`), plus `spawn_judge_server(port, gpu, log_path)` which launches the subprocess, polls `/health`, and returns `(proc, endpoint)`. If an existing server is already bound to the port the helper reuses it.
 
-1. **(a) Multiprocessing**: spawn judges in a child `multiprocessing.Process` with `CUDA_VISIBLE_DEVICES=0` set *before* torch/vLLM import, keep the trainer in the parent with `CUDA_VISIBLE_DEVICES=1`. IPC via `multiprocessing.Queue` for prompts / score tuples. Keep the same JSON parsing (`parse_score`).
-2. **(b) HTTP judge server**: spawn `CUDA_VISIBLE_DEVICES=0 python3 judge_server.py --judges … --port 8123` as a sibling process, and have `reward_fn` call that endpoint. More code, more failure modes (port conflicts, startup race), but isolates the trainer Python env so the judge server can stay on a pinned vLLM version if the trainer wants a newer one.
+Every consumer routes through the server:
+- `training/scripts/run_pilot_len_pen.py` (GRPO reward_fn + held-out eval)
+- `scripts/run_icir.py` (4-iter criticism loop)
+- `scripts/run_mission_attacks.py` (`bon_score`)
+- `scripts/score_all_missing.py` (gap-fill)
+- `scripts/preflight_rewriter.py` (1-step smoke)
+- `judge/vllm_client.py` (legacy held-out eval callers — now a thin HTTP passthrough)
 
-Either way, flag it at launch — running 400-step GRPO under co-location is a mission-invalidating mistake.
+Each accepts `--judge-endpoint` / `--judge-port` / `--judge-gpu` CLI flags so an already-running server can be reused across a multi-stage pipeline without re-loading judge weights.
 
 ### Other two-GPU tuning knobs
 
-3. **Judge batch size**: with a dedicated judge GPU, bump `gpu_memory_utilization` to 0.45 and raise `max_model_len` to 4096 or 6144. That roughly doubles the KV-cache concurrency and cuts wall time per scoring call by ~30-40%. `JudgeVLLM.__init__` auto-picks the budget; override via the `EVAL_VLLM_MEM_UTIL` env var.
-4. **Rewriter size bump**: if using a 3-4B base with full bf16, raise `--per-device-batch` to 16 (`2 × G = 16` at G=8, or 8 at G=4), and keep `--num-generations 4`. If going to LoRA/QLoRA with a bigger base, reduce G to 2 to control rollout KV.
-5. **vLLM version**: if the judge or rewriter architecture needs a newer vLLM than 0.18.1, isolate the two processes' Python environments so one doesn't force a break of the other. Pre-flight smoke-test any rewriter base with `scripts/preflight_rewriter.py`.
+1. **Judge memory share**: `_auto_gpu_mem_util()` in `judge/server.py` sets defaults by model size. Override per-judge via the `gpu_memory_utilization` field on `JudgeHTTP(...)` or via `POST /load`.
+2. **Rewriter size bump**: if using a 3-4B base with full bf16, raise `--per-device-batch` to 16 (`2 × G = 16` at G=8, or 8 at G=4), and keep `--num-generations 4`. If going to LoRA/QLoRA with a bigger base, reduce G to 2 to control rollout KV.
+3. **vLLM version isolation**: the judge server runs in its own Python subprocess, so a vLLM upgrade needed by the judge (or the rewriter) is no longer a whole-repo break — spawn the server with an `extra_env` that prepends a different conda env or a site-packages override if needed.
 
 ---
 

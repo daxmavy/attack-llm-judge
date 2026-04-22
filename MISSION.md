@@ -13,7 +13,7 @@ The mission restarts tonight. Model IDs are TBD pending Max's selection — the 
 - **`config/models.py`** is the single source of truth for `REWRITER`, `JUDGE_REGISTRY`, and `FOLDS`. `require_config()` fails fast with a clear error if the placeholders are still set. See EXPERIMENT_NOTES.md §2026-04-22 refactor for the postmortem.
 - All scripts (`training/scripts/run_pilot_len_pen.py`, `scripts/run_mission_attacks.py`, `scripts/run_icir.py`, `scripts/score_all_missing.py`, `scripts/preflight_rewriter.py`, `judge/vllm_client.py`, `scripts/run_grpo_3fold_with_rewriter.sh`) now import from `config.models` and call `require_config()` at `main()` entry.
 - GRPO `--max-steps` default raised from `15` to **`400`** (CLAUDE.md GRPO step-budget rule).
-- Dual-GPU topology is now mandatory — see §1 Hardware assignment and §9b for the architectural gap that still needs to be closed before a full 400-step run can launch on 2 GPUs.
+- Dual-GPU topology is now live: `judge/server.py` + `judge/http_client.py` serve the judge panel out-of-process on GPU 0, while the rewriter process (vLLM rollouts + GRPOTrainer) owns GPU 1. Every consumer (`run_pilot_len_pen.py`, `run_icir.py`, `run_mission_attacks.py bon_score`, `score_all_missing.py`, `preflight_rewriter.py`, `judge/vllm_client.py`) now spawns the server via `spawn_judge_server` and talks to it through `JudgeHTTP`. The 2026-04-21 co-location pattern (3 vLLM engines on one A100) is gone.
 
 ## Reboot: pre-launch checklist
 
@@ -23,7 +23,7 @@ Before running anything heavier than a smoke test on the new mission:
 - [ ] `python3 -c "from config.models import require_config; require_config()"` exits 0.
 - [ ] `nvidia-smi` shows both A100s idle (0 MiB) or has an explicit carve-out.
 - [ ] `scripts/preflight_rewriter.py` passes for the new rewriter (vLLM load + 1 GRPO step).
-- [ ] The out-of-process judge refactor in §9b is either complete or explicitly deferred with Max's sign-off.
+- [x] Out-of-process judge refactor complete (`judge/server.py` + `judge/http_client.py`, 2026-04-22).
 
 ---
 
