@@ -357,3 +357,35 @@ CLI: `--nli-fidelity` (mutually exclusive with `--embed-sim`), `--nli-model`, `-
 5. Aggregate `mean((fwd+bwd)/2)` by (rewriter_model, method='grpo_400step', fold, criterion) → identify worst configuration.
 6. Re-run GRPO training for that one worst (rewriter × fold × criterion) with `--nli-fidelity` instead of `--embed-sim`. Everything else identical: 400 steps, lr 5e-6, α=100 asymm_cubic length penalty, 2 in-panel judges, 1 held-out. Tag: `grpo_nli_400step_foldN`. Push to HF as `daxmavy/grpo-{short}-fold{N}-{criterion}-nli`. Backfill post-rewrites + held-out scores.
 7. Compare held-out gap vs. the original embed-sim run for that same configuration.
+
+## 2026-04-23 — NLI port + fold 2 retrain (worst-config) results
+
+Post-hoc NLI scoring of all 45,359 non-candidate rewrites (13.9 min on A100).
+Aggregating `mean((fwd+bwd)/2)` on `grpo_400step` rows by (rewriter × fold × criterion)
+identified **LFM2.5-1.2B × fold 2 × informativeness** as worst: mean_bidir=0.257
+(fwd=0.294, bwd=0.220). Informativeness dominated the bottom of the table — the
+top 4 worst configs were all informativeness, because adding substantive content
+necessarily breaks bidirectional entailment.
+
+Retrained that single fold with `--nli-fidelity` (everything else identical to
+the embed-sim run). Original model at `final_grpo_lfm25-12b_fold2_informativeness`
+preserved; new model at `final_grpo_nli_lfm25-12b_fold2_informativeness` and
+`daxmavy/grpo-lfm25-12b-fold2-informativeness-nli` on HF. Rows added with
+`method='grpo_nli_400step'`, rewrite_id prefix `grpo_nli_` (coexists with the
+`grpo_400step` / `grpo_` rows).
+
+**Training (118.9 min, 61 min faster than embed-sim — NLI scoring is cheaper than extra vLLM inference):**
+- Final step: `ej=40.5  nli=89.2  pen=1.89  final=127.9`
+- NLI held in 88-95 throughout training; ej climbed 26→40 (modestly)
+
+**Held-out eval (llama8b):**
+| Judge | Role | Pre | Post | Δ |
+|---|---|---|---|---|
+| qwen95b | in_panel | 21.46 | 33.07 | +11.61 |
+| gemma9b | in_panel | 44.09 | 49.99 | +5.90 |
+| llama8b | **held-out** | 43.44 | 47.93 | **+4.49** |
+
+Compared to the original (embed-sim) fold 2 inf run, the NLI run trades absolute
+judge score for fidelity: bidirectional entailment mean ≈ 0.88 (vs 0.26 before),
+held-out Δ +4.49 (smaller than embed-sim's gap because the NLI penalty is tighter
+on meaning-preservation). Folds 1 and 3 queued under #45 for full 3-fold comparison.
