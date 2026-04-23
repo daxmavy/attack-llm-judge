@@ -46,7 +46,7 @@ from length_penalty import compute_length_penalty, word_count as _wc  # noqa: E4
 from run_manifest import capture_manifest  # noqa: E402
 
 # Single source of truth for rewriter + judge IDs. See config/models.py.
-from config.models import REWRITER, JUDGE_REGISTRY, require_config  # noqa: E402
+from config.models import REWRITER, JUDGE_REGISTRY, NLI_FIDELITY_MODEL, require_config  # noqa: E402
 from judge.rubrics import RUBRICS  # noqa: E402
 from judge.http_client import (  # noqa: E402
     DEFAULT_ENDPOINT, JudgeHTTP, spawn_judge_server,
@@ -124,6 +124,15 @@ def main():
                     help="fidelity penalty weight: beta * max(0, threshold - cos_sim)")
     ap.add_argument("--embed-threshold", type=float, default=0.85)
     ap.add_argument("--embed-model", type=str, default="intfloat/e5-large-v2")
+    # NLI-fidelity (bidirectional-entailment) reward shaping — alternative to embed-sim.
+    # Bonus = 100 * (P(entail | rew→orig) + P(entail | orig→rew)) / 2, added to ej with
+    # equal weight so the clarity judge and fidelity signal contribute equally to reward.
+    ap.add_argument("--nli-fidelity", action="store_true",
+                    help=f"Enable ModernBERT NLI fidelity bonus (default model: {NLI_FIDELITY_MODEL}). "
+                         "Mutually exclusive with --embed-sim.")
+    ap.add_argument("--nli-model", type=str, default=NLI_FIDELITY_MODEL)
+    ap.add_argument("--nli-max-length", type=int, default=512)
+    ap.add_argument("--nli-batch-size", type=int, default=16)
     ap.add_argument("--lr", type=float, default=5e-6)
     ap.add_argument("--beta", type=float, default=0.01)
     ap.add_argument("--temperature", type=float, default=1.0)
@@ -326,6 +335,12 @@ def main():
           f"(rewriter-side VRAM={torch.cuda.memory_allocated()/1e9:.1f}GB)",
           flush=True)
 
+    # --embed-sim and --nli-fidelity both subsume the "fidelity" role of the reward.
+    # Running both at once would double-count and make the length penalty weak
+    # relative to the sum of positive terms — reject explicitly so misconfigs fail loud.
+    if args.embed_sim and args.nli_fidelity:
+        raise SystemExit("--embed-sim and --nli-fidelity are mutually exclusive — pick one.")
+
     # Optional embedding-similarity backbone (e5-large-v2 by default)
     embedder_tok = embedder_model = None
     if args.embed_sim:
@@ -338,6 +353,28 @@ def main():
                                                     token=os.environ.get("HF_TOKEN"))
         embedder_model.eval()
         print(f"  embedder VRAM={torch.cuda.memory_allocated()/1e9:.1f}GB", flush=True)
+
+    # Optional NLI fidelity backbone (ModernBERT zero-shot entailment)
+    nli_tok = nli_model = None
+    if args.nli_fidelity:
+        print(f"[{time.strftime('%H:%M:%S')}] loading NLI backbone {args.nli_model}...", flush=True)
+        from transformers import AutoModelForSequenceClassification
+        nli_tok = AutoTokenizer.from_pretrained(args.nli_model,
+                                                cache_dir="/data/shil6647/attack-llm-judge/hf_cache")
+        nli_model = AutoModelForSequenceClassification.from_pretrained(
+            args.nli_model,
+            cache_dir="/data/shil6647/attack-llm-judge/hf_cache",
+            dtype=torch.bfloat16,
+        ).to("cuda").eval()
+        # ModernBERT-large-zeroshot-v2.0 uses id2label {0: 'entailment', 1: 'not_entailment'}.
+        # Stash the entail index so we never accidentally read from the wrong column.
+        _id2label = getattr(nli_model.config, "id2label", {0: "entailment"})
+        nli_entail_idx = next((i for i, lbl in _id2label.items()
+                                if str(lbl).lower().startswith("entail")), 0)
+        print(f"  NLI VRAM={torch.cuda.memory_allocated()/1e9:.1f}GB  "
+              f"entail_idx={nli_entail_idx}", flush=True)
+    else:
+        nli_entail_idx = 0
 
     @torch.no_grad()
     def embed_batch(texts, prefix="passage: ", batch_size=32, max_length=512):
@@ -354,6 +391,26 @@ def main():
             pooled = pooled / pooled.norm(dim=1, keepdim=True).clamp(min=1e-6)
             embs.append(pooled.cpu().numpy())
         return np.concatenate(embs, axis=0)
+
+    @torch.no_grad()
+    def nli_entail_probs(premises, hypotheses):
+        """Return P(entailment) for each (premise, hypothesis) pair via the NLI head.
+
+        Uses softmax probabilities (not logits) per Max's spec — simple, bounded in
+        [0,1], and saturates at the extremes (intentional: a rewrite that already
+        scores ≥0.95 gets no additional reward for pushing higher).
+        """
+        probs = []
+        for i in range(0, len(premises), args.nli_batch_size):
+            p_b = premises[i:i + args.nli_batch_size]
+            h_b = hypotheses[i:i + args.nli_batch_size]
+            enc = nli_tok(p_b, h_b, truncation=True, padding=True,
+                           max_length=args.nli_max_length,
+                           return_tensors="pt").to("cuda")
+            logits = nli_model(**enc).logits
+            p = torch.softmax(logits.float(), dim=-1)[:, nli_entail_idx].cpu().numpy()
+            probs.extend(p.tolist())
+        return probs
 
     wandb_common = dict(
         project="attack-llm-judge",
@@ -412,7 +469,7 @@ def main():
                                             gamma=args.penalty_gamma,
                                             over_tol=args.penalty_over_tol)
                      for gw, tw in zip(gen_wcs, target_wcs)]
-        # Optional fidelity (embedding-similarity) penalty
+        # Optional fidelity (embedding-similarity) penalty — subtractive
         if args.embed_sim and embedder_tok is not None:
             originals = kwargs["original_text"]
             import numpy as np
@@ -423,7 +480,19 @@ def main():
         else:
             cos_sims = [None] * len(rewrites)
             fid_pens = [0.0] * len(rewrites)
-        penalised = [ej - p - f for ej, p, f in zip(ensemble_judge, penalties, fid_pens)]
+        # Optional NLI-fidelity bonus — additive, on the same [0,100] scale as ej
+        # so the clarity judge and fidelity signal contribute equally to reward.
+        if args.nli_fidelity and nli_model is not None:
+            originals = kwargs["original_text"]
+            nli_fwd = nli_entail_probs(rewrites, originals)   # rewrite → original
+            nli_bwd = nli_entail_probs(originals, rewrites)   # original → rewrite
+            nli_scores = [100.0 * (f + b) / 2.0 for f, b in zip(nli_fwd, nli_bwd)]
+        else:
+            nli_fwd = [None] * len(rewrites)
+            nli_bwd = [None] * len(rewrites)
+            nli_scores = [0.0] * len(rewrites)
+        penalised = [ej + nli - p - f
+                     for ej, nli, p, f in zip(ensemble_judge, nli_scores, penalties, fid_pens)]
 
         step_counter["n"] += 1
         m1 = sum(j1) / len(j1)
@@ -471,14 +540,24 @@ def main():
                 log_payload["fidelity/min_cos_sim"] = min(valid_sims)
                 log_payload["fidelity/mean_penalty"] = sum(fid_pens) / len(fid_pens)
                 log_payload["fidelity/frac_below_threshold"] = sum(1 for c in valid_sims if c < args.embed_threshold) / len(valid_sims)
+        if args.nli_fidelity:
+            valid_fwd = [x for x in nli_fwd if x is not None]
+            valid_bwd = [x for x in nli_bwd if x is not None]
+            if valid_fwd:
+                log_payload["fidelity/nli_fwd_mean"] = sum(valid_fwd) / len(valid_fwd)
+                log_payload["fidelity/nli_bwd_mean"] = sum(valid_bwd) / len(valid_bwd)
+                log_payload["fidelity/nli_score_mean"] = sum(nli_scores) / len(nli_scores)
+                log_payload["fidelity/nli_score_min"] = min(nli_scores)
         if mdej is not None:
             log_payload[f"delta/{judges[0].wandb_name}_mean"] = md1
             log_payload[f"delta/{judges[1].wandb_name}_mean"] = md2
             log_payload["delta/ensemble_judge_mean"] = mdej
         wandb.log(log_payload)
         delta_str = f"  Δej={mdej:+.1f}" if mdej is not None else ""
+        nli_str = (f"  nli={sum(nli_scores)/len(nli_scores):.1f}"
+                   if args.nli_fidelity else "")
         print(f"[{time.strftime('%H:%M:%S')}] reward_fn #{step_counter['n']}  "
-              f"j1={m1:.1f}  j2={m2:.1f}  ej={m_ej:.1f}{delta_str}  pen={m_pen:.2f}  "
+              f"j1={m1:.1f}  j2={m2:.1f}  ej={m_ej:.1f}{delta_str}{nli_str}  pen={m_pen:.2f}  "
               f"final={m_reward:.1f}  ratio={m_ratio:.2f}  %out={frac_out:.2f}  "
               f"wc={m_gen_wc:.0f}/{m_tgt_wc:.0f}  score_s={t_score:.1f}", flush=True)
 
@@ -501,6 +580,9 @@ def main():
                             "ensemble_judge": ensemble_judge[i],
                             "length_ratio": len_ratios[i],
                             "length_penalty": penalties[i],
+                            "nli_fwd": nli_fwd[i],
+                            "nli_bwd": nli_bwd[i],
+                            "nli_score": nli_scores[i],
                             "final_reward": penalised[i],
                         }) + "\n")
             except Exception as e:
