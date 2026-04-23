@@ -305,3 +305,55 @@ Also removed: `LIT_INFORMED_USER_TEMPLATE`, `NAIVE_TIGHT_USER_TEMPLATE`, `RULES_
 
 ## 2026-04-22 — Gemma-3-1b inf fold 1: isolated grad-norm spike at step 394
 Step 394 of `grpo_gemma3-1b_fold1_informativeness`: `grad_norm=983040`, `loss=140.87`, `kl=14087` (vs neighbouring steps at ~5, ~0.01, ~0.9). Steps 395–400 recovered cleanly; final reward 80.2; final model saved OK. Likely a single degenerate rollout + KL outlier — the reward/penalty was still ~70 on that step, so it wasn't a judge-parse blow-up. Flag only; not blocking. If a similar event recurs on a later fold, investigate gradient clipping (not currently configured in the GRPO training args).
+
+## 2026-04-23 — ICIR rewrite_id collision bug (data-loss root cause)
+
+`run_icir.py` line 210 composes rewrite_id as `{method_tag}_f{fold}_{criterion}_{doc_id}` — no `rewriter_model` in the key. Paired with `INSERT OR REPLACE`, each subsequent rewriter's ICIR run silently overwrites the previous rewriter's rows.
+
+Timeline:
+- 2026-04-20 03:34 — Qwen2.5-1.5B ICIR: crashed on vLLM engine init, no rows written.
+- 2026-04-20 17:01 — LFM2.5-1.2B ICIR clarity (3 folds): completed per log, 2142 rows inserted.
+- 2026-04-21 03:13 — LFM2.5-1.2B ICIR informativeness (3 folds): completed per log, 2142 rows inserted.
+- 2026-04-21/22 — Gemma-3-1b ICIR (both criteria, 3 folds each): reused identical rewrite_ids, overwrote all LFM2.5 rows.
+
+Current DB: only Gemma-3-1b ICIR rows remain (4284 total). Qwen2.5 and LFM2.5 both show `icir n=0`.
+
+GRPO is not affected — its backfill script includes the rewriter short-name in the rewrite_id (`grpo_lfm25-12b_f{fold}_{crit}_{doc_id}`, `grpo_gemma3-1b_...`). The bug is specific to `run_icir.py`.
+
+Fix pattern: `rid = f"{method_tag}_{short}_f{fold}_{cri}_{doc_id}"` with a `REWRITER_SHORT_NAMES` lookup (`qwen25-15b`, `lfm25-12b`, `gemma3-1b`) and a fallback to the model basename. Task #42 was created for backfill but explicitly discarded by the operator — we accept the loss and only fix the bug going forward to prevent recurrence on future rewriter additions.
+
+## 2026-04-23 — NLI bidirectional-entailment fidelity plan
+
+Other-server agent on branch `origin/mission-2026-04-22` added NLI-based fidelity scoring (commits `f4e40fa`, `79c7f8b`, `3a9b6f3`). Plan to port into our main branch and apply post-hoc + to a targeted re-train.
+
+**Model:** `MoritzLaurer/ModernBERT-large-zeroshot-v2.0` (binary entail/not_entail, ~800 MB bf16, long-context capable). `id2label[0] = 'entailment'` — stash entail index at load time. float32 softmax over logits for stable probs.
+
+**Bidirectional scoring (raw probs, no thresholding):**
+- `fwd = P(entail | premise=rewrite,  hypothesis=original)`
+- `bwd = P(entail | premise=original, hypothesis=rewrite)`
+
+**Reward integration** (replaces subtractive embed-sim with additive NLI bonus):
+```
+nli_score = 100 * (fwd + bwd) / 2                  # same [0,100] scale as ej
+penalised = ej + nli_score − length_pen − fid_pen  # embed-sim fid_pen off when --nli-fidelity
+```
+CLI: `--nli-fidelity` (mutually exclusive with `--embed-sim`), `--nli-model`, `--nli-max-length 512`, `--nli-batch-size 16`. Wandb keys: `fidelity/nli_fwd_mean`, `nli_bwd_mean`, `nli_score_mean`, `nli_score_min`. `rollouts.jsonl` gains `nli_fwd`, `nli_bwd`, `nli_score`.
+
+**Port plan:**
+1. Cherry-pick `f4e40fa` + `79c7f8b` + `3a9b6f3` onto main; rebase paths `/data/shil6647/...` → `/workspace/...` and `/home/shil6647/...` → `/home/max/...` (4 locations across the probe scripts and one HF cache path in `run_pilot_len_pen.py`).
+2. Download model to `/workspace/hf_cache`; smoke test: `premise="The sky is blue." hypothesis="It is daytime."` should give moderate entail prob (~0.3-0.6); identical premise/hypothesis ~0.95.
+3. Create new `attack_nli_scores` table in `paragraphs.db`:
+   ```sql
+   CREATE TABLE attack_nli_scores (
+     rewrite_id TEXT PRIMARY KEY,
+     nli_fwd REAL NOT NULL,
+     nli_bwd REAL NOT NULL,
+     model_id TEXT NOT NULL,
+     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     FOREIGN KEY (rewrite_id) REFERENCES attack_rewrites(rewrite_id)
+   );
+   ```
+4. Score all ~113k rewrites bidirectionally. ~40 min at batch=32 on idle A100.
+5. Aggregate `mean((fwd+bwd)/2)` by (rewriter_model, method='grpo_400step', fold, criterion) → identify worst configuration.
+6. Re-run GRPO training for that one worst (rewriter × fold × criterion) with `--nli-fidelity` instead of `--embed-sim`. Everything else identical: 400 steps, lr 5e-6, α=100 asymm_cubic length penalty, 2 in-panel judges, 1 held-out. Tag: `grpo_nli_400step_foldN`. Push to HF as `daxmavy/grpo-{short}-fold{N}-{criterion}-nli`. Backfill post-rewrites + held-out scores.
+7. Compare held-out gap vs. the original embed-sim run for that same configuration.
