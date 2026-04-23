@@ -272,6 +272,9 @@ def main():
                     help="fidelity penalty weight: beta * max(0, threshold - cos_sim)")
     ap.add_argument("--embed-threshold", type=float, default=0.85)
     ap.add_argument("--embed-model", type=str, default="intfloat/e5-large-v2")
+    ap.add_argument("--base-model", type=str, default=None,
+                    help="override rewriter base model (HF id or local path). Default: "
+                         "the hardcoded REWRITER constant.")
     # NLI-fidelity (bidirectional-entailment) reward shaping — alternative to embed-sim.
     # Bonus = 100 * (P(entail | rew→orig) + P(entail | orig→rew)) / 2, added to ej with
     # equal weight so the in-panel judges and fidelity signal contribute equally to reward.
@@ -430,8 +433,6 @@ def main():
             dtype=torch.bfloat16,
             token=os.environ.get("HF_TOKEN"),
         ).to("cuda").eval()
-        # ModernBERT-large-zeroshot-v2.0 uses id2label {0: 'entailment', 1: 'not_entailment'}.
-        # Stash the entail index so we never accidentally read from the wrong column.
         _id2label = getattr(nli_model.config, "id2label", {0: "entailment"})
         nli_entail_idx = next((i for i, lbl in _id2label.items()
                                 if str(lbl).lower().startswith("entail")), 0)
@@ -439,7 +440,7 @@ def main():
               f"entail_idx={nli_entail_idx}", flush=True)
 
     @torch.no_grad()
-    def embed_batch(texts, prefix="passage: ", batch_size=32, max_length=512):
+    def embed_batch(texts, prefix="query: ", batch_size=32, max_length=512):
         import numpy as np
         embs = []
         for i in range(0, len(texts), batch_size):
@@ -475,7 +476,7 @@ def main():
         name=f"grpo-{args.name_suffix}-{time.strftime('%Y%m%d-%H%M%S')}",
         group="mission_20260418",
         config={
-            "rewriter": REWRITER,
+            "rewriter": args.base_model or REWRITER,
             "train_judges": [m for _, m in judge_ensemble],
             "judge_backend": "vllm",
             "n_train_prompts": len(train_data),
@@ -508,11 +509,14 @@ def main():
 
         t_s = time.time()
         j1 = judges[0].score(props, rewrites)
-        j2 = judges[1].score(props, rewrites)
+        j2 = judges[1].score(props, rewrites) if len(judges) > 1 else j1
         t_score = time.time() - t_s
         step_counter["t_total_score"] += t_score
 
-        ensemble_judge = [(a + b) / 2.0 for a, b in zip(j1, j2)]
+        if len(judges) > 1:
+            ensemble_judge = [(a + b) / 2.0 for a, b in zip(j1, j2)]
+        else:
+            ensemble_judge = list(j1)
         # Length penalty on each rollout
         gen_wcs = [_wc(r) for r in rewrites]
         len_ratios = [gw / max(tw, 1) for gw, tw in zip(gen_wcs, target_wcs)]
@@ -570,7 +574,6 @@ def main():
         # Dynamic per-judge wandb keys — respects actual ensemble composition (fixes hardcoded-name bug)
         log_payload = {
             f"reward/{judges[0].name}_mean": m1,
-            f"reward/{judges[1].name}_mean": m2,
             "reward/ensemble_judge_mean": m_ej,
             "reward/penalty_mean": m_pen,
             "reward/final_mean": m_reward,
@@ -582,6 +585,8 @@ def main():
             "timing/score_seconds": t_score,
             "reward_fn_step": step_counter["n"],
         }
+        if len(judges) > 1:
+            log_payload[f"reward/{judges[1].name}_mean"] = m2
         if args.embed_sim:
             valid_sims = [c for c in cos_sims if c is not None]
             if valid_sims:
@@ -599,14 +604,16 @@ def main():
                 log_payload["fidelity/nli_score_min"] = min(nli_scores)
         if mdej is not None:
             log_payload[f"delta/{judges[0].name}_mean"] = md1
-            log_payload[f"delta/{judges[1].name}_mean"] = md2
+            if len(judges) > 1:
+                log_payload[f"delta/{judges[1].name}_mean"] = md2
             log_payload["delta/ensemble_judge_mean"] = mdej
         wandb.log(log_payload)
         delta_str = f"  Δej={mdej:+.1f}" if mdej is not None else ""
+        j2_str = f"  j2={m2:.1f}" if len(judges) > 1 else ""
         nli_str = (f"  nli={sum(nli_scores)/len(nli_scores):.1f}"
                    if args.nli_fidelity else "")
         print(f"[{time.strftime('%H:%M:%S')}] reward_fn #{step_counter['n']}  "
-              f"j1={m1:.1f}  j2={m2:.1f}  ej={m_ej:.1f}{delta_str}{nli_str}  pen={m_pen:.2f}  "
+              f"j1={m1:.1f}{j2_str}  ej={m_ej:.1f}{delta_str}{nli_str}  pen={m_pen:.2f}  "
               f"final={m_reward:.1f}  ratio={m_ratio:.2f}  %out={frac_out:.2f}  "
               f"wc={m_gen_wc:.0f}/{m_tgt_wc:.0f}  score_s={t_score:.1f}", flush=True)
 
@@ -695,14 +702,15 @@ def main():
         print(f"WARN manifest: {e}", flush=True)
 
     # Pre-eval: load rewriter as HF, generate, score with vLLM judges
-    print(f"[{time.strftime('%H:%M:%S')}] pre-eval", flush=True)
-    rw_tok = AutoTokenizer.from_pretrained(REWRITER, cache_dir="/workspace/hf_cache",
+    base_model = args.base_model or REWRITER
+    print(f"[{time.strftime('%H:%M:%S')}] pre-eval (base={base_model})", flush=True)
+    rw_tok = AutoTokenizer.from_pretrained(base_model, cache_dir="/workspace/hf_cache",
                                             token=os.environ.get("HF_TOKEN"))
     if rw_tok.pad_token is None:
         rw_tok.pad_token = rw_tok.eos_token
     rw_tok.padding_side = "left"
     rw_model = AutoModelForCausalLM.from_pretrained(
-        REWRITER, cache_dir="/workspace/hf_cache",
+        base_model, cache_dir="/workspace/hf_cache",
         dtype=torch.bfloat16, device_map="cuda",
         token=os.environ.get("HF_TOKEN"),
     )
