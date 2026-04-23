@@ -101,6 +101,22 @@ FOLDS: dict[int, dict[str, object]] = {
 }
 
 
+# -----------------------------------------------------------------------------
+# NLI fidelity backbone (optional reward-shaping component)
+# -----------------------------------------------------------------------------
+# Used by `training/scripts/run_pilot_len_pen.py --nli-fidelity` to compute a
+# bidirectional-entailment bonus: 100 * (P(entail | rew→orig) + P(entail | orig→rew)) / 2.
+# The bonus is added to the ensemble-judge score with equal weight, so both the
+# clarity judge and the fidelity signal contribute equally to reward.
+#
+# Chosen because MoritzLaurer/ModernBERT-large-zeroshot-v2.0 is a modern long-context
+# NLI backbone (zero-shot binary entail/not_entail) that handles paragraph-sized
+# premises without truncation, and in the 2026-04-23 probe it cleanly separated
+# register-preserved rewrites (stance_gap ≈ 0) from stance-sharpened ones
+# (stance_gap > 0.5) that the clarity-only reward was quietly rewarding.
+NLI_FIDELITY_MODEL: str = "MoritzLaurer/ModernBERT-large-zeroshot-v2.0"
+
+
 def require_config() -> None:
     """Fail fast at entrypoint if the placeholders haven't been filled.
 
