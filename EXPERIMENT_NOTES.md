@@ -389,3 +389,21 @@ Compared to the original (embed-sim) fold 2 inf run, the NLI run trades absolute
 judge score for fidelity: bidirectional entailment mean ≈ 0.88 (vs 0.26 before),
 held-out Δ +4.49 (smaller than embed-sim's gap because the NLI penalty is tighter
 on meaning-preservation). Folds 1 and 3 queued under #45 for full 3-fold comparison.
+
+### 3-fold NLI sweep complete (LFM2.5-1.2B × informativeness)
+
+| Fold | Held-out | NLI held-out Δ | NLI in-panel Δ (mean) | Runtime |
+|---|---|---|---|---|
+| 1 | gemma9b | +6.71 | +10.46 | 121 min |
+| 2 | llama8b | +4.49 | +8.76  | 119 min |
+| 3 | qwen95b | +10.34 | +11.46 | 93 min (re-run after disk-quota truncation) |
+
+Mean held-out Δ = **+7.18**, mean in-panel = **+10.23**. Judge-vs-held-out gap ~3 points.
+
+Disk-quota gotcha discovered during fold 3: `trainer.save_model()` silently truncated `model.safetensors` when `/workspace` hit its 150 GB quota, leaving a `safetensors_rust.SafetensorError: incomplete metadata` when anything later tried to load it. Fix: cleaned up pushed-to-HF `final_grpo_400step_*` dirs (23 GB freed), relaunched fold 3 fresh. Going forward the disk-headroom rule in CLAUDE.md needs to be re-checked *during* a run, not just before.
+
+HF artifacts:
+- `daxmavy/grpo-lfm25-12b-fold{1,2,3}-informativeness-nli`
+- Original embed-sim run preserved at `daxmavy/grpo-lfm25-12b-fold{1,2,3}-informativeness`
+
+DB: new `grpo_nli_400step` rows coexist with original `grpo_400step` under the same `(rewriter_model, fold, criterion)`. Analysis queries can pivot on `method` to compare NLI vs embed-sim head-to-head.
