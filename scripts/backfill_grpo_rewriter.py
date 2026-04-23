@@ -17,10 +17,14 @@ def main():
     ap.add_argument("--criterion", required=True, choices=["clarity", "informativeness"])
     ap.add_argument("--rewriter", required=True)
     ap.add_argument("--held-out", required=True)
+    ap.add_argument("--method-tag", default="grpo_400step",
+                    help="method tag for attack_rewrites (e.g. grpo_400step or grpo_nli_400step)")
+    ap.add_argument("--name-prefix", default="grpo",
+                    help="rewrite_id prefix + pilot dir prefix (e.g. 'grpo' or 'grpo_nli')")
     ap.add_argument("--db", default="/home/max/attack-llm-judge/data/paragraphs.db")
     args = ap.parse_args()
 
-    eval_path = f"/workspace/grpo_run/pilot_grpo_{args.short}_fold{args.fold}_{args.criterion}/eval_summary.json"
+    eval_path = f"/workspace/grpo_run/pilot_{args.name_prefix}_{args.short}_fold{args.fold}_{args.criterion}/eval_summary.json"
     p = json.load(open(eval_path))
     doc_ids = p["eval_document_ids"]
     post = p["post_rewrites"]
@@ -28,7 +32,7 @@ def main():
     assert len(doc_ids) == len(post) == 714, f"lengths: {len(doc_ids)}/{len(post)}"
 
     config = {
-        "method": "grpo_400step",
+        "method": args.method_tag,
         "fold": args.fold,
         "criterion": args.criterion,
         "rewriter": args.rewriter,
@@ -42,14 +46,14 @@ def main():
     cur = conn.cursor()
     inserted = 0
     for doc_id, text in zip(doc_ids, post):
-        rid = f"grpo_{args.short}_f{args.fold}_{args.criterion}_{doc_id}"
+        rid = f"{args.name_prefix}_{args.short}_f{args.fold}_{args.criterion}_{doc_id}"
         wc = len(text.split())
         cur.execute(
             """INSERT OR IGNORE INTO attack_rewrites
                (rewrite_id, source_doc_id, method, fold, criterion, config_json, rewriter_model,
                 judge_panel_json, text, word_count, run_metadata_json)
-               VALUES (?, ?, 'grpo_400step', ?, ?, ?, ?, ?, ?, ?, NULL)""",
-            (rid, doc_id, args.fold, args.criterion, config_json, args.rewriter, judge_panel,
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)""",
+            (rid, doc_id, args.method_tag, args.fold, args.criterion, config_json, args.rewriter, judge_panel,
              text, wc),
         )
         inserted += cur.rowcount
@@ -57,7 +61,7 @@ def main():
     score_inserted = 0
     if heldout_scores and len(heldout_scores) == len(doc_ids):
         for doc_id, sc in zip(doc_ids, heldout_scores):
-            rid = f"grpo_{args.short}_f{args.fold}_{args.criterion}_{doc_id}"
+            rid = f"{args.name_prefix}_{args.short}_f{args.fold}_{args.criterion}_{doc_id}"
             cur.execute(
                 """INSERT OR IGNORE INTO attack_judge_scores
                    (rewrite_id, judge_slug, criterion, score, reasoning)
@@ -68,7 +72,8 @@ def main():
     conn.commit()
     conn.close()
     print(f"backfilled {inserted} rewrites, {score_inserted} held-out scores for "
-          f"{args.short} fold {args.fold} {args.criterion}")
+          f"{args.name_prefix} {args.short} fold {args.fold} {args.criterion} "
+          f"(method_tag={args.method_tag})")
 
 
 if __name__ == "__main__":
