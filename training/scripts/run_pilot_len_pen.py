@@ -742,6 +742,14 @@ def main():
     torch.cuda.empty_cache()
 
     # Training
+    # Graceful stop: operators can `touch <stop_file>` to save + exit after the next step.
+    from stop_signal import default_stop_file, clear_stop_file, announce as stop_announce, build_trainer_callback
+    pilot_dir = OUT_DIR / f"pilot_{args.name_suffix}"
+    pilot_dir.mkdir(parents=True, exist_ok=True)
+    stop_file = default_stop_file(pilot_dir)
+    clear_stop_file(stop_file)
+    stop_announce(stop_file)
+
     print(f"[{time.strftime('%H:%M:%S')}] building GRPOTrainer...", flush=True)
     # Pass the already-bf16-loaded rw_model instead of the string REWRITER.
     # If GRPOTrainer receives the string it reloads in FP32, doubling save size
@@ -753,6 +761,7 @@ def main():
         args=cfg,
         train_dataset=ds,
         processing_class=rw_tok,
+        callbacks=[build_trainer_callback(stop_file)],
     )
     t_train_start = time.time()
     print(f"[{time.strftime('%H:%M:%S')}] starting GRPO training ({args.max_steps} steps)", flush=True)

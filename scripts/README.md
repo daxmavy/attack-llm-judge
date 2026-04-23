@@ -1,18 +1,29 @@
-# scripts/ — canonical copies of the mission pipeline
+# scripts/ — canonical source of truth for the mission pipeline
 
-These are the source-of-truth copies of every script used in the current
-attack experiment. The live working copies sit at:
+**Repo is canonical.** Every script lives here (or in `training/scripts/`).
+The runtime directory `/workspace/grpo_run/` holds byte-exact copies of the
+active subset; populate it with `bash scripts/sync_to_workspace.sh` after
+each pull. `/home/max/` no longer contains pipeline scripts — everything
+that used to live there moved here (2026-04-23 de-dup).
 
-- `/workspace/grpo_run/*.sh` and `/workspace/grpo_run/*.py` (the driver/runner scripts)
-- `/workspace/grpo_run/run_pilot_len_pen.py` (mirrors `training/scripts/run_pilot_len_pen.py`)
-- `/home/max/*.py` (the post-hoc DB scripts: scoring, agreement, backfill, preflight)
+Live copies (kept in sync via `sync_to_workspace.sh`):
 
-When you clone this repo onto another machine, copy these scripts into your
-working directory (preferably `/workspace/grpo_run/` or equivalent scratch dir)
-before running. They assume:
+```
+/workspace/grpo_run/
+  run_pilot_len_pen.py          ← training/scripts/run_pilot_len_pen.py
+  run_manifest.py               ← training/scripts/run_manifest.py
+  length_penalty.py             ← training/scripts/length_penalty.py
+  run_mission_attacks.py        ← scripts/run_mission_attacks.py
+  run_icir.py                   ← scripts/run_icir.py
+  stop_signal.py                ← scripts/stop_signal.py
+  run_full_criterion_with_rewriter.sh
+  run_grpo_3fold_with_rewriter.sh
+```
 
-- `sys.path.insert(0, "/workspace/grpo_run")` to import `run_pilot_len_pen` → rebind this to wherever you put the training script on the new host.
-- `sys.path.insert(0, "/home/max/attack-llm-judge")` to import `rewriters.rewrite_prompts` → rebind to the repo path on the new host.
+Path bindings at the top of each script:
+
+- `sys.path.insert(0, "/workspace/grpo_run")` — to import `run_pilot_len_pen.JudgeVLLM` and friends. Rebind to your scratch dir on a new host.
+- `sys.path.insert(0, "/home/max/attack-llm-judge")` — to import `rewriters.rewrite_prompts`. Rebind to the repo path on a new host.
 
 ## Script index
 
@@ -31,13 +42,22 @@ before running. They assume:
 - `score_all_missing.py` — mission-panel scoring: scans `attack_rewrites`, finds missing (judge × criterion) cells, loads one vLLM judge at a time, rubric-swaps across criteria in-place. `--methods`, `--judges`, `--criteria`, `--include-candidates`.
 - `apply_agreement_score.py` — DeBERTa-v3-base regressor scoring for stance agreement. Idempotent.
 
+### Fidelity scoring (NLI and embedding)
+- `apply_nli_scores.py` — bidirectional entailment scoring via `MoritzLaurer/ModernBERT-large-zeroshot-v2.0`. Populates `attack_nli_scores` with raw `nli_fwd`, `nli_bwd` probabilities. Idempotent; `--reset` to rescore.
+- `e5_prefix_ablation.py` — one-off ablation of `"query: "` vs `"passage: "` e5-large-v2 prefix on attack-rewrite fidelity. Historical; results in EXPERIMENT_NOTES.md.
+
 ### Smoke tests / tooling
 - `preflight_rewriter.py` — vLLM compatibility check: load → generate → single GRPO step with live judge. Produces `/home/max/attack-llm-judge/PREFLIGHT.md`.
 - `build_controversial_subset.py` — regenerates the 40-prop stratified train/eval split. Only needed if you need a new subset.
+- `init_db.py` — bootstrap a fresh `paragraphs.db` from the committed JSON + schema.
+- `backup_db.py` — snapshot `paragraphs.db` to private HF dataset `daxmavy/attack-llm-judge-db` (SQLite online backup + gzipped SQL dump). Run whenever the DB has grown.
+- `sync_to_workspace.sh` — copy canonical scripts into `/workspace/grpo_run/`.
+- `stop_signal.py` — graceful-stop primitives. `touch <pilot_dir>/STOP` mid-run to save + exit after the next training step.
 
-## Known differences from the currently-live `/workspace/grpo_run/run_pilot_len_pen.py`
+## Current reward modes
 
-- Embedding prefix for e5-large-v2 fidelity check was changed from `"query: "` to `"passage: "` (the E5 paper's documented recipe for symmetric paragraph-vs-paragraph similarity). **The live `/workspace/grpo_run/` copy still uses `"query: "` for the currently-running Qwen2.5 / LFM2.5 / Gemma-3-1b experiments** — changing mid-run would break the fidelity-penalty calibration (threshold=0.85 was tuned against "query: " embeddings). The repo copy is for follow-up runs. Re-calibrate the threshold on a sample of known-stance-preserving vs known-stance-flipped rewrites before the new prefix is used in production.
+- `--embed-sim` — subtractive fidelity penalty: `reward = ej − length_pen − β·max(0, threshold − cos_sim_e5)`. Used for all overnight/Qwen2.5 + LFM2.5 + Gemma-3-1b runs.
+- `--nli-fidelity` — additive bidirectional-entailment bonus: `reward = ej + 100·(P(rew→orig)+P(orig→rew))/2 − length_pen`. Used for the 2026-04-23 NLI retrain. Mutually exclusive with `--embed-sim`.
 
 ## Running order for a new rewriter × criterion
 

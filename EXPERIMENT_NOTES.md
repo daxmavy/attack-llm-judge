@@ -400,7 +400,7 @@ on meaning-preservation). Folds 1 and 3 queued under #45 for full 3-fold compari
 
 Mean held-out Δ = **+7.18**, mean in-panel = **+10.23**. Judge-vs-held-out gap ~3 points.
 
-Disk-quota gotcha discovered during fold 3: `trainer.save_model()` silently truncated `model.safetensors` when `/workspace` hit its 150 GB quota, leaving a `safetensors_rust.SafetensorError: incomplete metadata` when anything later tried to load it. Fix: cleaned up pushed-to-HF `final_grpo_400step_*` dirs (23 GB freed), relaunched fold 3 fresh. Going forward the disk-headroom rule in CLAUDE.md needs to be re-checked *during* a run, not just before.
+Disk-quota gotcha discovered during fold 3: `trainer.save_model()` silently truncated `model.safetensors` when `/workspace` hit its 200 GB quota, leaving a `safetensors_rust.SafetensorError: incomplete metadata` when anything later tried to load it. Fix: cleaned up pushed-to-HF `final_grpo_400step_*` dirs (23 GB freed), relaunched fold 3 fresh. Going forward the disk-headroom rule in CLAUDE.md needs to be re-checked *during* a run, not just before.
 
 HF artifacts:
 - `daxmavy/grpo-lfm25-12b-fold{1,2,3}-informativeness-nli`
