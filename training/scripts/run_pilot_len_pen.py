@@ -58,6 +58,7 @@ JUDGE_REGISTRY = {
     # by short slug.
     "mistral7b": ("judge_mistral7b", "mistralai/Mistral-7B-Instruct-v0.3"),
     "phi35mini": ("judge_phi35mini", "microsoft/Phi-3.5-mini-instruct"),
+    "cmdr7b":    ("judge_cmdr7b",    "CohereLabs/c4ai-command-r7b-12-2024"),
 }
 
 OUT_DIR = Path("/workspace/grpo_run")
