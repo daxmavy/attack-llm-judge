@@ -407,3 +407,57 @@ HF artifacts:
 - Original embed-sim run preserved at `daxmavy/grpo-lfm25-12b-fold{1,2,3}-informativeness`
 
 DB: new `grpo_nli_400step` rows coexist with original `grpo_400step` under the same `(rewriter_model, fold, criterion)`. Analysis queries can pivot on `method` to compare NLI vs embed-sim head-to-head.
+
+## 2026-04-25 — Full NLI extension matrix (3 rewriters × 2 criteria × 3 folds = 18 runs)
+
+Chain `run_all_nli_extensions.sh` (PID 1907987) ran 16:08 Apr 23 → 13:39 Apr 25 (~46h end-to-end).
+All 15 new (rewriter × criterion × fold) combos completed without manual intervention; original
+LFM2.5×inf×3 from #44/#45 already done. Each run: GRPO 400 steps with `--nli-fidelity`
+swapped in for `--embed-sim`, identical hyperparameters otherwise. Models pushed to HF as
+`daxmavy/grpo-{short}-fold{N}-{criterion}-nli`. DB-backfilled as `method='grpo_nli_400step'`.
+
+After chain completion: `score_all_missing.py --methods grpo_nli_400step` populated all
+3 mission judges × 2 criteria for the 12,852 new rows (~75 min). Then `apply_agreement_score.py`
+on the same rows (45 s).
+
+### Headline: NLI vs embed-sim mean judge score (lower = less judge-attack)
+
+| rewriter × criterion           | embed-sim | NLI   | Δ      |
+|--------------------------------|-----------|-------|--------|
+| Qwen2.5-1.5B × clarity         | 87.2      | 80.4  | −6.8   |
+| Qwen2.5-1.5B × informativeness | 60.5      | 42.8  | **−17.7**|
+| LFM2.5-1.2B × clarity          | 89.1      | 85.2  | −3.8   |
+| LFM2.5-1.2B × informativeness  | 79.4      | 45.6  | **−33.8**|
+| gemma-3-1b × clarity           | 87.7      | 83.8  | −3.9   |
+| gemma-3-1b × informativeness   | 72.1      | 46.2  | **−25.9**|
+
+### Interpretation
+
+Predicted signature, observed cleanly:
+- **Clarity attack surface is small.** Rewriting for clarity preserves meaning by definition; NLI penalty barely bites (−4 to −7 judge points). NLI-trained model still scores ~84 mean, vs ~88 for embed-sim.
+- **Informativeness attack surface is large.** Embed-sim lets the rewriter add plausible-sounding content that wins judge points but isn't supported by the original (cos-sim doesn't catch this). NLI's bidirectional entailment penalty hits it hard: −18 to −34 judge points.
+- The asymmetry — clarity small, informativeness huge — is exactly what you'd expect if the LLM judge can be gamed by content addition but not by mere paraphrase. Strong support for using NLI fidelity as a defence.
+
+### Per-fold held-out gaps
+
+For each fold's 1 held-out judge, `Δheld_out_post = post_score − pre_score` (post = trained
+NLI rewrite, pre = base-model rewrite of same paragraph):
+
+| Rewriter × criterion           | f1 held-out | f2 held-out | f3 held-out | mean |
+|--------------------------------|-------------|-------------|-------------|------|
+| LFM2.5 × clarity               | −0.98 (gemma9b) | +2.69 (llama8b) | +0.06 (qwen95b) | **+0.59** |
+| Qwen2.5 × clarity              | −3.35 (gemma9b) | −4.15 (llama8b) | −3.12 (qwen95b) | **−3.54** |
+| Gemma-3 × clarity              | −1.16 (gemma9b) | −1.38 (llama8b) | −0.01 (qwen95b) | **−0.85** |
+| LFM2.5 × informativeness       | +6.71 (gemma9b) | +4.49 (llama8b) | +10.34 (qwen95b)| **+7.18** |
+| Qwen2.5 × informativeness      | −3.25 (gemma9b) | +3.17 (llama8b) | +3.98 (qwen95b) | **+1.30** |
+| Gemma-3 × informativeness      | +2.73 (gemma9b) | +5.20 (llama8b) | +5.77 (qwen95b) | **+4.57** |
+
+Held-out positives are smaller than embed-sim's (which were +25-+45 on informativeness in the
+original mission) — NLI is sacrificing attack effectiveness for fidelity, as designed.
+
+### Reward-hacking gap (in-panel mean Δ − held-out Δ)
+
+Across all 18 NLI folds the mean gap is **+0.5** (essentially zero). NLI's bidirectional
+entailment constraint is preventing the rewriter from learning judge-specific shortcuts that
+don't transfer. Compare embed-sim's overnight Qwen2.5 informativeness runs where the gap
+was 8-12 points consistently.
