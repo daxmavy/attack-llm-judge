@@ -461,3 +461,40 @@ Across all 18 NLI folds the mean gap is **+0.5** (essentially zero). NLI's bidir
 entailment constraint is preventing the rewriter from learning judge-specific shortcuts that
 don't transfer. Compare embed-sim's overnight Qwen2.5 informativeness runs where the gap
 was 8-12 points consistently.
+
+## 2026-04-25 — OOS coverage gap-fill + mission-panel vs OOS judge analysis
+
+Finished filling out-of-sample judge coverage (Mistral-7B-v0.3, Phi-3.5-mini) on the
+~40k rewrites that were added after the original 04-20 OOS sweep — bringing both judges
+to 100% coverage on non-candidate rewrites. Total elapsed 19:36:53 - 17:26:53 = 2h10m.
+Then attempted CohereLabs/c4ai-command-r7b-12-2024 — blocked on gated-repo clickthrough.
+
+With 5-judge coverage now complete (3 mission panel + 2 OOS), pulled mission-panel-vs-OOS
+gap by (rewriter × criterion × method). **Surprising finding: the gap is small on clarity
+(panel slightly higher than OOS, +1 to +3) but inverted on informativeness (OOS scores
+HIGHER than panel by 5–25 points across the board).**
+
+| rewriter × criterion × method            | panel | OOS  | gap   |
+|------------------------------------------|-------|------|-------|
+| Qwen2.5 × clarity × grpo_400step         | 88.4  | 85.8 | +2.6  |
+| Qwen2.5 × clarity × grpo_nli_400step     | 80.4  | 79.8 | +0.6  |
+| Qwen2.5 × inf × grpo_400step             | 50.5  | 75.6 | **−25.2** |
+| Qwen2.5 × inf × grpo_nli_400step         | 42.8  | 61.0 | **−18.2** |
+| LFM2.5 × inf × grpo_400step              | 79.4  | 84.1 | −4.7  |
+| LFM2.5 × inf × grpo_nli_400step          | 45.6  | 65.5 | **−19.9** |
+| Gemma-3 × inf × grpo_400step             | 72.1  | 81.1 | −9.0  |
+| Gemma-3 × inf × grpo_nli_400step         | 46.2  | 66.6 | **−20.4** |
+
+**Interpretation.** The OOS-higher-than-panel pattern on informativeness is the *opposite*
+of what reward-hacking would predict — if the rewriter were learning panel-specific
+shortcuts, OOS would score lower than panel. Instead the mission panel (9B-class
+modern instruct models) appears to be much stricter on the informativeness rubric than
+Mistral-7B and Phi-3.5-mini are. The Qwen2.5 inf grpo_400step case is especially clear:
+panel gives 50.5 (rubric: "moderately informative — some specifics, much abstract") while
+OOS gives 75.6 ("informative — multiple concrete claims/examples").
+
+**Implication for the paper.** The attack generalizes to OOS judges — rewrites still score
+well on Mistral-7B and Phi-3.5-mini, just at a different absolute level. The judge-hacking
+worry that motivated the OOS evaluation doesn't show up. What does show up is rubric-strictness
+heterogeneity: smaller/older instruct models grade informativeness more leniently. Worth
+noting but not a confound for the central finding.
