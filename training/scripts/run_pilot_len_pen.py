@@ -51,6 +51,13 @@ JUDGE_REGISTRY = {
     "qwen95b": ("judge_qwen95b", "Qwen/Qwen3.5-9B"),
     "llama8b": ("judge_llama8b", "meta-llama/Llama-3.1-8B-Instruct"),
     "gemma9b": ("judge_gemma9b", "google/gemma-2-9b-it"),
+    # Out-of-sample judges (post-hoc only; never used as in-panel or held-out
+    # in fold rotation — that's enforced by run_full_criterion_with_rewriter.sh
+    # which only ever passes the 3 mission-panel keys to --train-judges /
+    # --heldout-judge). Listed here so score_all_missing.py can address them
+    # by short slug.
+    "mistral7b": ("judge_mistral7b", "mistralai/Mistral-7B-Instruct-v0.3"),
+    "phi35mini": ("judge_phi35mini", "microsoft/Phi-3.5-mini-instruct"),
 }
 
 OUT_DIR = Path("/workspace/grpo_run")
