@@ -75,15 +75,33 @@ async def main_async(args):
     cur = conn.cursor()
 
     # Build the universe of (rewrite_id, proposition, text) tuples to score.
+    # By default restrict to rewrites whose own criterion matches the rubric's
+    # criterion (so e.g. clarity-rubric scoring picks only clarity-text rows).
+    # Pass --no-criterion-filter to score every method × rewriter combo with
+    # the chosen rubric regardless of the rewrite's own criterion (useful if
+    # you want to measure cross-criterion attack transfer).
     placeholders_methods = ",".join("?" * len(args.methods))
     placeholders_rewriters = ",".join("?" * len(args.rewriters))
-    rows = cur.execute(f"""
-        SELECT r.rewrite_id, p.proposition, r.text
-        FROM attack_rewrites r
-        JOIN paragraphs p ON r.source_doc_id = p.document_id
-        WHERE r.method IN ({placeholders_methods})
-          AND r.rewriter_model IN ({placeholders_rewriters})
-    """, list(args.methods) + list(args.rewriters)).fetchall()
+    if args.no_criterion_filter:
+        rows = cur.execute(f"""
+            SELECT r.rewrite_id, p.proposition, r.text
+            FROM attack_rewrites r
+            JOIN paragraphs p ON r.source_doc_id = p.document_id
+            WHERE r.method IN ({placeholders_methods})
+              AND r.rewriter_model IN ({placeholders_rewriters})
+        """, list(args.methods) + list(args.rewriters)).fetchall()
+    else:
+        # naive is criterion-agnostic (only stored under criterion='clarity'); we
+        # always include it. Other methods: restrict to rows whose own criterion
+        # matches the rubric criterion.
+        rows = cur.execute(f"""
+            SELECT r.rewrite_id, p.proposition, r.text
+            FROM attack_rewrites r
+            JOIN paragraphs p ON r.source_doc_id = p.document_id
+            WHERE r.method IN ({placeholders_methods})
+              AND r.rewriter_model IN ({placeholders_rewriters})
+              AND (r.criterion = ? OR r.method = 'naive')
+        """, list(args.methods) + list(args.rewriters) + [args.criterion]).fetchall()
     print(f"[{time.strftime('%H:%M:%S')}] universe: {len(rows)} rewrites", flush=True)
 
     rubric_template = RUBRICS[args.criterion]
@@ -147,6 +165,9 @@ def main():
     ap.add_argument("--criterion", required=True, choices=list(RUBRICS.keys()))
     ap.add_argument("--concurrency", type=int, default=40,
                     help="parallel in-flight requests per judge")
+    ap.add_argument("--no-criterion-filter", action="store_true",
+                    help="score every method × rewriter row regardless of its own criterion "
+                         "(useful for cross-criterion attack-transfer measurement)")
     args = ap.parse_args()
     asyncio.run(main_async(args))
 
