@@ -498,3 +498,32 @@ well on Mistral-7B and Phi-3.5-mini, just at a different absolute level. The jud
 worry that motivated the OOS evaluation doesn't show up. What does show up is rubric-strictness
 heterogeneity: smaller/older instruct models grade informativeness more leniently. Worth
 noting but not a confound for the central finding.
+
+
+---
+
+## 2026-04-27 19:00 BST — Opus 4.7 as rewriter (Task #46)
+
+After the 18-fold single-judge GRPO chain finished, ran Anthropic Opus 4.7 (via OpenRouter,
+reasoning disabled) as a rewriter on the 714-row eval set, both criteria. Method tag:
+`lit_informed_tight_strictlen_opus47`.
+
+**Probe finding (length tolerance).** The default `lit_informed_tight` prompt drifted
++11.9 words on informativeness (8/10 in 10% tolerance, max +27). Clarity drifted only +3.3
+words (9/10 in tolerance). Hardened the length constraint into new templates
+`LIT_INFORMED_TIGHT_STRICTLEN_*` (added without editing the originals — both qwen rewrites
+and the eval-set comparison stay reproducible). Re-probe with strictlen: **20/20 in range,
++2 word avg drift** for both criteria.
+
+**Cost.** Estimated ~$8.27 for 1428 calls. At ~1.6 calls/s with concurrency=8, full run ~15 min.
+
+**Why a separate method tag.** `lit_informed_tight` already exists for the qwen rewriter.
+Tagging the Opus rewrites separately means side-by-side method comparisons (qwen-rewriter
+lit_informed_tight vs opus47-rewriter lit_informed_tight_strictlen_opus47) on identical
+judge panels work directly without rewriter-model joins.
+
+**Universe bucket in score_openrouter_panel.** Opus rewrites have
+rewriter_model="anthropic/claude-opus-4-7" which is not in the 3-rewriter filter. Added a
+third bucket "OR-rewriter methods" (no rewriter_model filter, like original/original_ai)
+so the OR judge panel covers them.
+
