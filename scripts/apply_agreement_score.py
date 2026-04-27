@@ -9,6 +9,12 @@ by skipping rows already scored unless --reset is passed.
 
 GPU is required but usage is modest (~1 GB). Safe to run alongside vLLM judges if VRAM
 headroom allows; otherwise run during a GPU-idle window.
+
+Recovery note (2026-04-27): the saved tokenizer_config.json had a stale list-form
+``extra_special_tokens`` that was incompatible with transformers >= 4.50. Fixed by
+removing that key (the [PAD]/[CLS]/[SEP] tokens are already declared via the
+pad_token/cls_token/sep_token fields). If the regressor is re-downloaded from a
+fresh checkpoint, re-apply the same fix.
 """
 import argparse
 import sqlite3
