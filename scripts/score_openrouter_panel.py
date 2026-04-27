@@ -54,7 +54,7 @@ PROGRESS_FILE = Path("/tmp/openrouter_panel.progress.json")
 CRITERION_AGNOSTIC = {"naive", "original", "original_ai"}
 ATTACK_METHODS = [
     "naive", "lit_informed_tight", "rubric_aware", "icir",
-    "bon_panel", "bon_panel_single", "bon_panel_nli",
+    "bon_panel", "bon_panel_single", "bon_panel_nli", "bon_panel_single_nli",
     "grpo_400step", "grpo_nli_400step", "grpo_nli_single",
     "original", "original_ai",
 ]
