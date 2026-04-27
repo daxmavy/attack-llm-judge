@@ -56,6 +56,7 @@ ATTACK_METHODS = [
     "naive", "lit_informed_tight", "rubric_aware", "icir",
     "bon_panel", "bon_panel_single", "bon_panel_nli", "bon_panel_single_nli",
     "grpo_400step", "grpo_nli_400step", "grpo_nli_single",
+    "lit_informed_tight_strictlen_opus47",
     "original", "original_ai",
 ]
 
@@ -287,14 +288,20 @@ async def main_async(args):
     conn_lock = asyncio.Lock()
 
     # Build universe: 3-rewriter attack methods + originals (no rewriter filter)
+    # + OpenRouter rewriter methods (anthropic/claude-opus-4-7 etc, no rewriter filter)
     print(f"[{time.strftime('%H:%M:%S')}] building universe...", flush=True)
-    methods_3rew = [m for m in ATTACK_METHODS if m not in ("original", "original_ai")]
+    or_rewriter_methods = {"lit_informed_tight_strictlen_opus47"}
+    methods_3rew = [m for m in ATTACK_METHODS
+                    if m not in ("original", "original_ai") and m not in or_rewriter_methods]
     universe_3rew = fetch_universe(conn, methods_3rew, REWRITERS_3)
     methods_orig = ["original", "original_ai"]
     universe_orig = fetch_universe(conn, methods_orig, None)
-    universe = universe_3rew + universe_orig
+    methods_or_rew = [m for m in ATTACK_METHODS if m in or_rewriter_methods]
+    universe_or_rew = fetch_universe(conn, methods_or_rew, None) if methods_or_rew else []
+    universe = universe_3rew + universe_orig + universe_or_rew
     print(f"  attack-method calls (3 rewriters): {len(universe_3rew)}", flush=True)
     print(f"  original / original_ai calls:      {len(universe_orig)}", flush=True)
+    print(f"  OpenRouter-rewriter calls:         {len(universe_or_rew)}", flush=True)
     print(f"  TOTAL universe per judge:          {len(universe)}", flush=True)
 
     state = {}
