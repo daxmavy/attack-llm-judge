@@ -39,6 +39,9 @@ def main():
                     help="also score bon_candidate rows (default: skip)")
     ap.add_argument("--methods", nargs="+", default=None,
                     help="restrict to specific methods (default: all except bon_candidate)")
+    ap.add_argument("--gpu-mem-util", type=float, default=None,
+                    help="override JudgeVLLM gpu_memory_utilization (default: per-model auto). "
+                         "Higher = bigger KV cache = more concurrency. 0.45 ~doubles concurrency on Qwen3.5-9B.")
     args = ap.parse_args()
 
     import torch
@@ -84,9 +87,10 @@ def main():
         first_cri = next((c for c, t in cri_todo.items() if t), None)
         if first_cri is None:
             continue
-        print(f"[{time.strftime('%H:%M:%S')}] loading {slug} (initial rubric={first_cri})",
+        print(f"[{time.strftime('%H:%M:%S')}] loading {slug} (initial rubric={first_cri}, "
+              f"gpu_mem_util={args.gpu_mem_util})",
               flush=True)
-        j = JudgeVLLM(*spec, rubric=first_cri)
+        j = JudgeVLLM(*spec, rubric=first_cri, gpu_mem_util=args.gpu_mem_util)
 
         for cri, todo in cri_todo.items():
             if not todo:
