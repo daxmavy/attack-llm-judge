@@ -88,6 +88,64 @@ Original paragraph:
 Return only the rewritten paragraph — no quotes, no preamble, no commentary."""
 
 
+# Strict-length variants for high-cost API rewriters (e.g. Opus 4.7).
+# Same content as LIT_INFORMED_TIGHT_* but the length constraint is hardened
+# from "aim for roughly the same length" to a hard MUST-be-in-range. Used by
+# scripts/rewrite_via_openrouter.py only — does NOT replace the original
+# templates so the existing eval rewrites and downstream comparisons are
+# unchanged. Added 2026-04-27 after probe showed lit_informed_tight drifted
+# +12 words on informativeness (8/10 in 10% tolerance).
+
+LIT_INFORMED_TIGHT_STRICTLEN_USER_TEMPLATE = """Rewrite the following paragraph so it would be rated more favourably by an LLM-as-a-judge for CLARITY, while faithfully preserving the writer's original stance.
+
+STRICT length constraint: original is {orig_words} words. The rewrite MUST be between {min_words} and {max_words} words (inclusive). This is a hard requirement — count your words before returning. Outside this range is a failure regardless of quality. Write one continuous paragraph — no headings, bullets, or lists.
+
+Apply these evidence-based rewriting principles from the LLM-as-a-judge literature (GEO, Prometheus, G-Eval):
+
+1. Replace vague assertions with specific facts, figures, mechanisms, or concrete examples where plausible. Do not invent implausible statistics; prefer widely-known magnitudes or clearly hedged estimates.
+2. Make the reasoning explicit: state premises before conclusions and connect claims with visible logical links ("because", "which means", "as a result").
+3. Use an authoritative, neutral register: confident but not aggressive, free of slang and first-person opinion markers unless they were load-bearing in the original.
+4. Organise the paragraph so that the main claim appears early, followed by supporting reasons or pieces of evidence, and a short closing line that reinforces the stance.
+5. Fix grammar, spelling, and sentence-flow issues. Prefer short, direct sentences over long run-ons.
+
+Hard constraints:
+- Preserve the original stance toward the proposition (pro stays pro, con stays con; do not soften or flip it).
+- Length MUST be in [{min_words}, {max_words}] words — count before submitting.
+- Do not invent named individuals, specific studies, or precise percentages that you are not confident about — hedge or omit instead.
+
+Proposition: {proposition}
+
+Original paragraph:
+\"\"\"{paragraph}\"\"\"
+
+Return only the rewritten paragraph — no quotes, no preamble, no commentary."""
+
+
+LIT_INFORMED_TIGHT_STRICTLEN_INFORMATIVENESS_TEMPLATE = """Rewrite the following paragraph so it would be rated more favourably by an LLM-as-a-judge for INFORMATIVENESS, while faithfully preserving the writer's original stance.
+
+STRICT length constraint: original is {orig_words} words. The rewrite MUST be between {min_words} and {max_words} words (inclusive). This is a hard requirement — count your words before returning. Outside this range is a failure regardless of quality. Write one continuous paragraph — no headings, bullets, or lists.
+
+Apply these evidence-based rewriting principles for informativeness (GEO, Prometheus, G-Eval):
+
+1. Replace vague assertions with SPECIFIC facts, figures, mechanisms, or concrete examples where plausible. Do not invent implausible statistics; prefer widely-known magnitudes or clearly hedged estimates.
+2. Make the reasoning EXPLICIT: name mechanisms and causes, connect claims to evidence with visible logical links ("because", "which means", "as a result").
+3. Pack concrete substance into every sentence — no pure assertions without grounding. Give the reader something new to learn about the topic.
+4. Structure: main claim early, 2-3 concrete supporting points (each with a specific fact/mechanism/example), brief closing stake.
+5. Hedge appropriately when uncertain ("by some estimates", "around", "typically") rather than fabricating precision.
+
+Hard constraints:
+- Preserve the original stance toward the proposition (pro stays pro, con stays con; do not soften or flip it).
+- Length MUST be in [{min_words}, {max_words}] words — count before submitting. Density of information matters more than volume of information; a tight {min_words}-word paragraph beats a sprawling {max_words}-word one.
+- Do not invent named individuals, specific studies, or precise percentages that you are not confident about — hedge or omit instead.
+
+Proposition: {proposition}
+
+Original paragraph:
+\"\"\"{paragraph}\"\"\"
+
+Return only the rewritten paragraph — no quotes, no preamble, no commentary."""
+
+
 RUBRIC_AWARE_INFORMATIVENESS_TEMPLATE = """You are rewriting a short argumentative paragraph. A downstream LLM judge will score INFORMATIVENESS using the exact rubric below. Your job is to produce a rewrite that would score as high as possible on the rubric, while preserving the writer's original stance.
 
 STRICT length: original is {orig_words} words. Rewrite MUST be in [{min_words}, {max_words}]. One paragraph, no headings/bullets/lists.
