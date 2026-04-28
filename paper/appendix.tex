@@ -1,4 +1,6 @@
-\section{The unknown-judge formulation is a generalisation of the known-judge formulation}\label{app:proof}
+\section{Methods and Experimental Details}\label{app:methods-details}
+
+\subsection{The unknown-judge formulation is a generalisation of the known-judge formulation}\label{app:proof}
 
 Suppose that the attacker is certain that a particular judge $\tilde{J}$ will be used. Under the unknown-judge formulation, their beliefs about what judges might be used to assess their documents are encoded in the probability distribution $\mu$ over judges $\mathcal{J}$. If they are certain that $\tilde{J}$ will be used, then $\mu$ is given by
 \begin{equation}
@@ -15,7 +17,7 @@ Plugging this into \cref{eq:uncertain} yields \cref{eq:known}. Hence, if the att
 
 \backlink{app:proof}
 
-\section{Details on document corpus and evaluation \& training datasets}\label{app:corpus}
+\subsection{Details on document corpus and evaluation \& training datasets}\label{app:corpus}
 
 \paragraph{Original dataset}
 
@@ -45,22 +47,7 @@ For evaluation and training, we only include human responses to the 40 propositi
 
 \backlink{app:corpus}
 
-\section{Judge-score distributions for original and rewritten content}\label{app:reference-coverage}
-
-Our method for normalising judge scores faces a possible problem: if the range of reference distribution is smaller than the range of the distribution of judge scores that we seek to normalise, then potentially many judge scores will all be mapped to the 0th or 100th percentiles.
-
-The below chart shows that this is not a problem for us. We use all human-written and AI-written paragraphs from \citet{rottgerQuantifyingDistortiveImpacts2025} (filtering to only include those relating to the 40 propositions included in our experiments) as the reference distribution. Including AI-written paragraphs ensures that the reference distribution spans the same range of judge scores as the rewritten paragraphs.
-
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=\linewidth]{fig_s8_8_reference_coverage.png}
-  \caption{Distributions of judge scores for original (grey) and rewritten (orange) content, by judge model and criterion. Top two rows: in-sample judges (Qwen-2.5-9.5B, Llama-3.1-8B, Gemma-2-9B). Bottom two rows: out-of-sample judges (Mistral-7B-v0.3, Phi-3.5-mini, Command-R-7B). Within each judge, the upper panel shows clarity scores and the lower panel shows informativeness scores.}
-  \label{fig:reference-coverage}
-\end{figure}
-
-\backlink{app:reference-coverage}
-
-\section{Regression specification for method effects}\label{app:regression}
+\subsection{Regression specification for method effects}\label{app:regression}
 
 To estimate the average effect of each rewriting method on out-of-sample judge score, we fit
 \begin{equation}
@@ -76,172 +63,58 @@ We omit fixed effects for rewriter, judge, and criterion. \Cref{tab:fe-compariso
 
 \backlink{app:regression}
 
-\input{appendix_judge_prompts.tex}
+\subsection{GRPO finetuning hyperparameters}\label{app:grpo-config}
 
-\input{appendix_rewriter_prompts.tex}
-
-\section{GRPO finetuning hyperparameters}\label{app:grpo-config}
-
-\Cref{tab:grpo-config} lists the hyperparameters shared across all GRPO runs. Per-run knobs that vary across the panel — rewriter base, criterion, fold (which two judges supply feedback), and fidelity variant (embedding similarity vs.\ NLI) — are described inline in the main text.
+We use TRL 1.2.0's GRPO implementation. \Cref{tab:grpo-config} lists every hyperparameter we set; values that match the TRL default are marked accordingly, and deliberate overrides are flagged with~$\dagger$. The length-penalty schedule (last block of the table) is applied to each generation and subtracted from the rollout-level reward used by GRPO.
 
 \begin{table}[h]
   \centering\small
-  \begin{tabular}{ll}
+  \begin{tabular}{lll}
     \toprule
-    \textbf{Group} & \textbf{Setting} \\
+    \textbf{Setting} & \textbf{Value} & \textbf{Source} \\
     \midrule
-    \multicolumn{2}{l}{\emph{Optimisation}} \\
-    Algorithm & GRPO \\
-    Learning rate & $5\times10^{-6}$ \\
-    Optimiser & AdamW (default TRL) \\
-    KL coefficient $\beta$ & $0.01$ \\
-    Loss type & DAPO (TRL default) \\
-    Precision & bf16 \\
-    Total steps & $400$ \\
-    Random seed & $42$ \\
+    \multicolumn{3}{l}{\emph{GRPO objective}} \\
+    Algorithm & GRPO (TRL implementation) & --- \\
+    Loss type & \texttt{dapo} & TRL default \\
+    KL coefficient $\beta$ & $0.01$ & override $\dagger$ (TRL default $0.0$) \\
+    Clipping $\epsilon$ & $0.2$ & TRL default \\
+    Iterations per batch ($\mu$) & $1$ & TRL default \\
+    Reward scaling & group-level & TRL default \\
     \midrule
-    \multicolumn{2}{l}{\emph{Rollouts}} \\
-    Generations per prompt & $4$ \\
-    Per-device batch size (prompts) & $8$ \\
-    Gradient accumulation & $4$ \\
-    Effective generations per step & $128$ \\
-    Sampling temperature & $1.0$ \\
-    Top-$p$ & $1.0$ \\
-    Reward normalisation & group \\
-    Importance-sampling correction & enabled (cap $3.0$, sequence-mask) \\
+    \multicolumn{3}{l}{\emph{Optimisation}} \\
+    Optimiser & AdamW & TRL default \\
+    Learning rate & $5\times 10^{-6}$ & override $\dagger$ (TRL default $1\times 10^{-6}$) \\
+    Warmup ratio & $0.0$ & TRL default \\
+    Total training steps & $400$ & explicitly set \\
+    Precision & bf16 & override $\dagger$ (TRL default fp32) \\
+    Random seed & $42$ & TRL default \\
     \midrule
-    \multicolumn{2}{l}{\emph{Reward (shared terms)}} \\
-    Judge term $J_{\text{ens}}$ & mean of the two in-training judges, each in $[0,100]$ \\
-    Length-penalty shape & quadratic, $\alpha (r-1)^2$ \\
-    Length-penalty weight $\alpha$ & $100$ \\
-    Length ratio $r$ & generated word count / target word count \\
+    \multicolumn{3}{l}{\emph{Rollout sampling}} \\
+    Generations per prompt $G$ & $4$ & override $\dagger$ (TRL default $8$) \\
+    Per-device batch size (prompts) & $8$ ($= 2G$) & explicitly set \\
+    Gradient accumulation steps & $4$ & override $\dagger$ (TRL default $1$) \\
+    Effective generations per optimiser step & $128$ ($= G \cdot 8 \cdot 4$) & --- \\
+    Sampling temperature & $1.0$ & TRL default \\
+    Top-$p$ & $1.0$ & TRL default \\
+    Max completion length (tokens) & $260$ & override $\dagger$ (TRL default $256$) \\
+    Rewriter generation backend & HuggingFace \texttt{transformers.generate} & TRL default (\texttt{use\_vllm=False}) \\
     \midrule
-    \multicolumn{2}{l}{\emph{Reward (embed-sim variant)}} \\
-    Encoder & \texttt{intfloat/e5-large-v2} \\
-    Encoder prefix & \texttt{query:} \\
-    Hinge threshold $\tau$ & $0.85$ \\
-    Hinge weight $\beta_e$ & $20.0$ \\
-    Reward & $J_{\text{ens}} - \alpha(r-1)^2 - \beta_e \max\{0, \tau - \cos\}$ \\
-    \midrule
-    \multicolumn{2}{l}{\emph{Reward (NLI variant)}} \\
-    NLI model & \texttt{MoritzLaurer/ModernBERT-large-zeroshot-v2.0} \\
-    Direction & bidirectional, $(p_\text{fwd} + p_\text{bwd}) / 2$ \\
-    Scale & $\times 100$ to match judge range \\
-    Reward & $J_{\text{ens}} - \alpha(r-1)^2 + 100 \cdot (p_\text{fwd} + p_\text{bwd}) / 2$ \\
-    \midrule
-    \multicolumn{2}{l}{\emph{Data}} \\
-    Train paragraphs & $1{,}091$ \\
-    Eval paragraphs & $714$ \\
-    Stratification & clarity tertile $\times$ agreement tertile \\
+    \multicolumn{3}{l}{\emph{Length penalty}} \\
+    Shape & asymmetric cubic & --- \\
+    Length ratio & $r = w_\text{gen} / w_\text{target}$ & --- \\
+    Penalty value & $\alpha (r - 1)^2 + \gamma \cdot \mathbb{1}[r > 1 + \tau_o] \cdot (r - 1 - \tau_o)^3$ & --- \\
+    Quadratic weight $\alpha$ & $100$ & --- \\
+    Cubic overshoot weight $\gamma$ & $1{,}000$ & --- \\
+    Overshoot tolerance $\tau_o$ & $0.15$ & --- \\
     \bottomrule
   \end{tabular}
-  \caption{GRPO hyperparameters shared across all 36 panel configurations.}
+  \caption{GRPO and length-penalty hyperparameters. Settings flagged $\dagger$ are deliberate overrides relative to TRL 1.2.0 defaults. The length-penalty value combines a symmetric quadratic on the length ratio with an additional cubic term that activates only when the generation overshoots its target word count by more than $\tau_o = 15\%$; undershoots stay at the symmetric quadratic. The penalty is subtracted from each generation's rollout reward.}
   \label{tab:grpo-config}
 \end{table}
 
 \backlink{app:grpo-config}
 
-\input{appendix_nli_examples.tex}
-
-
-\section{Pairwise judge agreement and intra-rater reliability}\label{app:judge-correlation}
-
-\Cref{fig:judge-correlation} shows pairwise Spearman correlations between judges' scores on all originals: 1,805 human-written paragraphs (top row) and 1,805 LLM-written paragraphs (bottom row), separately for clarity (left) and informativeness (right). All correlations are computed between per-paragraph averages of 10 independent judge calls (from \texttt{attack\_judge\_repeated\_scores}). \Cref{tab:icc} reports ICC(1,1) for each judge across the 10 replicates over the full 3,610-paragraph reference, as a measure of test-retest reliability.
-
-\begin{table}[h]
-  \centering
-  \caption{Test-retest reliability ICC(1,1) per judge, computed across 10 independent calls on each of the 3,610 reference paragraphs (1,805 human + 1,805 LLM-written originals). Of the six judges, only \texttt{Qwen-2.5-9.5B} is fully deterministic (zero variance across replicates). The other five (\texttt{Llama-3.1-8B}, \texttt{Gemma-2-9B}, \texttt{Mistral-7B-v0.3}, \texttt{Phi-3.5-mini}, \texttt{Command-R-7B}) have non-zero call-to-call variability; ICCs are 0.88 (\texttt{Phi-3.5-mini} on informativeness) to 0.996 (\texttt{Gemma-2-9B} on clarity).}
-  \label{tab:icc}
-  \begin{tabular}{lrr}
-    \toprule
-    Judge & ICC(1,1) clarity & ICC(1,1) informativeness \\
-    \midrule
-    Qwen-2.5-9.5B    & 1.000 & 1.000 \\
-    Llama-3.1-8B     & 0.972 & 0.915 \\
-    Gemma-2-9B       & 0.996 & 0.992 \\
-    Mistral-7B-v0.3  & 0.985 & 0.974 \\
-    Phi-3.5-mini     & 0.979 & 0.879 \\
-    Command-R-7B     & 0.969 & 0.961 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=\linewidth]{fig_judge_correlation.png}
-  \caption{Pairwise Spearman correlation between judges, on the 3,610 reference paragraphs split by source. Top row: 1,805 human-written originals. Bottom row: 1,805 LLM-written originals (Claude-Sonnet-4 / DeepSeek-Chat-v3 / GPT-4o-latest, distributed across paragraphs). All correlations are computed on per-paragraph means across 10 independent judge calls. Of the six judges, only \texttt{Qwen-2.5-9.5B} is deterministic (ICC = 1.000); the other five (\texttt{Llama-3.1-8B}, \texttt{Gemma-2-9B}, \texttt{Mistral-7B-v0.3}, \texttt{Phi-3.5-mini}, \texttt{Command-R-7B}) have non-zero call-to-call variance with ICC values 0.88--0.996, so single-call correlations under-state the latent agreement. Cross-judge agreement is consistently lower on the LLM-written half of the reference than on the human-written half, especially on clarity, where AI scores cluster at the top of every judge's scale and the within-population variance available for ranking is smaller.}
-  \label{fig:judge-correlation}
-\end{figure}
-
-\backlink{app:judge-correlation}
-\section{Returns to increasing \texorpdfstring{$N$}{N} in Best-of-N}\label{app:bon-returns}
-
-For each (source paragraph $\times$ rewriter $\times$ criterion) cell of $K=16$ candidates from \texttt{bon\_candidate}, we sample 100 random orderings; the cumulative max along each ordering gives one realisation of the Best-of-$N$ curve $E[\max\text{-of-}N]$ for that cell, for $N \in \{1, \ldots, 16\}$. The per-cell expected max is the mean across the 100 samples; the curves shown plot the mean and 95\% confidence interval \emph{across cells}. Two metrics: the in-sample judge score (mean of \texttt{qwen95b}, \texttt{llama8b}, \texttt{gemma9b} on the matching criterion) and the mean bidirectional NLI ($\tfrac{1}{2}(\mathrm{NLI}_{\rightarrow} + \mathrm{NLI}_{\leftarrow})$).
-
-\Cref{fig:bon-returns} shows the overall curves pooled across all 4{,}284 cells. \Cref{fig:bon-returns-faceted} disaggregates the same data by criterion and rewriter base model.
-
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=\linewidth]{fig_bon_returns.png}
-  \caption{Best-of-$N$ curves on the \texttt{bon\_candidate} pool, pooled across all cells. Both curves are concave with diminishing returns: roughly half of the total gain is realised by $N=4$ and $\sim$80\% by $N=8$. The NLI curve plateaus near 0.71 — this is the upper bound that BoN-argmax-NLI can extract from the small-rewriter candidate distribution; matching GRPO-NLI's $\sim$0.87 mean NLI requires changing the generator, not enlarging $N$. Shaded ribbons: 95\% CI across cells.}
-  \label{fig:bon-returns}
-\end{figure}
-
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=\linewidth]{fig_bon_returns_faceted.png}
-  \caption{Best-of-$N$ curves faceted by rewriter (columns) and criterion (rows within each metric). Top half: in-sample judge score. Bottom half: mean bidirectional NLI. \texttt{Qwen2.5-1.5B} starts from substantially higher single-shot NLI ($N=1$ value $\approx 0.55$ vs $\approx 0.30$ for the other two rewriters) but caps at lower judge scores; \texttt{LFM2.5-1.2B} and \texttt{gemma-3-1B} achieve higher judge scores at the cost of much lower fidelity in the candidate distribution. Shaded ribbons: 95\% CI across cells.}
-  \label{fig:bon-returns-faceted}
-\end{figure}
-
-\backlink{app:bon-returns}
-
-\section{Bidirectional NLI examples}\label{app:nli-examples}
-
-For each of mean bidirectional NLI $\in \{0.5, 0.7, 0.9\}$, we show one (original, rewrite) pair generated by the na\"ive rewriting method. Mean NLI is $\tfrac{1}{2}(\mathrm{NLI}_{\rightarrow} + \mathrm{NLI}_{\leftarrow})$ where $\rightarrow$ is the probability that the rewrite entails the original (forward), and $\leftarrow$ the reverse (backward). Embedding cosine similarity is computed with \texttt{intfloat/e5-large-v2}.
-
-\subsection*{Mean NLI $\approx$ 0.5}
-
-\begin{description}\setlength{\itemsep}{0pt}\setlength{\parsep}{0pt}
-  \item[Proposition] The UK should legally recognize and protect all forms of transgender identity.
-  \item[Method] na\"ive~~(rewriter: Qwen2.5-1.5B)
-  \item[NLI fwd / bwd / mean] 0.064 / 0.930 / 0.497
-  \item[Embedding cosine] 0.880
-\end{description}
-
-\noindent\textbf{Original.}~~\textit{We live in a very difficult and troubled world where religion and identity seem to be the centre of a lot of issues. I feel that is we could iron out the opinions that transgender people are less entitled to an opinion, then society in general may be able to live side by side with all people no matter what their identity is. Transgender people have as much right as anyone else of their opinions and I feel sure many people could learn a lot of they could accept this and listen to them. It must be very frustrating for transgender people, which may not bring out the best in them.}
-
-\noindent\textbf{Rewrite.}~~\textit{In a world grappling with complex issues like religion and identity, it is crucial to recognize and protect the rights of all individuals, regardless of their transgender identity. By fostering an environment where all people, including transgender individuals, feel valued and respected, society can progress together. Transgender individuals, like others, deserve the right to express their opinions and should be encouraged to do so. Their experiences and perspectives can offer enriching insights that can help bridge gaps and promote understanding. It is essential that society listens to and embraces these voices, acknowledging the struggles and challenges they face. This approach can lead to a more inclusive and harmonious society where everyone can thrive.}
-
-\subsection*{Mean NLI $\approx$ 0.7}
-
-\begin{description}\setlength{\itemsep}{0pt}\setlength{\parsep}{0pt}
-  \item[Proposition] The UK should mandate COVID-19 vaccinations for all eligible citizens.
-  \item[Method] na\"ive~~(rewriter: Qwen2.5-1.5B)
-  \item[NLI fwd / bwd / mean] 0.405 / 0.991 / 0.698
-  \item[Embedding cosine] 0.908
-\end{description}
-
-\noindent\textbf{Original.}~~\textit{We saw so much delay during Covid and who knows how many lives were lost due to indecision, conspiracies and so on. I remember a fitness instructor who didn't want the vaccine because he had believed some false information about the vaccine and he subsequently died. He almost certainly would have lived if he had had the vaccine. There is a responsibility on ourselves to act in the best interests of the whole public, and we saw too many people acting selfishly. Therefore let's take away the indecision and move more quickly by making it mandatory to be vaccinated. It would save lives.}
-
-\noindent\textbf{Rewrite.}~~\textit{''''''A delay during the pandemic exposed our collective hesitancy. An example is a fitness instructor who died after rejecting the vaccine due to false beliefs. Had he been vaccinated, he likely would have survived. It's our responsibility to prioritize public welfare. We observed too much selfishness. Mandating vaccinations is necessary to save lives. It would take away indecision and expedite the process. Let's move forward with mandatory vaccinations.''''''}
-
-\subsection*{Mean NLI $\approx$ 0.9}
-
-\begin{description}\setlength{\itemsep}{0pt}\setlength{\parsep}{0pt}
-  \item[Proposition] The UK should ban internet use for under-14-year-olds.
-  \item[Method] na\"ive~~(rewriter: Qwen2.5-1.5B)
-  \item[NLI fwd / bwd / mean] 0.922 / 0.883 / 0.902
-  \item[Embedding cosine] 0.891
-\end{description}
-
-\noindent\textbf{Original.}~~\textit{The Internet is growing part of learning and development for younger people. Taking this away could hinder and not progress their education like it should. It could cause more stress leading to higher levels of school drop out and under achievement. There is a lot of reliance on technology and it is a big part of what people do and how people communicate. Taking this away would make males feel isolated and unaware of what others may be going on about. It could end up almost like a giant social click of boys against girls. If the concern is due to what can be found online then the ban would need to be implemented across the board not just aimed at males. There are resources which make it easy to monitor and restrict what can and cannot be accessed which may be more beneficial}
-
-\noindent\textbf{Rewrite.}~~\textit{The Internet plays a crucial role in younger people's education and development. Restricting internet use for underage individuals could stifle their learning and hinder their progress. This measure could also lead to increased stress and higher rates of school dropout and underachievement. Reliance on technology is pervasive; removing it would isolate males and limit their understanding of others. Implementing a blanket ban targeting both genders would make boys feel isolated and disconnected from their peers. If concerns about online content are valid, a comprehensive ban across all platforms would be more effective than restricting access to males alone.}
-
-\backlink{app:nli-examples}
-
-\section{Agreement-score regressor: training and evaluation}\label{app:agreement-score}
+\subsection{Agreement-score regressor: training and evaluation}\label{app:agreement-score}
 
 We use a learned regressor to predict the rater-aggregated stance label $y \in [0, 1]$ (where $y=0$ encodes ``argues against the proposition'', $y=1$ encodes ``argues for it'') for each (proposition, paragraph) pair. The regressor lets us score every rewrite in the eval set without running a fresh rater study, and is the backbone of the agreement-score change metric reported in the main results.
 
@@ -315,3 +188,81 @@ The downstream eval rewrites are LLM-generated, so we additionally test what hap
 After the diagnostic runs above had quantified generalisation behaviour, we retrained on the full dataset (every paragraph from every proposition except the val 5+5) with the same recipe, again selecting the best checkpoint on val MAE. The final model's val MAE is 0.0736 (Pearson 0.956). This is the model whose predictions are reported throughout the paper for the rewrite eval set; predictions are stored in \texttt{attack\_agreement\_scores\_v2} keyed by \texttt{rewrite\_id}.
 
 \backlink{app:agreement-score}
+
+\section{Additional Results}\label{app:additional-results}
+
+\subsection{Judge-score distributions for original and rewritten content}\label{app:reference-coverage}
+
+Our method for normalising judge scores faces a possible problem: if the range of reference distribution is smaller than the range of the distribution of judge scores that we seek to normalise, then potentially many judge scores will all be mapped to the 0th or 100th percentiles.
+
+The below chart shows that this is not a problem for us. We use all human-written and AI-written paragraphs from \citet{rottgerQuantifyingDistortiveImpacts2025} (filtering to only include those relating to the 40 propositions included in our experiments) as the reference distribution. Including AI-written paragraphs ensures that the reference distribution spans the same range of judge scores as the rewritten paragraphs.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{fig_s8_8_reference_coverage.png}
+  \caption{Distributions of judge scores for original (grey) and rewritten (orange) content, by judge model and criterion. Top two rows: in-sample judges (Qwen-2.5-9.5B, Llama-3.1-8B, Gemma-2-9B). Bottom two rows: out-of-sample judges (Mistral-7B-v0.3, Phi-3.5-mini, Command-R-7B). Within each judge, the upper panel shows clarity scores and the lower panel shows informativeness scores.}
+  \label{fig:reference-coverage}
+\end{figure}
+
+\backlink{app:reference-coverage}
+
+\subsection{Pairwise judge agreement and intra-rater reliability}\label{app:judge-correlation}
+
+\Cref{fig:judge-correlation} shows pairwise Spearman correlations between judges' scores on all originals: 1,805 human-written paragraphs (top row) and 1,805 LLM-written paragraphs (bottom row), separately for clarity (left) and informativeness (right). All correlations are computed between per-paragraph averages of 10 independent judge calls (from \texttt{attack\_judge\_repeated\_scores}). \Cref{tab:icc} reports ICC(1,1) for each judge across the 10 replicates over the full 3,610-paragraph reference, as a measure of test-retest reliability.
+
+\begin{table}[h]
+  \centering
+  \caption{Test-retest reliability ICC(1,1) per judge, computed across 10 independent calls on each of the 3,610 reference paragraphs (1,805 human + 1,805 LLM-written originals). Of the six judges, only \texttt{Qwen-2.5-9.5B} is fully deterministic (zero variance across replicates). The other five (\texttt{Llama-3.1-8B}, \texttt{Gemma-2-9B}, \texttt{Mistral-7B-v0.3}, \texttt{Phi-3.5-mini}, \texttt{Command-R-7B}) have non-zero call-to-call variability; ICCs are 0.88 (\texttt{Phi-3.5-mini} on informativeness) to 0.996 (\texttt{Gemma-2-9B} on clarity).}
+  \label{tab:icc}
+  \begin{tabular}{lrr}
+    \toprule
+    Judge & ICC(1,1) clarity & ICC(1,1) informativeness \\
+    \midrule
+    Qwen-2.5-9.5B    & 1.000 & 1.000 \\
+    Llama-3.1-8B     & 0.972 & 0.915 \\
+    Gemma-2-9B       & 0.996 & 0.992 \\
+    Mistral-7B-v0.3  & 0.985 & 0.974 \\
+    Phi-3.5-mini     & 0.979 & 0.879 \\
+    Command-R-7B     & 0.969 & 0.961 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{fig_judge_correlation.png}
+  \caption{Pairwise Spearman correlation between judges, on the 3,610 reference paragraphs split by source. Top row: 1,805 human-written originals. Bottom row: 1,805 LLM-written originals (Claude-Sonnet-4 / DeepSeek-Chat-v3 / GPT-4o-latest, distributed across paragraphs). All correlations are computed on per-paragraph means across 10 independent judge calls. Of the six judges, only \texttt{Qwen-2.5-9.5B} is deterministic (ICC = 1.000); the other five (\texttt{Llama-3.1-8B}, \texttt{Gemma-2-9B}, \texttt{Mistral-7B-v0.3}, \texttt{Phi-3.5-mini}, \texttt{Command-R-7B}) have non-zero call-to-call variance with ICC values 0.88--0.996, so single-call correlations under-state the latent agreement. Cross-judge agreement is consistently lower on the LLM-written half of the reference than on the human-written half, especially on clarity, where AI scores cluster at the top of every judge's scale and the within-population variance available for ranking is smaller.}
+  \label{fig:judge-correlation}
+\end{figure}
+
+\backlink{app:judge-correlation}
+
+\subsection{Returns to increasing \texorpdfstring{$N$}{N} in Best-of-N}\label{app:bon-returns}
+
+For each (source paragraph $\times$ rewriter $\times$ criterion) cell of $K=16$ candidates from \texttt{bon\_candidate}, we sample 100 random orderings; the cumulative max along each ordering gives one realisation of the Best-of-$N$ curve $E[\max\text{-of-}N]$ for that cell, for $N \in \{1, \ldots, 16\}$. The per-cell expected max is the mean across the 100 samples; the curves shown plot the mean and 95\% confidence interval \emph{across cells}. Two metrics: the in-sample judge score (mean of \texttt{qwen95b}, \texttt{llama8b}, \texttt{gemma9b} on the matching criterion) and the mean bidirectional NLI ($\tfrac{1}{2}(\mathrm{NLI}_{\rightarrow} + \mathrm{NLI}_{\leftarrow})$).
+
+\Cref{fig:bon-returns} shows the overall curves pooled across all 4{,}284 cells. \Cref{fig:bon-returns-faceted} disaggregates the same data by criterion and rewriter base model.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{fig_bon_returns.png}
+  \caption{Best-of-$N$ curves on the \texttt{bon\_candidate} pool, pooled across all cells. Both curves are concave with diminishing returns: roughly half of the total gain is realised by $N=4$ and $\sim$80\% by $N=8$. The NLI curve plateaus near 0.71 — this is the upper bound that BoN-argmax-NLI can extract from the small-rewriter candidate distribution; matching GRPO-NLI's $\sim$0.87 mean NLI requires changing the generator, not enlarging $N$. Shaded ribbons: 95\% CI across cells.}
+  \label{fig:bon-returns}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{fig_bon_returns_faceted.png}
+  \caption{Best-of-$N$ curves faceted by rewriter (columns) and criterion (rows within each metric). Top half: in-sample judge score. Bottom half: mean bidirectional NLI. \texttt{Qwen2.5-1.5B} starts from substantially higher single-shot NLI ($N=1$ value $\approx 0.55$ vs $\approx 0.30$ for the other two rewriters) but caps at lower judge scores; \texttt{LFM2.5-1.2B} and \texttt{gemma-3-1B} achieve higher judge scores at the cost of much lower fidelity in the candidate distribution. Shaded ribbons: 95\% CI across cells.}
+  \label{fig:bon-returns-faceted}
+\end{figure}
+
+\backlink{app:bon-returns}
+
+\input{appendix_nli_examples.tex}
+
+\section{Supplementary Materials}\label{app:supplementary}
+
+\input{appendix_judge_prompts.tex}
+
+\input{appendix_rewriter_prompts.tex}
