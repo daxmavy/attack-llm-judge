@@ -18,7 +18,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 DB = "/home/max/attack-llm-judge/data/paragraphs.db"
-MODEL_DIR = "/workspace/agreement_model_v2/final"
+MODEL_DIR = "/workspace/agreement_model_v2_full/final"
 MAX_LEN = 256
 BATCH = 64
 
