@@ -55,6 +55,7 @@ CRITERION_AGNOSTIC = {"naive", "original", "original_ai"}
 ATTACK_METHODS = [
     "naive", "lit_informed_tight", "rubric_aware", "icir",
     "bon_panel", "bon_panel_single", "bon_panel_nli", "bon_panel_single_nli",
+    "bon_panel_highnli", "bon_panel_mean3",
     "grpo_400step", "grpo_nli_400step", "grpo_nli_single",
     "lit_informed_tight_strictlen_opus47",
     "original", "original_ai",
