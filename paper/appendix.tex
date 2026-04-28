@@ -1,0 +1,317 @@
+\section{The unknown-judge formulation is a generalisation of the known-judge formulation}\label{app:proof}
+
+Suppose that the attacker is certain that a particular judge $\tilde{J}$ will be used. Under the unknown-judge formulation, their beliefs about what judges might be used to assess their documents are encoded in the probability distribution $\mu$ over judges $\mathcal{J}$. If they are certain that $\tilde{J}$ will be used, then $\mu$ is given by
+\begin{equation}
+    \mu(J) = \begin{cases}
+        1 & \text{if } J = \tilde{J} \\
+        0 & \text{otherwise}.
+    \end{cases}
+\end{equation}
+Then,
+\begin{equation}
+  \mathbb{E}_\mu[J(R(x))]  = \sum_{J \in \mathcal{J}} \mu(J) \cdot J(R(x)) = \tilde{J}(R(x)).
+\end{equation}
+Plugging this into \cref{eq:uncertain} yields \cref{eq:known}. Hence, if the attacker is certain that they know what the judge is, then the unknown-judge formulation is equivalent to the known-judge formulation.
+
+\backlink{app:proof}
+
+\section{Details on document corpus and evaluation \& training datasets}\label{app:corpus}
+
+\paragraph{Original dataset}
+
+We use documents from a corpus developed by \citet{rottgerQuantifyingDistortiveImpacts2025} for an upcoming publication.
+
+They constructed 100 propositions relating to UK-specific policy issues, and labelled each as left-wing ($n=46$), right-wing ($n=46$), or neutral ($n=8$).
+
+In the first stage of their experiment, they recruited a group of writers ($n = 1500$) from a Prolific UK representative sample. Each writer wrote a response to three propositions, yielding 4500 responses.
+
+Each human-written response was used as the basis for generating a LLM-generated response. This was achieved in the following way. Each human-written response was randomly allocated to one of GPT-4o, Claude Sonnet 4, or DeepSeek V3. Then, with equal probability, one of the following three prompts were used to produce a LLM-generated response:
+\begin{itemize}
+    \item Bullets-based ($n=1404$): all humans wrote bullet points explaining their opinion prior to writing their full response. The LLM was provided with these bullet points and prompted to write a full response.
+    \item Stance-based ($n=1358$): all humans provided a self-rated level of agreement with the proposition. The LLM was provided only with this agreement score, and prompted to write a response in alignment with this level of agreement.
+    \item Improve ($n=703$)/rewrite ($n=677$): The LLM was prompted to improve or rewrite the human-written response.
+\end{itemize}
+More details available at \citep[p.7]{rottgerQuantifyingDistortiveImpacts2025}.
+
+In the second stage of the experiment, they used a separate pool of participants ($n=10017$) to rate the perceived level of agreement each paragraph had with the proposition it was written in response to. These participants also rated documents according to criteria such as clarity and informativeness. Raters were not told that some responses were LLM-generated. Each rating was on a scale of 0-100, and each response received 9-19 (average of 10) ratings. We aggregate these human annotations for each document as document-level attribute scores.
+
+The primary attribute used in the current study is agreement\_score, which measures the extent to which a document agrees with the proposition it was written in response to. We use intraclass correlation to measure inter-rater reliability. While the reliability of individual rating scores was only $ICC(1) = 0.671$, the reliability of ratings aggregated for each response was much better, with $ICC(10) = 0.953$. This provides support for the validity  of using the aggregated human-annotated agreement\_score as a ground-truth measure of how much each document agreed with its proposition.
+
+\paragraph{Construction of training and evaluation samples}
+
+We measured the controversiality of a proposition by using the variance of the human-annotated agreement\_score of each proposition. Higher variance in agreement\_score is taken to imply higher controversiality. We did this to ensure that responses spanned a wide range of levels of agreement, rather than all agreeing or disagreeing with propositions. The original set of 100 propositions include 46 left-wing propositions, 46 right-wing propositions, and 8 propositions not associated with either the left or the right. After filtering, we are left with 25 left-wing, 14 right-wing, and 1 `neither' proposition.
+
+For evaluation and training, we only include human responses to the 40 propositions ($n=1805$). We split these responses 60/40 between training and evaluation. This split was achieved using stratified random sampling. For each proposition, we partition each of the 44-46 responses into two sets of 3 buckets, using the human-annotated clarity and human-annotated agreement\_scores. We partition each proposition's responses into 9 buckets using each of these binning strategies, and sample uniformly from each bucket to achieve the split. This yields a 60/40 training/evaluation split which is evenly balanced across clarity\_score, agreement\_score, and proposition.
+
+\backlink{app:corpus}
+
+\section{Judge-score distributions for original and rewritten content}\label{app:reference-coverage}
+
+Our method for normalising judge scores faces a possible problem: if the range of reference distribution is smaller than the range of the distribution of judge scores that we seek to normalise, then potentially many judge scores will all be mapped to the 0th or 100th percentiles.
+
+The below chart shows that this is not a problem for us. We use all human-written and AI-written paragraphs from \citet{rottgerQuantifyingDistortiveImpacts2025} (filtering to only include those relating to the 40 propositions included in our experiments) as the reference distribution. Including AI-written paragraphs ensures that the reference distribution spans the same range of judge scores as the rewritten paragraphs.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{fig_s8_8_reference_coverage.png}
+  \caption{Distributions of judge scores for original (grey) and rewritten (orange) content, by judge model and criterion. Top two rows: in-sample judges (Qwen-2.5-9.5B, Llama-3.1-8B, Gemma-2-9B). Bottom two rows: out-of-sample judges (Mistral-7B-v0.3, Phi-3.5-mini, Command-R-7B). Within each judge, the upper panel shows clarity scores and the lower panel shows informativeness scores.}
+  \label{fig:reference-coverage}
+\end{figure}
+
+\backlink{app:reference-coverage}
+
+\section{Regression specification for method effects}\label{app:regression}
+
+To estimate the average effect of each rewriting method on out-of-sample judge score, we fit
+\begin{equation}
+  \text{score}_i = \alpha + \sum_{m \neq \text{original}} \beta_m \, \mathbb{1}[\text{method}_i = m] + \varepsilon_i,
+\end{equation}
+where $i$ indexes a (rewrite, judge, criterion) observation. The reference category is \texttt{original} (untouched human paragraphs), so each $\beta_m$ is the \emph{average discrete difference} (ADD) in out-of-sample judge score between rewriting with method $m$ and not rewriting. Standard errors are cluster-robust at the source paragraph level. \Cref{tab:add-method-effects} reports the headline estimates.
+
+\input{tables/regression_method_effects.tex}
+
+We omit fixed effects for rewriter, judge, and criterion. \Cref{tab:fe-comparison} shows that adding a fixed effect for each \texttt{(method, rewriter)} cell leaves both the point estimates and the standard errors unchanged.
+
+\input{tables/regression_fe_comparison.tex}
+
+\backlink{app:regression}
+
+\input{appendix_judge_prompts.tex}
+
+\input{appendix_rewriter_prompts.tex}
+
+\section{GRPO finetuning hyperparameters}\label{app:grpo-config}
+
+\Cref{tab:grpo-config} lists the hyperparameters shared across all GRPO runs. Per-run knobs that vary across the panel — rewriter base, criterion, fold (which two judges supply feedback), and fidelity variant (embedding similarity vs.\ NLI) — are described inline in the main text.
+
+\begin{table}[h]
+  \centering\small
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{Group} & \textbf{Setting} \\
+    \midrule
+    \multicolumn{2}{l}{\emph{Optimisation}} \\
+    Algorithm & GRPO \\
+    Learning rate & $5\times10^{-6}$ \\
+    Optimiser & AdamW (default TRL) \\
+    KL coefficient $\beta$ & $0.01$ \\
+    Loss type & DAPO (TRL default) \\
+    Precision & bf16 \\
+    Total steps & $400$ \\
+    Random seed & $42$ \\
+    \midrule
+    \multicolumn{2}{l}{\emph{Rollouts}} \\
+    Generations per prompt & $4$ \\
+    Per-device batch size (prompts) & $8$ \\
+    Gradient accumulation & $4$ \\
+    Effective generations per step & $128$ \\
+    Sampling temperature & $1.0$ \\
+    Top-$p$ & $1.0$ \\
+    Reward normalisation & group \\
+    Importance-sampling correction & enabled (cap $3.0$, sequence-mask) \\
+    \midrule
+    \multicolumn{2}{l}{\emph{Reward (shared terms)}} \\
+    Judge term $J_{\text{ens}}$ & mean of the two in-training judges, each in $[0,100]$ \\
+    Length-penalty shape & quadratic, $\alpha (r-1)^2$ \\
+    Length-penalty weight $\alpha$ & $100$ \\
+    Length ratio $r$ & generated word count / target word count \\
+    \midrule
+    \multicolumn{2}{l}{\emph{Reward (embed-sim variant)}} \\
+    Encoder & \texttt{intfloat/e5-large-v2} \\
+    Encoder prefix & \texttt{query:} \\
+    Hinge threshold $\tau$ & $0.85$ \\
+    Hinge weight $\beta_e$ & $20.0$ \\
+    Reward & $J_{\text{ens}} - \alpha(r-1)^2 - \beta_e \max\{0, \tau - \cos\}$ \\
+    \midrule
+    \multicolumn{2}{l}{\emph{Reward (NLI variant)}} \\
+    NLI model & \texttt{MoritzLaurer/ModernBERT-large-zeroshot-v2.0} \\
+    Direction & bidirectional, $(p_\text{fwd} + p_\text{bwd}) / 2$ \\
+    Scale & $\times 100$ to match judge range \\
+    Reward & $J_{\text{ens}} - \alpha(r-1)^2 + 100 \cdot (p_\text{fwd} + p_\text{bwd}) / 2$ \\
+    \midrule
+    \multicolumn{2}{l}{\emph{Data}} \\
+    Train paragraphs & $1{,}091$ \\
+    Eval paragraphs & $714$ \\
+    Stratification & clarity tertile $\times$ agreement tertile \\
+    \bottomrule
+  \end{tabular}
+  \caption{GRPO hyperparameters shared across all 36 panel configurations.}
+  \label{tab:grpo-config}
+\end{table}
+
+\backlink{app:grpo-config}
+
+\input{appendix_nli_examples.tex}
+
+
+\section{Pairwise judge agreement and intra-rater reliability}\label{app:judge-correlation}
+
+\Cref{fig:judge-correlation} shows pairwise Spearman correlations between judges' scores on all originals: 1,805 human-written paragraphs (top row) and 1,805 LLM-written paragraphs (bottom row), separately for clarity (left) and informativeness (right). All correlations are computed between per-paragraph averages of 10 independent judge calls (from \texttt{attack\_judge\_repeated\_scores}). \Cref{tab:icc} reports ICC(1,1) for each judge across the 10 replicates over the full 3,610-paragraph reference, as a measure of test-retest reliability.
+
+\begin{table}[h]
+  \centering
+  \caption{Test-retest reliability ICC(1,1) per judge, computed across 10 independent calls on each of the 3,610 reference paragraphs (1,805 human + 1,805 LLM-written originals). Of the six judges, only \texttt{Qwen-2.5-9.5B} is fully deterministic (zero variance across replicates). The other five (\texttt{Llama-3.1-8B}, \texttt{Gemma-2-9B}, \texttt{Mistral-7B-v0.3}, \texttt{Phi-3.5-mini}, \texttt{Command-R-7B}) have non-zero call-to-call variability; ICCs are 0.88 (\texttt{Phi-3.5-mini} on informativeness) to 0.996 (\texttt{Gemma-2-9B} on clarity).}
+  \label{tab:icc}
+  \begin{tabular}{lrr}
+    \toprule
+    Judge & ICC(1,1) clarity & ICC(1,1) informativeness \\
+    \midrule
+    Qwen-2.5-9.5B    & 1.000 & 1.000 \\
+    Llama-3.1-8B     & 0.972 & 0.915 \\
+    Gemma-2-9B       & 0.996 & 0.992 \\
+    Mistral-7B-v0.3  & 0.985 & 0.974 \\
+    Phi-3.5-mini     & 0.979 & 0.879 \\
+    Command-R-7B     & 0.969 & 0.961 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{fig_judge_correlation.png}
+  \caption{Pairwise Spearman correlation between judges, on the 3,610 reference paragraphs split by source. Top row: 1,805 human-written originals. Bottom row: 1,805 LLM-written originals (Claude-Sonnet-4 / DeepSeek-Chat-v3 / GPT-4o-latest, distributed across paragraphs). All correlations are computed on per-paragraph means across 10 independent judge calls. Of the six judges, only \texttt{Qwen-2.5-9.5B} is deterministic (ICC = 1.000); the other five (\texttt{Llama-3.1-8B}, \texttt{Gemma-2-9B}, \texttt{Mistral-7B-v0.3}, \texttt{Phi-3.5-mini}, \texttt{Command-R-7B}) have non-zero call-to-call variance with ICC values 0.88--0.996, so single-call correlations under-state the latent agreement. Cross-judge agreement is consistently lower on the LLM-written half of the reference than on the human-written half, especially on clarity, where AI scores cluster at the top of every judge's scale and the within-population variance available for ranking is smaller.}
+  \label{fig:judge-correlation}
+\end{figure}
+
+\backlink{app:judge-correlation}
+\section{Returns to increasing \texorpdfstring{$N$}{N} in Best-of-N}\label{app:bon-returns}
+
+For each (source paragraph $\times$ rewriter $\times$ criterion) cell of $K=16$ candidates from \texttt{bon\_candidate}, we sample 100 random orderings; the cumulative max along each ordering gives one realisation of the Best-of-$N$ curve $E[\max\text{-of-}N]$ for that cell, for $N \in \{1, \ldots, 16\}$. The per-cell expected max is the mean across the 100 samples; the curves shown plot the mean and 95\% confidence interval \emph{across cells}. Two metrics: the in-sample judge score (mean of \texttt{qwen95b}, \texttt{llama8b}, \texttt{gemma9b} on the matching criterion) and the mean bidirectional NLI ($\tfrac{1}{2}(\mathrm{NLI}_{\rightarrow} + \mathrm{NLI}_{\leftarrow})$).
+
+\Cref{fig:bon-returns} shows the overall curves pooled across all 4{,}284 cells. \Cref{fig:bon-returns-faceted} disaggregates the same data by criterion and rewriter base model.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{fig_bon_returns.png}
+  \caption{Best-of-$N$ curves on the \texttt{bon\_candidate} pool, pooled across all cells. Both curves are concave with diminishing returns: roughly half of the total gain is realised by $N=4$ and $\sim$80\% by $N=8$. The NLI curve plateaus near 0.71 — this is the upper bound that BoN-argmax-NLI can extract from the small-rewriter candidate distribution; matching GRPO-NLI's $\sim$0.87 mean NLI requires changing the generator, not enlarging $N$. Shaded ribbons: 95\% CI across cells.}
+  \label{fig:bon-returns}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{fig_bon_returns_faceted.png}
+  \caption{Best-of-$N$ curves faceted by rewriter (columns) and criterion (rows within each metric). Top half: in-sample judge score. Bottom half: mean bidirectional NLI. \texttt{Qwen2.5-1.5B} starts from substantially higher single-shot NLI ($N=1$ value $\approx 0.55$ vs $\approx 0.30$ for the other two rewriters) but caps at lower judge scores; \texttt{LFM2.5-1.2B} and \texttt{gemma-3-1B} achieve higher judge scores at the cost of much lower fidelity in the candidate distribution. Shaded ribbons: 95\% CI across cells.}
+  \label{fig:bon-returns-faceted}
+\end{figure}
+
+\backlink{app:bon-returns}
+
+\section{Bidirectional NLI examples}\label{app:nli-examples}
+
+For each of mean bidirectional NLI $\in \{0.5, 0.7, 0.9\}$, we show one (original, rewrite) pair generated by the na\"ive rewriting method. Mean NLI is $\tfrac{1}{2}(\mathrm{NLI}_{\rightarrow} + \mathrm{NLI}_{\leftarrow})$ where $\rightarrow$ is the probability that the rewrite entails the original (forward), and $\leftarrow$ the reverse (backward). Embedding cosine similarity is computed with \texttt{intfloat/e5-large-v2}.
+
+\subsection*{Mean NLI $\approx$ 0.5}
+
+\begin{description}\setlength{\itemsep}{0pt}\setlength{\parsep}{0pt}
+  \item[Proposition] The UK should legally recognize and protect all forms of transgender identity.
+  \item[Method] na\"ive~~(rewriter: Qwen2.5-1.5B)
+  \item[NLI fwd / bwd / mean] 0.064 / 0.930 / 0.497
+  \item[Embedding cosine] 0.880
+\end{description}
+
+\noindent\textbf{Original.}~~\textit{We live in a very difficult and troubled world where religion and identity seem to be the centre of a lot of issues. I feel that is we could iron out the opinions that transgender people are less entitled to an opinion, then society in general may be able to live side by side with all people no matter what their identity is. Transgender people have as much right as anyone else of their opinions and I feel sure many people could learn a lot of they could accept this and listen to them. It must be very frustrating for transgender people, which may not bring out the best in them.}
+
+\noindent\textbf{Rewrite.}~~\textit{In a world grappling with complex issues like religion and identity, it is crucial to recognize and protect the rights of all individuals, regardless of their transgender identity. By fostering an environment where all people, including transgender individuals, feel valued and respected, society can progress together. Transgender individuals, like others, deserve the right to express their opinions and should be encouraged to do so. Their experiences and perspectives can offer enriching insights that can help bridge gaps and promote understanding. It is essential that society listens to and embraces these voices, acknowledging the struggles and challenges they face. This approach can lead to a more inclusive and harmonious society where everyone can thrive.}
+
+\subsection*{Mean NLI $\approx$ 0.7}
+
+\begin{description}\setlength{\itemsep}{0pt}\setlength{\parsep}{0pt}
+  \item[Proposition] The UK should mandate COVID-19 vaccinations for all eligible citizens.
+  \item[Method] na\"ive~~(rewriter: Qwen2.5-1.5B)
+  \item[NLI fwd / bwd / mean] 0.405 / 0.991 / 0.698
+  \item[Embedding cosine] 0.908
+\end{description}
+
+\noindent\textbf{Original.}~~\textit{We saw so much delay during Covid and who knows how many lives were lost due to indecision, conspiracies and so on. I remember a fitness instructor who didn't want the vaccine because he had believed some false information about the vaccine and he subsequently died. He almost certainly would have lived if he had had the vaccine. There is a responsibility on ourselves to act in the best interests of the whole public, and we saw too many people acting selfishly. Therefore let's take away the indecision and move more quickly by making it mandatory to be vaccinated. It would save lives.}
+
+\noindent\textbf{Rewrite.}~~\textit{''''''A delay during the pandemic exposed our collective hesitancy. An example is a fitness instructor who died after rejecting the vaccine due to false beliefs. Had he been vaccinated, he likely would have survived. It's our responsibility to prioritize public welfare. We observed too much selfishness. Mandating vaccinations is necessary to save lives. It would take away indecision and expedite the process. Let's move forward with mandatory vaccinations.''''''}
+
+\subsection*{Mean NLI $\approx$ 0.9}
+
+\begin{description}\setlength{\itemsep}{0pt}\setlength{\parsep}{0pt}
+  \item[Proposition] The UK should ban internet use for under-14-year-olds.
+  \item[Method] na\"ive~~(rewriter: Qwen2.5-1.5B)
+  \item[NLI fwd / bwd / mean] 0.922 / 0.883 / 0.902
+  \item[Embedding cosine] 0.891
+\end{description}
+
+\noindent\textbf{Original.}~~\textit{The Internet is growing part of learning and development for younger people. Taking this away could hinder and not progress their education like it should. It could cause more stress leading to higher levels of school drop out and under achievement. There is a lot of reliance on technology and it is a big part of what people do and how people communicate. Taking this away would make males feel isolated and unaware of what others may be going on about. It could end up almost like a giant social click of boys against girls. If the concern is due to what can be found online then the ban would need to be implemented across the board not just aimed at males. There are resources which make it easy to monitor and restrict what can and cannot be accessed which may be more beneficial}
+
+\noindent\textbf{Rewrite.}~~\textit{The Internet plays a crucial role in younger people's education and development. Restricting internet use for underage individuals could stifle their learning and hinder their progress. This measure could also lead to increased stress and higher rates of school dropout and underachievement. Reliance on technology is pervasive; removing it would isolate males and limit their understanding of others. Implementing a blanket ban targeting both genders would make boys feel isolated and disconnected from their peers. If concerns about online content are valid, a comprehensive ban across all platforms would be more effective than restricting access to males alone.}
+
+\backlink{app:nli-examples}
+
+\section{Agreement-score regressor: training and evaluation}\label{app:agreement-score}
+
+We use a learned regressor to predict the rater-aggregated stance label $y \in [0, 1]$ (where $y=0$ encodes ``argues against the proposition'', $y=1$ encodes ``argues for it'') for each (proposition, paragraph) pair. The regressor lets us score every rewrite in the eval set without running a fresh rater study, and is the backbone of the agreement-score change metric reported in the main results.
+
+\paragraph{Data.}
+The training data comes from the \texttt{paul\_data} aggregated rater dataset: 10{,}008 (proposition, paragraph) pairs across 100 propositions, with a continuous stance label $y$ obtained by averaging \texttt{writer\_stance} across human raters and rescaling to $[0, 1]$. Three paragraph sources contribute roughly equal volumes: 4{,}503 human-written paragraphs (\texttt{paragraph\_type}=\texttt{writer}), 4{,}503 LLM-written paragraphs across three model authors (\texttt{anthropic/claude-sonnet-4}, \texttt{deepseek/deepseek-chat-v3-0324}, \texttt{openai/chatgpt-4o-latest}, \texttt{paragraph\_type}=\texttt{model}), and 1{,}002 human-edited LLM paragraphs (\texttt{paragraph\_type}=\texttt{edited}). 40 of the 100 propositions are the \emph{controversial} subset used in the main experiments; the remaining 60 are \emph{non-controversial} pre-tests that did not make the controversial cut.
+
+\paragraph{Architecture.}
+\texttt{microsoft/deberta-v3-base} (140M parameters) with a single-output regression head, applied to the (proposition, paragraph) sentence pair via the standard sequence-classification API. Inputs are tokenised at \texttt{max\_length=256}; longer paragraphs are right-truncated. Outputs are clipped to $[0, 1]$ at inference time.
+
+\paragraph{Training procedure.}
+4 epochs of AdamW with linear warmup over the first 6\% of steps, learning rate $1\times10^{-5}$, weight decay 0.01, batch size 32, seed 42, fp32 precision (DeBERTa-v3 disentangled attention is unstable in bf16/fp16). MSE loss; we report mean absolute error (MAE) for interpretability. Best-checkpoint selection is on validation MAE.
+
+\paragraph{Hold-out strategy.}
+Three disjoint test tiers measure different generalisation regimes:
+\begin{itemize}\setlength{\itemsep}{0pt}
+  \item \textbf{Validation (val):} 5 random controversial + 5 random non-controversial propositions held out at the proposition level. All paragraphs from these 10 propositions form the validation set used for early-stopping / best-checkpoint selection.
+  \item \textbf{Paragraph-OOD test (\texttt{test\_para\_ood}):} for every other proposition, we hold out 10\% of paragraphs per (proposition, paragraph\_type) cell. These are unseen paragraphs from \emph{seen} propositions.
+  \item \textbf{Proposition-OOD test (\texttt{test\_prop\_ood}):} 10\% of the non-controversial propositions (excluding the val 5) are held out at the proposition level. These are unseen paragraphs from \emph{unseen} propositions.
+\end{itemize}
+The remaining 90\% of paragraphs in the included propositions form the training set. Splits are deterministic for seed 42, giving 7{,}647 train / 1{,}009 val / 755 \texttt{test\_para\_ood} / 597 \texttt{test\_prop\_ood} / 10{,}008 total.
+
+\paragraph{Evaluation metrics.}
+We report MAE and the 95th percentile of absolute error. We also report a stance-flip rate, which is the fraction of \emph{polar} paragraphs (those with $y < 0.25$ or $y > 0.75$) where the prediction lands in the opposite polar bucket: $\hat{y} > 0.75$ when $y < 0.25$, or $\hat{y} < 0.25$ when $y > 0.75$. This is the worst-case error mode for downstream agreement-score analysis: paragraphs whose \emph{direction} of stance has been mis-attributed.
+
+\paragraph{Hold-out evaluation results.}
+\Cref{tab:agreement-holdout} reports diagnostic metrics from the model trained on the train split only (with the three test tiers held out for evaluation). The cross-proposition test (\texttt{test\_prop\_ood}) does not show degradation relative to the within-proposition test (\texttt{test\_para\_ood}) — the model generalises across propositions without further error inflation. Across all 10{,}008 paragraphs the model produces \emph{zero} polar stance-flips (denominator: only paragraphs with $y \in [0, 0.25) \cup (0.75, 1]$).
+
+\begin{table}[h]
+  \centering\small
+  \caption{Hold-out evaluation of the agreement-score regressor (model trained on the train split with all three test tiers held out). Stance-flip rate is computed only over polar-truth paragraphs.}
+  \label{tab:agreement-holdout}
+  \begin{tabular}{lrrrr}
+    \toprule
+    Split & $n$ & MAE & p95 abs error & stance-flip rate \\
+    \midrule
+    \texttt{train} & 7{,}647 & 0.065 & 0.164 & 0\,/\,4777 (0.00\%) \\
+    \texttt{val} & 1{,}009 & 0.075 & 0.200 & 0\,/\,670 (0.00\%) \\
+    \texttt{test\_para\_ood} & 755 & 0.073 & 0.189 & 0\,/\,486 (0.00\%) \\
+    \texttt{test\_prop\_ood} & 597 & 0.071 & 0.198 & 0\,/\,358 (0.00\%) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+By paragraph source, errors are systematically larger for human paragraphs (writer) than for LLM-written paragraphs (model + edited): on \texttt{val}, MAE = 0.082 for writer and 0.068 for non-writer; on \texttt{test\_prop\_ood}, MAE = 0.081 for writer and 0.063 for non-writer. Human paragraphs carry more idiosyncratic stance variance per proposition, which the regressor mostly absorbs without polar flips but which dominates the residual error tail.
+
+\paragraph{Distribution-shift validation.}
+The downstream eval rewrites are LLM-generated, so we additionally test what happens when no LLM-written paragraphs appear in training. We re-train with the same recipe but restrict every in-distribution split (train/val/test\_para\_ood/test\_prop\_ood) to \texttt{paragraph\_type=writer} only, holding all 4{,}503 \texttt{model} paragraphs and all 1{,}002 \texttt{edited} paragraphs as completely held-out distribution-shift test slices. \Cref{tab:agreement-dist-shift} shows the result: on the never-seen LLM corpus the model has \emph{lower} MAE than on its own (human) validation set, and produces zero polar stance-flips on all 3{,}001 polar LLM paragraphs. LLM paragraphs are systematically less idiosyncratic per proposition than human ones, so direction-of-stance prediction transfers cleanly from human-trained to LLM data.
+
+\begin{table}[h]
+  \centering\small
+  \caption{Distribution-shift validation. Model trained on \emph{only} \texttt{writer} (human-written) paragraphs from non-val propositions; \texttt{model} (LLM-written) and \texttt{edited} paragraphs from all 100 propositions held out completely from training and validation. Reported on the best-checkpoint model.}
+  \label{tab:agreement-dist-shift}
+  \begin{tabular}{lrrrr}
+    \toprule
+    Split & $n$ & MAE & p95 abs error & stance-flip rate \\
+    \midrule
+    \multicolumn{5}{l}{\emph{In-distribution (writer-only)}} \\
+    \texttt{train} & 3{,}433 & 0.086 & 0.228 & 0\,/\,2047 (0.00\%) \\
+    \texttt{val} & 452 & 0.090 & 0.252 & 0\,/\,282 (0.00\%) \\
+    \texttt{test\_para\_ood} & 348 & 0.090 & 0.252 & 0\,/\,201 (0.00\%) \\
+    \texttt{test\_prop\_ood} & 270 & 0.101 & 0.280 & 0\,/\,147 (0.00\%) \\
+    \midrule
+    \multicolumn{5}{l}{\emph{Distribution-shift (held out completely)}} \\
+    \texttt{test\_dist\_shift\_model} & 4{,}503 & 0.080 & 0.221 & 0\,/\,3001 (0.00\%) \\
+    \texttt{test\_dist\_shift\_edited} & 1{,}002 & 0.087 & 0.229 & 1\,/\,613 (0.16\%) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Final model used for downstream analysis.}
+After the diagnostic runs above had quantified generalisation behaviour, we retrained on the full dataset (every paragraph from every proposition except the val 5+5) with the same recipe, again selecting the best checkpoint on val MAE. The final model's val MAE is 0.0736 (Pearson 0.956). This is the model whose predictions are reported throughout the paper for the rewrite eval set; predictions are stored in \texttt{attack\_agreement\_scores\_v2} keyed by \texttt{rewrite\_id}.
+
+\backlink{app:agreement-score}
