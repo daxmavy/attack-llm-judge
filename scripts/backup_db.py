@@ -63,8 +63,9 @@ def main():
     if not token:
         raise SystemExit("HF_TOKEN not set — source .env first")
 
-    tmp_dir = Path("/tmp/db_backup")
-    tmp_dir.mkdir(exist_ok=True)
+    # Use /workspace (200GB quota) not /tmp (root overlay is small + frequently full)
+    tmp_dir = Path("/workspace/tmp_db_backup")
+    tmp_dir.mkdir(exist_ok=True, parents=True)
     snap_path = tmp_dir / "paragraphs.db"
     sql_path = tmp_dir / "paragraphs.sql.gz"
 
