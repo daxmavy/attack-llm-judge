@@ -62,9 +62,11 @@ ATTACK_METHODS = [
 ]
 
 REWRITERS_3 = (
+    # name kept for backwards-compat; tuple now covers tiny tier + small tier
     "Qwen/Qwen2.5-1.5B-Instruct",
     "LiquidAI/LFM2.5-1.2B-Instruct",
     "google/gemma-3-1b-it",
+    "Qwen/Qwen3-8B",  # imported from singlejudge-big HF dataset
 )
 
 
