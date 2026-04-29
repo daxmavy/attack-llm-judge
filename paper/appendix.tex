@@ -175,21 +175,6 @@ After the diagnostic runs above had quantified generalisation behaviour, we retr
 
 \section{Additional Results}\label{app:additional-results}
 
-\subsection{Judge-score distributions for original and rewritten content}\label{app:reference-coverage}
-
-Our method for normalising judge scores faces a possible problem: if the range of reference distribution is smaller than the range of the distribution of judge scores that we seek to normalise, then potentially many judge scores will all be mapped to the 0th or 100th percentiles.
-
-The below chart shows that this is not a problem for us. We use all human-written and AI-written paragraphs from \citet{rottgerQuantifyingDistortiveImpacts2025} (filtering to only include those relating to the 40 propositions included in our experiments) as the reference distribution. Including AI-written paragraphs ensures that the reference distribution spans the same range of judge scores as the rewritten paragraphs.
-
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=\linewidth]{fig_s8_8_reference_coverage.png}
-  \caption{Distributions of judge scores for original (grey) and rewritten (orange) content, by judge model and criterion. Top two rows: feedback judges (Qwen-3.5-9B, Llama-3.1-8B, Gemma-2-9B). Bottom two rows: evaluation judges (Mistral-7B-v0.3, Phi-3.5-mini, Command-R-7B). Within each judge, the upper panel shows clarity scores and the lower panel shows informativeness scores.}
-  \label{fig:reference-coverage}
-\end{figure}
-
-\backlink{app:reference-coverage}
-
 \subsection{Pairwise judge agreement and intra-rater reliability}\label{app:judge-correlation}
 
 \Cref{fig:judge-correlation} shows pairwise Spearman correlations between judges' scores on all originals: 1,805 human-written paragraphs (top row) and 1,805 LLM-written paragraphs (bottom row), separately for clarity (left) and informativeness (right). All correlations are computed between per-paragraph averages of 10 independent judge calls (from \texttt{attack\_judge\_repeated\_scores}). \Cref{tab:icc} reports ICC(1,1) for each judge across the 10 replicates over the full 3,610-paragraph reference, as a measure of test-retest reliability.
