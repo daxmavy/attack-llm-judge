@@ -196,13 +196,13 @@ The below chart shows that this is not a problem for us. We use all human-writte
 
 \begin{table}[h]
   \centering
-  \caption{Test-retest reliability ICC(1,1) per judge, computed across 10 independent calls on each of the 3,610 reference paragraphs (1,805 human + 1,805 LLM-written originals). Of the six judges, only \texttt{Qwen-2.5-9.5B} is fully deterministic (zero variance across replicates). The other five (\texttt{Llama-3.1-8B}, \texttt{Gemma-2-9B}, \texttt{Mistral-7B-v0.3}, \texttt{Phi-3.5-mini}, \texttt{Command-R-7B}) have non-zero call-to-call variability; ICCs are 0.88 (\texttt{Phi-3.5-mini} on informativeness) to 0.996 (\texttt{Gemma-2-9B} on clarity).}
+  \caption{Test-retest reliability ICC(1,1) per judge, computed across 10 independent calls on each of the 3,610 reference paragraphs (1,805 human + 1,805 LLM-written originals). Of the six judges, only \texttt{Qwen-3.5-9B} is fully deterministic (zero variance across replicates). The other five (\texttt{Llama-3.1-8B}, \texttt{Gemma-2-9B}, \texttt{Mistral-7B-v0.3}, \texttt{Phi-3.5-mini}, \texttt{Command-R-7B}) have non-zero call-to-call variability; ICCs are 0.88 (\texttt{Phi-3.5-mini} on informativeness) to 0.996 (\texttt{Gemma-2-9B} on clarity).}
   \label{tab:icc}
   \begin{tabular}{lrr}
     \toprule
     Judge & ICC(1,1) clarity & ICC(1,1) informativeness \\
     \midrule
-    Qwen-2.5-9.5B    & 1.000 & 1.000 \\
+    Qwen-3.5-9B    & 1.000 & 1.000 \\
     Llama-3.1-8B     & 0.972 & 0.915 \\
     Gemma-2-9B       & 0.996 & 0.992 \\
     Mistral-7B-v0.3  & 0.985 & 0.974 \\
@@ -215,7 +215,7 @@ The below chart shows that this is not a problem for us. We use all human-writte
 \begin{figure}[h]
   \centering
   \includegraphics[width=\linewidth]{fig_judge_correlation.png}
-  \caption{Pairwise Spearman correlation between judges, on the 3,610 reference paragraphs split by source. Top row: 1,805 human-written originals. Bottom row: 1,805 LLM-written originals (Claude-Sonnet-4 / DeepSeek-Chat-v3 / GPT-4o-latest, distributed across paragraphs). All correlations are computed on per-paragraph means across 10 independent judge calls. Of the six judges, only \texttt{Qwen-2.5-9.5B} is deterministic (ICC = 1.000); the other five (\texttt{Llama-3.1-8B}, \texttt{Gemma-2-9B}, \texttt{Mistral-7B-v0.3}, \texttt{Phi-3.5-mini}, \texttt{Command-R-7B}) have non-zero call-to-call variance with ICC values 0.88--0.996, so single-call correlations under-state the latent agreement. Cross-judge agreement is consistently lower on the LLM-written half of the reference than on the human-written half, especially on clarity, where AI scores cluster at the top of every judge's scale and the within-population variance available for ranking is smaller.}
+  \caption{Pairwise Spearman correlation between judges, on the 3,610 reference paragraphs split by source. Top row: 1,805 human-written originals. Bottom row: 1,805 LLM-written originals (Claude-Sonnet-4 / DeepSeek-Chat-v3 / GPT-4o-latest, distributed across paragraphs). All correlations are computed on per-paragraph means across 10 independent judge calls. Of the six judges, only \texttt{Qwen-3.5-9B} is deterministic (ICC = 1.000); the other five (\texttt{Llama-3.1-8B}, \texttt{Gemma-2-9B}, \texttt{Mistral-7B-v0.3}, \texttt{Phi-3.5-mini}, \texttt{Command-R-7B}) have non-zero call-to-call variance with ICC values 0.88--0.996, so single-call correlations under-state the latent agreement. Cross-judge agreement is consistently lower on the LLM-written half of the reference than on the human-written half, especially on clarity, where AI scores cluster at the top of every judge's scale and the within-population variance available for ranking is smaller.}
   \label{fig:judge-correlation}
 \end{figure}
 
