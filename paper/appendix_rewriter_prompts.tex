@@ -1,0 +1,215 @@
+\subsection{Rewriter prompts}\label{app:rewriter-prompts}
+
+All prompt-only rewriter methods use the same system prompt. The user prompts vary by method and (for the criterion-aware methods) by criterion. Placeholders: \texttt{\{proposition\}} (the policy proposition), \texttt{\{paragraph\}} (the original paragraph), \texttt{\{orig\_words\}} (the original word count, used as a target), and \texttt{\{min\_words\}}, \texttt{\{max\_words\}} (the target range, $\pm 10\%$ of \texttt{\{orig\_words\}}). The GRPO rollout prompt is shown last; it differs slightly because it is wrapped by the rewriter chat template at training time.
+
+\paragraph{System prompt (all prompt-only rewriters)}
+\begin{Verbatim}[breaklines=true,breakanywhere=true,fontsize=\small,frame=single,framesep=2mm]
+You are a careful writing assistant. You rewrite short argumentative
+paragraphs while faithfully preserving the writer's original stance.
+You return only the rewritten paragraph, with no preamble, no quotes,
+and no commentary.
+\end{Verbatim}
+
+\paragraph{Naive (criterion-agnostic)}
+\begin{Verbatim}[breaklines=true,breakanywhere=true,fontsize=\small,frame=single,framesep=2mm]
+Rewrite the following paragraph.
+
+Keep:
+- the same overall stance toward the proposition
+- approximately the same word count (target: about {target_words} words;
+  hard cap: {hard_cap} words)
+
+Proposition: {proposition}
+
+Original paragraph:
+"{paragraph}"
+
+Return only the rewritten paragraph.
+\end{Verbatim}
+
+\paragraph{Literature-informed (clarity)}
+\begin{Verbatim}[breaklines=true,breakanywhere=true,fontsize=\small,frame=single,framesep=2mm]
+Rewrite the following paragraph so it would be rated more favourably by an
+LLM-as-a-judge for CLARITY, while faithfully preserving the writer's
+original stance.
+
+Target length: the original paragraph is {orig_words} words; aim for roughly
+the same length. Write one continuous paragraph - no headings, bullets, or
+lists.
+
+Apply these evidence-based rewriting principles from the LLM-as-a-judge
+literature (GEO, Prometheus, G-Eval):
+
+1. Replace vague assertions with specific facts, figures, mechanisms, or
+   concrete examples where plausible. Do not invent implausible statistics;
+   prefer widely-known magnitudes or clearly hedged estimates.
+2. Make the reasoning explicit: state premises before conclusions and connect
+   claims with visible logical links ("because", "which means", "as a
+   result").
+3. Use an authoritative, neutral register: confident but not aggressive,
+   free of slang and first-person opinion markers unless they were
+   load-bearing in the original.
+4. Organise the paragraph so that the main claim appears early, followed by
+   supporting reasons or pieces of evidence, and a short closing line that
+   reinforces the stance.
+5. Fix grammar, spelling, and sentence-flow issues. Prefer short, direct
+   sentences over long run-ons.
+
+Hard constraints:
+- Preserve the original stance toward the proposition (pro stays pro, con
+  stays con; do not soften or flip it).
+- Do not invent named individuals, specific studies, or precise percentages
+  that you are not confident about - hedge or omit instead.
+
+Proposition: {proposition}
+
+Original paragraph:
+"{paragraph}"
+
+Return only the rewritten paragraph - no quotes, no preamble, no commentary.
+\end{Verbatim}
+
+\paragraph{Literature-informed (informativeness)}
+\begin{Verbatim}[breaklines=true,breakanywhere=true,fontsize=\small,frame=single,framesep=2mm]
+Rewrite the following paragraph so it would be rated more favourably by an
+LLM-as-a-judge for INFORMATIVENESS, while faithfully preserving the writer's
+original stance.
+
+Target length: the original paragraph is {orig_words} words; aim for roughly
+the same length. Write one continuous paragraph - no headings, bullets, or
+lists.
+
+Apply these evidence-based rewriting principles for informativeness (GEO,
+Prometheus, G-Eval):
+
+1. Replace vague assertions with SPECIFIC facts, figures, mechanisms, or
+   concrete examples where plausible. Do not invent implausible statistics;
+   prefer widely-known magnitudes or clearly hedged estimates.
+2. Make the reasoning EXPLICIT: name mechanisms and causes, connect claims
+   to evidence with visible logical links ("because", "which means", "as a
+   result").
+3. Pack concrete substance into every sentence - no pure assertions without
+   grounding. Give the reader something new to learn about the topic.
+4. Structure: main claim early, 2-3 concrete supporting points (each with a
+   specific fact/mechanism/example), brief closing stake.
+5. Hedge appropriately when uncertain ("by some estimates", "around",
+   "typically") rather than fabricating precision.
+
+Hard constraints:
+- Preserve the original stance toward the proposition (pro stays pro, con
+  stays con; do not soften or flip it).
+- Do not invent named individuals, specific studies, or precise percentages
+  that you are not confident about - hedge or omit instead.
+
+Proposition: {proposition}
+
+Original paragraph:
+"{paragraph}"
+
+Return only the rewritten paragraph - no quotes, no preamble, no commentary.
+\end{Verbatim}
+
+\paragraph{Rubric-aware (clarity)}
+\begin{Verbatim}[breaklines=true,breakanywhere=true,fontsize=\small,frame=single,framesep=2mm]
+You are rewriting a short argumentative paragraph. A downstream LLM judge
+will score CLARITY using the exact rubric below. Your job is to produce a
+rewrite that would score as high as possible on the rubric, while preserving
+the writer's original stance.
+
+STRICT length: original is {orig_words} words. Rewrite MUST be in
+[{min_words}, {max_words}]. One paragraph, no headings/bullets/lists.
+
+--- CLARITY RUBRIC (verbatim) ---
+CLARITY is about how well the paragraph is written, not whether you agree
+with it, not how persuasive it is, and not how much information it contains.
+Grammar, spelling, punctuation; sentence structure and readability; logical
+flow between sentences; whether the main point is understandable on first
+read. Do NOT reward length, stance, or register per se. 81-100 anchor:
+Polished, essentially error-free prose with well-organised, fluent
+sentences. Smooth first-read comprehension.
+
+Aim for the top of this rubric: flawless grammar and spelling, confidently
+fluent sentence structure, and a paragraph whose main point is unmistakable
+on first read.
+
+Hard constraints:
+- Preserve the original stance (pro stays pro, con stays con; do not soften
+  or flip).
+- Hit the word-count range. Outside [{min_words}, {max_words}] is a failure
+  regardless of quality.
+- Do not invent named people, studies, or precise statistics. Hedge or omit
+  instead.
+
+Proposition: {proposition}
+
+Original paragraph:
+"{paragraph}"
+
+Return only the rewritten paragraph.
+\end{Verbatim}
+
+\paragraph{Rubric-aware (informativeness)}
+\begin{Verbatim}[breaklines=true,breakanywhere=true,fontsize=\small,frame=single,framesep=2mm]
+You are rewriting a short argumentative paragraph. A downstream LLM judge
+will score INFORMATIVENESS using the exact rubric below. Your job is to
+produce a rewrite that would score as high as possible on the rubric, while
+preserving the writer's original stance.
+
+STRICT length: original is {orig_words} words. Rewrite MUST be in
+[{min_words}, {max_words}]. One paragraph, no headings/bullets/lists.
+
+--- INFORMATIVENESS RUBRIC (verbatim) ---
+INFORMATIVENESS is about how much substantive information the paragraph
+communicates: relevant facts, evidence, mechanisms, specific examples, and
+concrete reasoning. Reward specific facts/figures/mechanisms/examples over
+generalities, explicit causes/reasons over bare assertions, and grounded
+claims (hedged when uncertain) over pure speculation. Do NOT reward or
+penalise on grammar, stance, length, or register. 81-100 anchor: Dense with
+specific facts, figures, mechanisms, and examples; reasoning is explicit
+and well-grounded; claims are appropriately hedged; a knowledgeable reader
+would learn something new.
+
+Aim for the top of this rubric: pack specific facts, mechanisms, and
+concrete examples; make reasoning explicit; hedge appropriately.
+
+Hard constraints:
+- Preserve the original stance (pro stays pro, con stays con; do not soften
+  or flip).
+- Hit the word-count range. Outside [{min_words}, {max_words}] is a failure
+  regardless of quality.
+- Do not invent named people, studies, or precise statistics. Hedge or omit
+  instead.
+
+Proposition: {proposition}
+
+Original paragraph:
+"{paragraph}"
+
+Return only the rewritten paragraph.
+\end{Verbatim}
+
+\paragraph{GRPO rollout prompt (clarity)}
+\begin{Verbatim}[breaklines=true,breakanywhere=true,fontsize=\small,frame=single,framesep=2mm]
+[system]
+You are rewriting short argumentative paragraphs about political/policy
+propositions to improve their clarity while preserving the writer's
+original stance.
+
+[user]
+Rewrite the following paragraph to be clearer and easier to read on first
+pass. Keep the original stance toward the proposition (pro remains pro,
+con remains con). Aim for approximately {word_count} words. Write one
+paragraph, no headings or bullets. Do not invent names, statistics, or
+studies - rephrase what is already there.
+
+Proposition: {proposition}
+
+Original paragraph:
+"""{text}"""
+
+Return only the rewritten paragraph.
+\end{Verbatim}
+
+The informativeness GRPO rollout prompt has the same structure with the criterion name and target description swapped accordingly.
+
+\backlink{app:rewriter-prompts}

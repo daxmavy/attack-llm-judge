@@ -435,20 +435,24 @@
 
 
 \RequirePackage{hyperref}
-\RequirePackage[pageref]{backref}
+% backref is loaded only when natbib is active; with biblatex, use its
+% built-in backref=true option instead (the two packages are incompatible).
+\if@natbib
+  \RequirePackage[pageref]{backref}
 
-% ── Bibliography backlinks ──────────────────────────────────────────
-% Customize the backref string that appears after each bib entry
-\renewcommand*{\backref}[1]{}
-\renewcommand*{\backrefalt}[4]{%
-  \ifcase #1 %
-    \relax% no citations
-  \or
-    {\small(cited on p.\,#2)}%
-  \else
-    {\small(cited on pp.\,#2)}%
-  \fi
-}
+  % ── Bibliography backlinks ──────────────────────────────────────────
+  % Customize the backref string that appears after each bib entry
+  \renewcommand*{\backref}[1]{}
+  \renewcommand*{\backrefalt}[4]{%
+    \ifcase #1 %
+      \relax% no citations
+    \or
+      {\small(cited on p.\,#2)}%
+    \else
+      {\small(cited on pp.\,#2)}%
+    \fi
+  }
+\fi
 
 % ── Appendix backlinks ─────────────────────────────────────────────
 % \appref{label} — use in main text; drops a backlink anchor at first call site

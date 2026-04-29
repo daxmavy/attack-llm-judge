@@ -1,0 +1,17 @@
+\begin{table}[h]
+  \centering
+  \caption{Average discrete difference (ADD) in out-of-sample judge score from rewriting with each method relative to leaving the human paragraph unchanged. Out-of-sample judges are Mistral-7B-v0.3, Phi-3.5-mini, and Command-R-7B; observations span both clarity and informativeness criteria. Standard errors are cluster-robust at the source paragraph level. Reference category: \texttt{original} (untouched human paragraphs). Estimates and confidence intervals computed via \texttt{marginaleffects.avg\_comparisons}.}
+  \label{tab:add-method-effects}
+  \begin{tabular}{lrrrrr}
+    \toprule
+    Method & ADD & SE & 95\% CI low & 95\% CI high & $t$ \\
+    \midrule
+    Na\"ive                &  18.12 & 0.358 &  17.42 &  18.82 &   50.6 \\
+    Rubric-aware           &  19.43 & 0.354 &  18.74 &  20.12 &   54.9 \\
+    GRPO-NLI               &  19.00 & 0.359 &  18.30 &  19.71 &   52.9 \\
+    Lit-informed (tight)   &  23.52 & 0.359 &  22.82 &  24.23 &   65.6 \\
+    BoN (panel)            &  26.20 & 0.371 &  25.47 &  26.93 &   70.7 \\
+    GRPO                   &  26.72 & 0.359 &  26.01 &  27.42 &   74.4 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

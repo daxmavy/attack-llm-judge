@@ -1,0 +1,13 @@
+\begin{table}[h]
+  \centering
+  \caption{Predictive performance of paraphrase-similarity metrics for stance preservation. AUROC reports how often a stance-preserving rewrite outranks a stance-flipping one — equivalently, the AUROC for predicting preservation from the metric. AUPRC is reported for the rare \emph{flip} class (base rate 9.9\%) and so measures how informative each metric is about which rewrites flip stance, even though flips are uncommon. Computed on 60,214 rewrites of paragraphs with extreme original v2 agreement ($\leq 25$ or $\geq 75$).}
+  \label{tab:preservation-prediction}
+  \begin{tabular}{lrr}
+    \toprule
+    Metric & AUROC & AUPRC \\
+    \midrule
+    mean bidirectional NLI           & 0.909 & 0.539 \\
+    e5-large-v2 cosine similarity    & 0.771 & 0.234 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

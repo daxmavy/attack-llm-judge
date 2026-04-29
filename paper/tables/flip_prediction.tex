@@ -1,0 +1,13 @@
+\begin{table}[h]
+  \centering
+  \caption{Predictive performance of paraphrase-similarity metrics for stance flips. AUROC ranks rewrites by the metric and asks how often a non-flipper outranks a flipper. AUPRC focuses on the (rare) flip class; positive-class base rate is 9.9\%. Computed on 60,214 rewrites of paragraphs with extreme original v2 agreement ($\leq 0.25$ or $\geq 0.75$).}
+  \label{tab:flip-prediction}
+  \begin{tabular}{lrr}
+    \toprule
+    Metric & AUROC & AUPRC \\
+    \midrule
+    mean bidirectional NLI           & 0.909 & 0.539 \\
+    e5-large-v2 cosine similarity    & 0.771 & 0.234 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

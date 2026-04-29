@@ -1,0 +1,2130 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.3 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{none/global//global/global/global}
+    \entry{sunChatGPTGoodSearch2023}{inproceedings}{}{}
+      \name{author}{8}{}{%
+        {{hash=4781c42e169c246c010c5100fbd708e4}{%
+           family={Sun},
+           familyi={S\bibinitperiod},
+           given={Weiwei},
+           giveni={W\bibinitperiod}}}%
+        {{hash=d34e71bf5964593df973f37a897055df}{%
+           family={Yan},
+           familyi={Y\bibinitperiod},
+           given={Lingyong},
+           giveni={L\bibinitperiod}}}%
+        {{hash=43aa7beb99bf5590e74b6cd104d38617}{%
+           family={Ma},
+           familyi={M\bibinitperiod},
+           given={Xinyu},
+           giveni={X\bibinitperiod}}}%
+        {{hash=643e7d4623069c06fde728f3a80e9613}{%
+           family={Wang},
+           familyi={W\bibinitperiod},
+           given={Shuaiqiang},
+           giveni={S\bibinitperiod}}}%
+        {{hash=385459b24114f2472dccc149bc2f21c1}{%
+           family={Ren},
+           familyi={R\bibinitperiod},
+           given={Pengjie},
+           giveni={P\bibinitperiod}}}%
+        {{hash=65cde5120c4ec8d9e5762295e5ab9f51}{%
+           family={Chen},
+           familyi={C\bibinitperiod},
+           given={Zhumin},
+           giveni={Z\bibinitperiod}}}%
+        {{hash=866fc31d9db55acbc0a55c2b3c929414}{%
+           family={Yin},
+           familyi={Y\bibinitperiod},
+           given={Dawei},
+           giveni={D\bibinitperiod}}}%
+        {{hash=1941235203150251e261846fd02f2008}{%
+           family={Ren},
+           familyi={R\bibinitperiod},
+           given={Zhaochun},
+           giveni={Z\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Singapore}%
+      }
+      \list{publisher}{1}{%
+        {Association for Computational Linguistics}%
+      }
+      \strng{namehash}{87c910996158f3cabe5898574747dd98}
+      \strng{fullhash}{3fe60926f0060bd60391c71730b58187}
+      \strng{fullhashraw}{3fe60926f0060bd60391c71730b58187}
+      \strng{bibnamehash}{87c910996158f3cabe5898574747dd98}
+      \strng{authorbibnamehash}{87c910996158f3cabe5898574747dd98}
+      \strng{authornamehash}{87c910996158f3cabe5898574747dd98}
+      \strng{authorfullhash}{3fe60926f0060bd60391c71730b58187}
+      \strng{authorfullhashraw}{3fe60926f0060bd60391c71730b58187}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{booktitle}{Proceedings of the 2023 {{Conference}} on {{Empirical Methods}} in {{Natural Language Processing}}}
+      \field{langid}{english}
+      \field{shorttitle}{Is {{ChatGPT Good}} at {{Search}}?}
+      \field{title}{Is {{ChatGPT Good}} at {{Search}}? {{Investigating Large Language Models}} as {{Re-Ranking Agents}}}
+      \field{urlday}{27}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2023}
+      \field{urldateera}{ce}
+      \field{pages}{14918\bibrangedash 14937}
+      \range{pages}{20}
+      \verb{doi}
+      \verb 10.18653/v1/2023.emnlp-main.923
+      \endverb
+      \verb{file}
+      \verb /Users/daxmavy/Zotero/storage/VRARMZ6A/Sun et al. - 2023 - Is ChatGPT Good at Search Investigating Large Language Models as Re-Ranking Agents.pdf
+      \endverb
+    \endentry
+    \entry{chatterjiHowPeopleUse2025}{report}{}{}
+      \name{author}{7}{}{%
+        {{hash=5be50f62eeb7487f0783e149c639999f}{%
+           family={Chatterji},
+           familyi={C\bibinitperiod},
+           given={Aaron},
+           giveni={A\bibinitperiod}}}%
+        {{hash=935e981d4569397996d415eb2440e42b}{%
+           family={Cunningham},
+           familyi={C\bibinitperiod},
+           given={Thomas},
+           giveni={T\bibinitperiod}}}%
+        {{hash=2f3041724128a3c13e8fe67a8728f166}{%
+           family={Deming},
+           familyi={D\bibinitperiod},
+           given={David},
+           giveni={D\bibinitperiod}}}%
+        {{hash=eeef6b15d0b94f3de1d491eb72045596}{%
+           family={Hitzig},
+           familyi={H\bibinitperiod},
+           given={Zoe},
+           giveni={Z\bibinitperiod}}}%
+        {{hash=9d264e30f978d56f6af7180cec40b650}{%
+           family={Ong},
+           familyi={O\bibinitperiod},
+           given={Christopher},
+           giveni={C\bibinitperiod}}}%
+        {{hash=5f88799eb0a2a7a152c37d4bd6ade1ab}{%
+           family={Shan},
+           familyi={S\bibinitperiod},
+           given={Carl\bibnamedelima Yan},
+           giveni={C\bibinitperiod\bibinitdelim Y\bibinitperiod}}}%
+        {{hash=f2878b2d587860c9b58dd11a1d9c5548}{%
+           family={Wadman},
+           familyi={W\bibinitperiod},
+           given={Kevin},
+           giveni={K\bibinitperiod}}}%
+      }
+      \list{institution}{1}{%
+        {National Bureau of Economic Research}%
+      }
+      \list{location}{1}{%
+        {Cambridge, MA}%
+      }
+      \strng{namehash}{97baa7e0801f0ae0793268425cc28618}
+      \strng{fullhash}{93bb7572c459d73f6ad506e73d6c8e80}
+      \strng{fullhashraw}{93bb7572c459d73f6ad506e73d6c8e80}
+      \strng{bibnamehash}{97baa7e0801f0ae0793268425cc28618}
+      \strng{authorbibnamehash}{97baa7e0801f0ae0793268425cc28618}
+      \strng{authornamehash}{97baa7e0801f0ae0793268425cc28618}
+      \strng{authorfullhash}{93bb7572c459d73f6ad506e73d6c8e80}
+      \strng{authorfullhashraw}{93bb7572c459d73f6ad506e73d6c8e80}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{langid}{english}
+      \field{month}{9}
+      \field{number}{w34255}
+      \field{title}{How {{People Use ChatGPT}}}
+      \field{type}{techreport}
+      \field{urlday}{10}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2025}
+      \field{urldateera}{ce}
+      \field{pages}{w34255}
+      \range{pages}{-1}
+      \verb{doi}
+      \verb 10.3386/w34255
+      \endverb
+      \verb{file}
+      \verb /Users/daxmavy/Zotero/storage/KAJU82IK/Chatterji et al. - 2025 - How People Use ChatGPT.pdf
+      \endverb
+    \endentry
+    \entry{coffeeBillionDollarQuestionHangs2025}{article}{}{}
+      \name{author}{1}{}{%
+        {{hash=5b08023b4ec79ae4c17d4c1ffe02bb4e}{%
+           family={Coffee},
+           familyi={C\bibinitperiod},
+           given={Patrick},
+           giveni={P\bibinitperiod}}}%
+      }
+      \strng{namehash}{5b08023b4ec79ae4c17d4c1ffe02bb4e}
+      \strng{fullhash}{5b08023b4ec79ae4c17d4c1ffe02bb4e}
+      \strng{fullhashraw}{5b08023b4ec79ae4c17d4c1ffe02bb4e}
+      \strng{bibnamehash}{5b08023b4ec79ae4c17d4c1ffe02bb4e}
+      \strng{authorbibnamehash}{5b08023b4ec79ae4c17d4c1ffe02bb4e}
+      \strng{authornamehash}{5b08023b4ec79ae4c17d4c1ffe02bb4e}
+      \strng{authorfullhash}{5b08023b4ec79ae4c17d4c1ffe02bb4e}
+      \strng{authorfullhashraw}{5b08023b4ec79ae4c17d4c1ffe02bb4e}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Do marketers need to completely rethink their search strategies, or is AI search optimization simply a complement to traditional SEO?}
+      \field{chapter}{C Suite}
+      \field{issn}{0099-9660}
+      \field{journaltitle}{Wall Street Journal}
+      \field{langid}{american}
+      \field{month}{12}
+      \field{title}{A {{Billion-Dollar Question Hangs Over}} the {{New AI Search Marketing Industry}}}
+      \field{urlday}{27}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2025}
+      \field{urldateera}{ce}
+      \verb{file}
+      \verb /Users/daxmavy/Zotero/storage/LMJZIZP2/a-billion-dollar-question-hangs-over-the-new-ai-search-marketing-industry-06a039ec.html
+      \endverb
+      \keyw{ADBE,Adobe,artificial intelligence,Artificial Intelligence Technologies,Artificial Intelligence/Machine Learning,C&E Industry News Filter,Computer Science,Content Types,corporate,Corporate/Industrial News,Earnings,EXPE,Expedia Group,Factiva Filters,Financial Performance,GCAPI,general news,Generative AI,humanities,industrial news,LINK|i1-WP-WSJ-0003190162,LINK|i2-WP-WSJ-0003190162,machine learning,new products,New Products/Services,political,Political/General News,products,Products/Services,Risk Topics - Artificial Intelligence,sciences,Sciences/Humanities,SEMR,Semrush,SEMrush Holdings,services,SYND,Technology,WSJ-PRO-WSJ.com}
+    \endentry
+    \entry{kanekoParaphrasingAdversarialAttack2026}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=b219708875748797da32779ef2d7caaa}{%
+           family={Kaneko},
+           familyi={K\bibinitperiod},
+           given={Masahiro},
+           giveni={M\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {arXiv}%
+      }
+      \strng{namehash}{b219708875748797da32779ef2d7caaa}
+      \strng{fullhash}{b219708875748797da32779ef2d7caaa}
+      \strng{fullhashraw}{b219708875748797da32779ef2d7caaa}
+      \strng{bibnamehash}{b219708875748797da32779ef2d7caaa}
+      \strng{authorbibnamehash}{b219708875748797da32779ef2d7caaa}
+      \strng{authornamehash}{b219708875748797da32779ef2d7caaa}
+      \strng{authorfullhash}{b219708875748797da32779ef2d7caaa}
+      \strng{authorfullhashraw}{b219708875748797da32779ef2d7caaa}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{The use of large language models (LLMs) in peer review systems has attracted growing attention, making it essential to examine their potential vulnerabilities. Prior attacks rely on prompt injection, which alters manuscript content and conflates injection susceptibility with evaluation robustness. We propose the Paraphrasing Adversarial Attack (PAA), a black-box optimization method that searches for paraphrased sequences yielding higher review scores while preserving semantic equivalence and linguistic naturalness. PAA leverages in-context learning, using previous paraphrases and their scores to guide candidate generation. Experiments across five ML and NLP conferences with three LLM reviewers and five attacking models show that PAA consistently increases review scores without changing the paper's claims. Human evaluation confirms that generated paraphrases maintain meaning and naturalness. We also find that attacked papers exhibit increased perplexity in reviews, offering a potential detection signal, and that paraphrasing submissions can partially mitigate attacks.}
+      \field{title}{Paraphrasing {{Adversarial Attack}} on {{LLM-as-a-Reviewer}}}
+      \field{urlday}{18}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{doi}
+      \verb 10.48550/ARXIV.2601.06884
+      \endverb
+      \keyw{Artificial Intelligence (cs.AI),Computation and Language (cs.CL),FOS: Computer and information sciences,Machine Learning (cs.LG)}
+    \endentry
+    \entry{liLLMsCannotReliably2025}{misc}{}{}
+      \name{author}{9}{}{%
+        {{hash=a47826b7c67d54fa80bbcb456ef1d37b}{%
+           family={Li},
+           familyi={L\bibinitperiod},
+           given={Songze},
+           giveni={S\bibinitperiod}}}%
+        {{hash=57eb9f8e0f0249a7ceb6efe8e0ac7ead}{%
+           family={Xu},
+           familyi={X\bibinitperiod},
+           given={Chuokun},
+           giveni={C\bibinitperiod}}}%
+        {{hash=1680f10bef7ce90d669884980e0c787e}{%
+           family={Wang},
+           familyi={W\bibinitperiod},
+           given={Jiaying},
+           giveni={J\bibinitperiod}}}%
+        {{hash=7d584a4ffabdd48f2e06dea445ca1876}{%
+           family={Gong},
+           familyi={G\bibinitperiod},
+           given={Xueluan},
+           giveni={X\bibinitperiod}}}%
+        {{hash=da31f56113cb61a1fef7cf7543eefff8}{%
+           family={Chen},
+           familyi={C\bibinitperiod},
+           given={Chen},
+           giveni={C\bibinitperiod}}}%
+        {{hash=e3cde80dca309b34fef4e4da6cda6a8c}{%
+           family={Zhang},
+           familyi={Z\bibinitperiod},
+           given={Jirui},
+           giveni={J\bibinitperiod}}}%
+        {{hash=2f3ea981fa5a715a69118b48e576a9f5}{%
+           family={Wang},
+           familyi={W\bibinitperiod},
+           given={Jun},
+           giveni={J\bibinitperiod}}}%
+        {{hash=09cce3661eca85e3cae079f09ea411e5}{%
+           family={Lam},
+           familyi={L\bibinitperiod},
+           given={Kwok-Yan},
+           giveni={K\bibinithyphendelim Y\bibinitperiod}}}%
+        {{hash=6468302f7741c170edc641669f883ce7}{%
+           family={Ji},
+           familyi={J\bibinitperiod},
+           given={Shouling},
+           giveni={S\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {arXiv}%
+      }
+      \strng{namehash}{2cd881e2dc7703f35bbf710b3a06f84f}
+      \strng{fullhash}{0f7240b2f187a16c67c0a1f11a73e2fa}
+      \strng{fullhashraw}{0f7240b2f187a16c67c0a1f11a73e2fa}
+      \strng{bibnamehash}{2cd881e2dc7703f35bbf710b3a06f84f}
+      \strng{authorbibnamehash}{2cd881e2dc7703f35bbf710b3a06f84f}
+      \strng{authornamehash}{2cd881e2dc7703f35bbf710b3a06f84f}
+      \strng{authorfullhash}{0f7240b2f187a16c67c0a1f11a73e2fa}
+      \strng{authorfullhashraw}{0f7240b2f187a16c67c0a1f11a73e2fa}
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{Large Language Models (LLMs) have demonstrated exceptional capabilities across diverse tasks, driving the development and widespread adoption of LLM-as-a-Judge systems for automated evaluation, including red teaming and benchmarking. However, these systems are susceptible to adversarial attacks that can manipulate evaluation outcomes, raising critical concerns about their robustness and trustworthiness. Existing evaluation methods for LLM-based judges are often fragmented and lack a unified framework for comprehensive robustness assessment. Furthermore, the impact of prompt template design and model selection on judge robustness has rarely been explored, and their performance in real-world deployments remains largely unverified. To address these gaps, we introduce RobustJudge, a fully automated and scalable framework designed to systematically evaluate the robustness of LLM-as-a-Judge systems. Specifically, RobustJudge investigates the effectiveness of 15 attack methods and 7 defense strategies across 12 models (RQ1), examines the impact of prompt template design and model selection (RQ2), and evaluates the security of real-world deployments (RQ3). Our study yields three key findings: (1) LLM-as-a-Judge systems are highly vulnerable to attacks such as PAIR and combined attacks, while defense mechanisms such as re-tokenization and LLM-based detectors can provide enhanced protection; (2) robustness varies substantially across prompt templates (up to 40\%); (3) deploying RobustJudge on Alibaba's PAI platform uncovers previously undiscovered vulnerabilities. These results offer practical insights for building trustworthy LLM-as-a-Judge systems.}
+      \field{shorttitle}{{{LLMs Cannot Reliably Judge}} ({{Yet}}?}
+      \field{title}{{{LLMs Cannot Reliably Judge}} ({{Yet}}?): {{A Comprehensive Assessment}} on the {{Robustness}} of {{LLM-as-a-Judge}}}
+      \field{urlday}{18}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2025}
+      \field{urldateera}{ce}
+      \verb{doi}
+      \verb 10.48550/ARXIV.2506.09443
+      \endverb
+      \keyw{Cryptography and Security (cs.CR),FOS: Computer and information sciences}
+    \endentry
+    \entry{zhengCheatingAutomaticLLM2024b}{inproceedings}{}{}
+      \name{author}{6}{}{%
+        {{hash=d47b1b7a6b9a06ec99dd332088961e5a}{%
+           family={Zheng},
+           familyi={Z\bibinitperiod},
+           given={Xiaosen},
+           giveni={X\bibinitperiod}}}%
+        {{hash=bf5bd089a9f0f76dd422647e3701bcf2}{%
+           family={Pang},
+           familyi={P\bibinitperiod},
+           given={Tianyu},
+           giveni={T\bibinitperiod}}}%
+        {{hash=bc20802f575175c5666ccc401f133f6f}{%
+           family={Du},
+           familyi={D\bibinitperiod},
+           given={Chao},
+           giveni={C\bibinitperiod}}}%
+        {{hash=17a3ae7efe3a50945c17cf4309f42f3e}{%
+           family={Liu},
+           familyi={L\bibinitperiod},
+           given={Qian},
+           giveni={Q\bibinitperiod}}}%
+        {{hash=78f8ffda028131a2ad3f19fb3e42cdb7}{%
+           family={Jiang},
+           familyi={J\bibinitperiod},
+           given={Jing},
+           giveni={J\bibinitperiod}}}%
+        {{hash=d2827b813d1d73df44360201e3296bea}{%
+           family={Lin},
+           familyi={L\bibinitperiod},
+           given={Min},
+           giveni={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{089e3c8faaa01d9c9b425e5d6b3b34c1}
+      \strng{fullhash}{b0d5137708589fd6cb4355d5009aa230}
+      \strng{fullhashraw}{b0d5137708589fd6cb4355d5009aa230}
+      \strng{bibnamehash}{089e3c8faaa01d9c9b425e5d6b3b34c1}
+      \strng{authorbibnamehash}{089e3c8faaa01d9c9b425e5d6b3b34c1}
+      \strng{authornamehash}{089e3c8faaa01d9c9b425e5d6b3b34c1}
+      \strng{authorfullhash}{b0d5137708589fd6cb4355d5009aa230}
+      \strng{authorfullhashraw}{b0d5137708589fd6cb4355d5009aa230}
+      \field{extraname}{1}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{Automatic LLM benchmarks, such as AlpacaEval 2.0, Arena-Hard-Auto, and MT-Bench, have become popular for evaluating language models due to their cost-effectiveness and scalability compared to human evaluation. Achieving high win rates on these benchmarks can significantly boost the promotional impact of newly released language models. This promotional benefit may motivate tricks, such as manipulating model output length or style to game win rates, even though several mechanisms have been developed to control length and disentangle style to reduce gameability. Nonetheless, we show that even a **"null model"** that always outputs a **constant** response (*irrelevant to input instructions*) can cheat automatic benchmarks and achieve top-ranked win rates: an \$86.5\textbackslash\textbackslash\%\$ LC win rate on AlpacaEval 2.0; an \$83.0\$ score on Arena-Hard-Auto; and a \$9.55\$ score on MT-Bench. Moreover, the crafted cheating outputs are **transferable** because we assume that the instructions of these benchmarks (e.g., \$805\$ samples of AlpacaEval 2.0) are *private* and cannot be accessed. While our experiments are primarily proof-of-concept, an adversary could use LLMs to generate more imperceptible cheating responses, unethically benefiting from high win rates and promotional impact. Our findings call for the development of anti-cheating mechanisms for reliable automatic benchmarks. The code is available at https://github.com/sail-sg/Cheating-LLM-Benchmarks.}
+      \field{booktitle}{The {{Thirteenth International Conference}} on {{Learning Representations}}}
+      \field{langid}{english}
+      \field{month}{1}
+      \field{shorttitle}{Cheating {{Automatic LLM Benchmarks}}}
+      \field{title}{Cheating {{Automatic LLM Benchmarks}}: {{Null Models Achieve High Win Rates}}}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2025}
+      \field{urldateera}{ce}
+      \verb{file}
+      \verb /Users/daxmavy/Zotero/storage/C82I7ZUQ/Zheng et al. - 2024 - Cheating Automatic LLM Benchmarks Null Models Achieve High Win Rates.pdf
+      \endverb
+    \endentry
+    \entry{rottgerQuantifyingDistortiveImpacts2025}{misc}{}{}
+      \name{author}{5}{}{%
+        {{hash=ac25e0d7adb3ef6ecaa7e0e8e689f480}{%
+           family={Röttger},
+           familyi={R\bibinitperiod},
+           given={Paul},
+           giveni={P\bibinitperiod}}}%
+        {{hash=074d0eb68a2eeb3a63e792d51ef70c9e}{%
+           family={Hackenburg},
+           familyi={H\bibinitperiod},
+           given={Kobi},
+           giveni={K\bibinitperiod}}}%
+        {{hash=178edd1e6c53267595cc6d85c6775c11}{%
+           family={Kirk},
+           familyi={K\bibinitperiod},
+           given={Hannah\bibnamedelima Rose},
+           giveni={H\bibinitperiod\bibinitdelim R\bibinitperiod}}}%
+        {{hash=460909209014ce11714ba7d75523ebc8}{%
+           family={Hovy},
+           familyi={H\bibinitperiod},
+           given={Dirk},
+           giveni={D\bibinitperiod}}}%
+        {{hash=ed019276942690ecdd159abe6884b6d6}{%
+           family={Summerfield},
+           familyi={S\bibinitperiod},
+           given={Chris},
+           giveni={C\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {OSF Registries}%
+      }
+      \strng{namehash}{cdbf4bbf0510e066c7986af4b917b6ce}
+      \strng{fullhash}{36e62cb9554ed31bd44bbb9369077992}
+      \strng{fullhashraw}{36e62cb9554ed31bd44bbb9369077992}
+      \strng{bibnamehash}{cdbf4bbf0510e066c7986af4b917b6ce}
+      \strng{authorbibnamehash}{cdbf4bbf0510e066c7986af4b917b6ce}
+      \strng{authornamehash}{cdbf4bbf0510e066c7986af4b917b6ce}
+      \strng{authorfullhash}{36e62cb9554ed31bd44bbb9369077992}
+      \strng{authorfullhashraw}{36e62cb9554ed31bd44bbb9369077992}
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Our study investigates whether the use of Large Language Models (LLMs) for writing assistance systematically distorts how others perceive LLM users and the opinions they express. The study employs a two-phase design: In Phase 1 (Writing), participants ("writers'') report their demographic characteristics and then respond to political propositions by providing numeric stance ratings, opinion bullet points and opinion paragraphs. Writers also report their emotional states while writing, their issue knowledge and how important each issue is to them. For each proposition, each writer is then randomly assigned to one of three LLMs, which generates a version of the writer's opinion paragraph based on one of three randomly assigned input conditions. Writers can edit these AI-generated paragraphs and select which version they prefer for communicating their views. In Phase 2 (Rating), participants ("raters''), who are distinct from the Phase 1 writers, evaluate the paragraphs produced in Phase 1, without knowing the provenance of the paragraphs. Raters assess paragraph attributes (e.g. originality), make inferences about writer attributes (e.g. issue knowledge), writer personality traits (e.g. optimism), as well as writer demographics and emotional states. This design allows for measuring systematic differences in how human-written versus AI-assisted content is perceived, quantifying potential distortive effects of LLM writing assistance.}
+      \field{eprinttype}{OSF Registries}
+      \field{title}{Quantifying the {{Distortive Impacts}} of {{LLM Writing Assistance}}}
+      \field{urlday}{9}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2025}
+      \field{urldateera}{ce}
+      \verb{doi}
+      \verb 10.17605/OSF.IO/6EXF2
+      \endverb
+      \keyw{Computer Sciences,FOS: Political science,FOS: Psychology,Physical Sciences and Mathematics,Political Science,Psychology,Social and Behavioral Sciences}
+    \endentry
+    \entry{aaIntelligenceIndex}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=60a0f8adc747278c54843aa94bef2613}{%
+           family={{Artificial Analysis}},
+           familyi={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \strng{bibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorbibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \field{extraname}{1}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Artificial Analysis}
+      \field{title}{Artificial Analysis Intelligence Index}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index
+      \endverb
+      \verb{url}
+      \verb https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index
+      \endverb
+    \endentry
+    \entry{mistralaiMistral7BInstructV03}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=5f46782611de55f109003b4dac1b83e0}{%
+           family={{Mistral AI}},
+           familyi={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{5f46782611de55f109003b4dac1b83e0}
+      \strng{fullhash}{5f46782611de55f109003b4dac1b83e0}
+      \strng{fullhashraw}{5f46782611de55f109003b4dac1b83e0}
+      \strng{bibnamehash}{5f46782611de55f109003b4dac1b83e0}
+      \strng{authorbibnamehash}{5f46782611de55f109003b4dac1b83e0}
+      \strng{authornamehash}{5f46782611de55f109003b4dac1b83e0}
+      \strng{authorfullhash}{5f46782611de55f109003b4dac1b83e0}
+      \strng{authorfullhashraw}{5f46782611de55f109003b4dac1b83e0}
+      \field{extraname}{1}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Hugging Face}
+      \field{month}{5}
+      \field{title}{Mistral-7B-Instruct-v0.3 (Model Card)}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2024}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3
+      \endverb
+      \verb{url}
+      \verb https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3
+      \endverb
+    \endentry
+    \entry{aaMistral7BInstruct}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=60a0f8adc747278c54843aa94bef2613}{%
+           family={{Artificial Analysis}},
+           familyi={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \strng{bibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorbibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \field{extraname}{2}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Artificial Analysis}
+      \field{title}{Mistral 7B Instruct: Intelligence, Performance \& Price Analysis}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://artificialanalysis.ai/models/mistral-7b-instruct
+      \endverb
+      \verb{url}
+      \verb https://artificialanalysis.ai/models/mistral-7b-instruct
+      \endverb
+    \endentry
+    \entry{microsoftPhi35MiniInstruct}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=140864078aeca1c7c35b4beb33c53c34}{%
+           family={{Microsoft}},
+           familyi={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{fullhash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{fullhashraw}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{bibnamehash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{authorbibnamehash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{authornamehash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{authorfullhash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{authorfullhashraw}{140864078aeca1c7c35b4beb33c53c34}
+      \field{extraname}{1}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Hugging Face}
+      \field{month}{8}
+      \field{title}{Phi-3.5-mini-instruct (Model Card)}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2024}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://huggingface.co/microsoft/Phi-3.5-mini-instruct
+      \endverb
+      \verb{url}
+      \verb https://huggingface.co/microsoft/Phi-3.5-mini-instruct
+      \endverb
+    \endentry
+    \entry{aaPhi3Mini}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=60a0f8adc747278c54843aa94bef2613}{%
+           family={{Artificial Analysis}},
+           familyi={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \strng{bibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorbibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \field{extraname}{3}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Artificial Analysis}
+      \field{note}{Used as a proxy for Phi-3.5-mini (Phi-3.5-mini does not have a dedicated Artificial Analysis page)}
+      \field{title}{Phi-3 Mini: Intelligence, Performance \& Price Analysis}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://artificialanalysis.ai/models/phi-3-mini
+      \endverb
+      \verb{url}
+      \verb https://artificialanalysis.ai/models/phi-3-mini
+      \endverb
+    \endentry
+    \entry{cohereCommandR7B}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=92aae82448f3fa97cce68fece5e493fd}{%
+           family={{Cohere Labs}},
+           familyi={C\bibinitperiod}}}%
+      }
+      \strng{namehash}{92aae82448f3fa97cce68fece5e493fd}
+      \strng{fullhash}{92aae82448f3fa97cce68fece5e493fd}
+      \strng{fullhashraw}{92aae82448f3fa97cce68fece5e493fd}
+      \strng{bibnamehash}{92aae82448f3fa97cce68fece5e493fd}
+      \strng{authorbibnamehash}{92aae82448f3fa97cce68fece5e493fd}
+      \strng{authornamehash}{92aae82448f3fa97cce68fece5e493fd}
+      \strng{authorfullhash}{92aae82448f3fa97cce68fece5e493fd}
+      \strng{authorfullhashraw}{92aae82448f3fa97cce68fece5e493fd}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Hugging Face}
+      \field{month}{12}
+      \field{title}{C4AI Command-R7B-12-2024 (Model Card)}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2024}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://huggingface.co/CohereLabs/c4ai-command-r7b-12-2024
+      \endverb
+      \verb{url}
+      \verb https://huggingface.co/CohereLabs/c4ai-command-r7b-12-2024
+      \endverb
+    \endentry
+    \entry{qwenQwen3535BA3BCard}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=4622c4bb7444dadba22813c2addff5e7}{%
+           family={{Qwen Team}},
+           familyi={Q\bibinitperiod}}}%
+      }
+      \strng{namehash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{fullhash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{fullhashraw}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{bibnamehash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{authorbibnamehash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{authornamehash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{authorfullhash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{authorfullhashraw}{4622c4bb7444dadba22813c2addff5e7}
+      \field{extraname}{1}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Hugging Face}
+      \field{month}{2}
+      \field{title}{Qwen3.5-35B-A3B (Model Card)}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://huggingface.co/Qwen/Qwen3.5-35B-A3B
+      \endverb
+      \verb{url}
+      \verb https://huggingface.co/Qwen/Qwen3.5-35B-A3B
+      \endverb
+    \endentry
+    \entry{aaQwen3535BA3B}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=60a0f8adc747278c54843aa94bef2613}{%
+           family={{Artificial Analysis}},
+           familyi={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \strng{bibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorbibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \field{extraname}{4}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Artificial Analysis}
+      \field{title}{Qwen3.5 35B A3B: Intelligence, Performance \& Price Analysis}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://artificialanalysis.ai/models/qwen3-5-35b-a3b
+      \endverb
+      \verb{url}
+      \verb https://artificialanalysis.ai/models/qwen3-5-35b-a3b
+      \endverb
+    \endentry
+    \entry{googleGemini25FlashLiteAnnounce}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=8b36e9207c24c76e6719268e49201d94}{%
+           family={{Google}},
+           familyi={G\bibinitperiod}}}%
+      }
+      \strng{namehash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{fullhash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{fullhashraw}{8b36e9207c24c76e6719268e49201d94}
+      \strng{bibnamehash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{authorbibnamehash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{authornamehash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{authorfullhash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{authorfullhashraw}{8b36e9207c24c76e6719268e49201d94}
+      \field{extraname}{1}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Google Developers Blog}
+      \field{month}{7}
+      \field{title}{Gemini 2.5 Flash-Lite is now stable and generally available}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2025}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://developers.googleblog.com/en/gemini-25-flash-lite-is-now-stable-and-generally-available/
+      \endverb
+      \verb{url}
+      \verb https://developers.googleblog.com/en/gemini-25-flash-lite-is-now-stable-and-generally-available/
+      \endverb
+    \endentry
+    \entry{aaGemini25FlashLite}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=60a0f8adc747278c54843aa94bef2613}{%
+           family={{Artificial Analysis}},
+           familyi={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \strng{bibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorbibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \field{extraname}{5}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Artificial Analysis}
+      \field{title}{Gemini 2.5 Flash-Lite: Intelligence, Performance \& Price Analysis}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://artificialanalysis.ai/models/gemini-2-5-flash-lite
+      \endverb
+      \verb{url}
+      \verb https://artificialanalysis.ai/models/gemini-2-5-flash-lite
+      \endverb
+    \endentry
+    \entry{xiaomiMimoV2FlashCard}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=516581a2ce920b9bc16a9c5004a023b8}{%
+           family={{Xiaomi}},
+           familyi={X\bibinitperiod}}}%
+      }
+      \strng{namehash}{516581a2ce920b9bc16a9c5004a023b8}
+      \strng{fullhash}{516581a2ce920b9bc16a9c5004a023b8}
+      \strng{fullhashraw}{516581a2ce920b9bc16a9c5004a023b8}
+      \strng{bibnamehash}{516581a2ce920b9bc16a9c5004a023b8}
+      \strng{authorbibnamehash}{516581a2ce920b9bc16a9c5004a023b8}
+      \strng{authornamehash}{516581a2ce920b9bc16a9c5004a023b8}
+      \strng{authorfullhash}{516581a2ce920b9bc16a9c5004a023b8}
+      \strng{authorfullhashraw}{516581a2ce920b9bc16a9c5004a023b8}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Hugging Face}
+      \field{month}{12}
+      \field{title}{MiMo-V2-Flash (Model Card)}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2025}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://huggingface.co/XiaomiMiMo/MiMo-V2-Flash
+      \endverb
+      \verb{url}
+      \verb https://huggingface.co/XiaomiMiMo/MiMo-V2-Flash
+      \endverb
+    \endentry
+    \entry{aaMimoV2Flash}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=60a0f8adc747278c54843aa94bef2613}{%
+           family={{Artificial Analysis}},
+           familyi={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \strng{bibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorbibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \field{extraname}{6}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Artificial Analysis}
+      \field{title}{MiMo-V2-Flash: Intelligence, Performance \& Price Analysis}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://artificialanalysis.ai/models/mimo-v2-flash
+      \endverb
+      \verb{url}
+      \verb https://artificialanalysis.ai/models/mimo-v2-flash
+      \endverb
+    \endentry
+    \entry{bowmanLargeAnnotatedCorpus2015}{inproceedings}{}{}
+      \name{author}{4}{}{%
+        {{hash=fc3587de57b6b9868eab5cb9c8efc3fb}{%
+           family={Bowman},
+           familyi={B\bibinitperiod},
+           given={Samuel\bibnamedelima R.},
+           giveni={S\bibinitperiod\bibinitdelim R\bibinitperiod}}}%
+        {{hash=32711cc8ea83e2c8d3a17fdd1ee20034}{%
+           family={Angeli},
+           familyi={A\bibinitperiod},
+           given={Gabor},
+           giveni={G\bibinitperiod}}}%
+        {{hash=699d626ef41a1a827d623529c1a45e5a}{%
+           family={Potts},
+           familyi={P\bibinitperiod},
+           given={Christopher},
+           giveni={C\bibinitperiod}}}%
+        {{hash=2214edb8305f7ccd7cdc310b3a8ae1b4}{%
+           family={Manning},
+           familyi={M\bibinitperiod},
+           given={Christopher\bibnamedelima D.},
+           giveni={C\bibinitperiod\bibinitdelim D\bibinitperiod}}}%
+      }
+      \name{editor}{3}{}{%
+        {{hash=98a908240c23e42cd08857cd67e53cff}{%
+           family={Màrquez},
+           familyi={M\bibinitperiod},
+           given={Lluís},
+           giveni={L\bibinitperiod}}}%
+        {{hash=f7acd168ce346c83b255e5386dee1c67}{%
+           family={{Callison-Burch}},
+           familyi={C\bibinitperiod},
+           given={Chris},
+           giveni={C\bibinitperiod}}}%
+        {{hash=db4d1a8f4e413bf3334d60a4e29c64e0}{%
+           family={Su},
+           familyi={S\bibinitperiod},
+           given={Jian},
+           giveni={J\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Lisbon, Portugal}%
+      }
+      \list{publisher}{1}{%
+        {Association for Computational Linguistics}%
+      }
+      \strng{namehash}{2d4eac46f500ea79b2ca148f2bf01bc6}
+      \strng{fullhash}{9dff7b27d993f705d64a1016cd96e255}
+      \strng{fullhashraw}{9dff7b27d993f705d64a1016cd96e255}
+      \strng{bibnamehash}{2d4eac46f500ea79b2ca148f2bf01bc6}
+      \strng{authorbibnamehash}{2d4eac46f500ea79b2ca148f2bf01bc6}
+      \strng{authornamehash}{2d4eac46f500ea79b2ca148f2bf01bc6}
+      \strng{authorfullhash}{9dff7b27d993f705d64a1016cd96e255}
+      \strng{authorfullhashraw}{9dff7b27d993f705d64a1016cd96e255}
+      \strng{editorbibnamehash}{8ca667bcde180822a03daff5838460f0}
+      \strng{editornamehash}{8ca667bcde180822a03daff5838460f0}
+      \strng{editorfullhash}{8ca667bcde180822a03daff5838460f0}
+      \strng{editorfullhashraw}{8ca667bcde180822a03daff5838460f0}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the 2015 {{Conference}} on {{Empirical Methods}} in {{Natural Language Processing}}}
+      \field{month}{9}
+      \field{title}{A Large Annotated Corpus for Learning Natural Language Inference}
+      \field{urlday}{27}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2015}
+      \field{urldateera}{ce}
+      \field{pages}{632\bibrangedash 642}
+      \range{pages}{11}
+      \verb{doi}
+      \verb 10.18653/v1/D15-1075
+      \endverb
+      \verb{file}
+      \verb /Users/daxmavy/Zotero/storage/WAA8234V/Bowman et al. - 2015 - A large annotated corpus for learning natural language inference.pdf
+      \endverb
+    \endentry
+    \entry{babakovLargescaleComputationalStudy2022}{inproceedings}{}{}
+      \name{author}{4}{}{%
+        {{hash=5c8228920b5471145e3464cecb9366dd}{%
+           family={Babakov},
+           familyi={B\bibinitperiod},
+           given={Nikolay},
+           giveni={N\bibinitperiod}}}%
+        {{hash=92d08a2f25363e0a7eb8f3155fcf8225}{%
+           family={Dale},
+           familyi={D\bibinitperiod},
+           given={David},
+           giveni={D\bibinitperiod}}}%
+        {{hash=89b5b84a843e6c009ac6ee7543271a6b}{%
+           family={Logacheva},
+           familyi={L\bibinitperiod},
+           given={Varvara},
+           giveni={V\bibinitperiod}}}%
+        {{hash=d9054faf7360a4afcb449836d0a3ab18}{%
+           family={Panchenko},
+           familyi={P\bibinitperiod},
+           given={Alexander},
+           giveni={A\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Dublin, Ireland}%
+      }
+      \list{publisher}{1}{%
+        {Association for Computational Linguistics}%
+      }
+      \strng{namehash}{7f9f666e4339211074e0b5e4b7dcd981}
+      \strng{fullhash}{6f0f81d9ef21ef3aeaabfbbd676e1341}
+      \strng{fullhashraw}{6f0f81d9ef21ef3aeaabfbbd676e1341}
+      \strng{bibnamehash}{7f9f666e4339211074e0b5e4b7dcd981}
+      \strng{authorbibnamehash}{7f9f666e4339211074e0b5e4b7dcd981}
+      \strng{authornamehash}{7f9f666e4339211074e0b5e4b7dcd981}
+      \strng{authorfullhash}{6f0f81d9ef21ef3aeaabfbbd676e1341}
+      \strng{authorfullhashraw}{6f0f81d9ef21ef3aeaabfbbd676e1341}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the 60th {{Annual Meeting}} of the {{Association}} for {{Computational Linguistics}}: {{Student Research Workshop}}}
+      \field{langid}{english}
+      \field{title}{A Large-Scale Computational Study of Content Preservation Measures for Text Style Transfer and Paraphrase Generation}
+      \field{urlday}{27}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2022}
+      \field{urldateera}{ce}
+      \field{pages}{300\bibrangedash 321}
+      \range{pages}{22}
+      \verb{doi}
+      \verb 10.18653/v1/2022.acl-srw.23
+      \endverb
+      \verb{file}
+      \verb /Users/daxmavy/Zotero/storage/374E2XFJ/Babakov et al. - 2022 - A large-scale computational study of content preservation measures for text style transfer and parap.pdf
+      \endverb
+    \endentry
+    \entry{laurerBuildingEfficientUniversal2024}{misc}{}{}
+      \name{author}{4}{}{%
+        {{hash=14e5e461cb33210af27ec280a1c93bd6}{%
+           family={Laurer},
+           familyi={L\bibinitperiod},
+           given={Moritz},
+           giveni={M\bibinitperiod}}}%
+        {{hash=03fdf485569f3f1082287cf9908f7385}{%
+           family={Atteveldt},
+           familyi={A\bibinitperiod},
+           given={Wouter},
+           giveni={W\bibinitperiod},
+           prefix={van},
+           prefixi={v\bibinitperiod}}}%
+        {{hash=d7a6771bb61bc763e5c7dc56a309cb3e}{%
+           family={Casas},
+           familyi={C\bibinitperiod},
+           given={Andreu},
+           giveni={A\bibinitperiod}}}%
+        {{hash=a100a2d72bd46bb0dfcdd3b37bd9bcd8}{%
+           family={Welbers},
+           familyi={W\bibinitperiod},
+           given={Kasper},
+           giveni={K\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {arXiv}%
+      }
+      \strng{namehash}{7f94bb40791defc252ea4122f59afcb2}
+      \strng{fullhash}{bb9b2dc1344e78ed0e2ad0686f8fc6b8}
+      \strng{fullhashraw}{bb9b2dc1344e78ed0e2ad0686f8fc6b8}
+      \strng{bibnamehash}{7f94bb40791defc252ea4122f59afcb2}
+      \strng{authorbibnamehash}{7f94bb40791defc252ea4122f59afcb2}
+      \strng{authornamehash}{7f94bb40791defc252ea4122f59afcb2}
+      \strng{authorfullhash}{bb9b2dc1344e78ed0e2ad0686f8fc6b8}
+      \strng{authorfullhashraw}{bb9b2dc1344e78ed0e2ad0686f8fc6b8}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Generative Large Language Models (LLMs) have become the mainstream choice for fewshot and zeroshot learning thanks to the universality of text generation. Many users, however, do not need the broad capabilities of generative LLMs when they only want to automate a classification task. Smaller BERT-like models can also learn universal tasks, which allow them to do any text classification task without requiring fine-tuning (zeroshot classification) or to learn new tasks with only a few examples (fewshot), while being significantly more efficient than generative LLMs. This paper (1) explains how Natural Language Inference (NLI) can be used as a universal classification task that follows similar principles as instruction fine-tuning of generative LLMs, (2) provides a step-by-step guide with reusable Jupyter notebooks for building a universal classifier, and (3) shares the resulting universal classifier that is trained on 33 datasets with 389 diverse classes. Parts of the code we share has been used to train our older zeroshot classifiers that have been downloaded more than 55 million times via the Hugging Face Hub as of December 2023. Our new classifier improves zeroshot performance by 9.4\%.}
+      \field{eprintclass}{cs}
+      \field{eprinttype}{arXiv}
+      \field{month}{3}
+      \field{number}{arXiv:2312.17543}
+      \field{title}{Building {{Efficient Universal Classifiers}} with {{Natural Language Inference}}}
+      \field{urlday}{27}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2024}
+      \field{urldateera}{ce}
+      \verb{doi}
+      \verb 10.48550/arXiv.2312.17543
+      \endverb
+      \verb{eprint}
+      \verb 2312.17543
+      \endverb
+      \verb{file}
+      \verb /Users/daxmavy/Zotero/storage/GCJV9U8R/Laurer et al. - 2024 - Building Efficient Universal Classifiers with Natural Language Inference.pdf;/Users/daxmavy/Zotero/storage/IKAY8UVM/2312.html
+      \endverb
+      \keyw{Computer Science - Artificial Intelligence,Computer Science - Computation and Language}
+    \endentry
+    \entry{aggarwalGEOGenerativeEngine2024a}{inproceedings}{}{}
+      \name{author}{6}{}{%
+        {{hash=b8b0d2636bc529a8b516ab1f51641d91}{%
+           family={Aggarwal},
+           familyi={A\bibinitperiod},
+           given={Pranjal},
+           giveni={P\bibinitperiod}}}%
+        {{hash=50e33c16c7f11ca2f1ab604106e66ae7}{%
+           family={Murahari},
+           familyi={M\bibinitperiod},
+           given={Vishvak},
+           giveni={V\bibinitperiod}}}%
+        {{hash=2f9b1402ebcef25576af75be1861f5a9}{%
+           family={Rajpurohit},
+           familyi={R\bibinitperiod},
+           given={Tanmay},
+           giveni={T\bibinitperiod}}}%
+        {{hash=0fd961fe6ef2e9446aea0a874c620393}{%
+           family={Kalyan},
+           familyi={K\bibinitperiod},
+           given={Ashwin},
+           giveni={A\bibinitperiod}}}%
+        {{hash=997c3143c2e5d593e816d2ff704fbf98}{%
+           family={Narasimhan},
+           familyi={N\bibinitperiod},
+           given={Karthik},
+           giveni={K\bibinitperiod}}}%
+        {{hash=82c947884058fba088bf3b8f0f4fd1dc}{%
+           family={Deshpande},
+           familyi={D\bibinitperiod},
+           given={Ameet},
+           giveni={A\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Barcelona Spain}%
+      }
+      \list{publisher}{1}{%
+        {ACM}%
+      }
+      \strng{namehash}{22007413d61a0353e969f0b49ae3c8d0}
+      \strng{fullhash}{fa508bed4e30223cddf1a44c032acd6c}
+      \strng{fullhashraw}{fa508bed4e30223cddf1a44c032acd6c}
+      \strng{bibnamehash}{22007413d61a0353e969f0b49ae3c8d0}
+      \strng{authorbibnamehash}{22007413d61a0353e969f0b49ae3c8d0}
+      \strng{authornamehash}{22007413d61a0353e969f0b49ae3c8d0}
+      \strng{authorfullhash}{fa508bed4e30223cddf1a44c032acd6c}
+      \strng{authorfullhashraw}{fa508bed4e30223cddf1a44c032acd6c}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{booktitle}{Proceedings of the 30th {{ACM SIGKDD Conference}} on {{Knowledge Discovery}} and {{Data Mining}}}
+      \field{isbn}{979-8-4007-0490-1}
+      \field{langid}{english}
+      \field{month}{8}
+      \field{shorttitle}{{{GEO}}}
+      \field{title}{{{GEO}}: {{Generative Engine Optimization}}}
+      \field{urlday}{27}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2024}
+      \field{urldateera}{ce}
+      \field{pages}{5\bibrangedash 16}
+      \range{pages}{12}
+      \verb{doi}
+      \verb 10.1145/3637528.3671900
+      \endverb
+    \endentry
+    \entry{liuGEvalNLGEvaluation2023}{inproceedings}{}{}
+      \name{author}{6}{}{%
+        {{hash=621013bf54d3546375ad71f17f020b5b}{%
+           family={Liu},
+           familyi={L\bibinitperiod},
+           given={Yang},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=5491649d7b9eeab75bf54d1832e83bc5}{%
+           family={Iter},
+           familyi={I\bibinitperiod},
+           given={Dan},
+           giveni={D\bibinitperiod}}}%
+        {{hash=e8acff368822f4c09bf6b92fc68f8b56}{%
+           family={Xu},
+           familyi={X\bibinitperiod},
+           given={Yichong},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=5e5b074eac11025ce8ec1e809f999edf}{%
+           family={Wang},
+           familyi={W\bibinitperiod},
+           given={Shuohang},
+           giveni={S\bibinitperiod}}}%
+        {{hash=add220557fbbab6ea5f9cc7268088bd3}{%
+           family={Xu},
+           familyi={X\bibinitperiod},
+           given={Ruochen},
+           giveni={R\bibinitperiod}}}%
+        {{hash=18da93aeef135dea4a44b078bf8271ed}{%
+           family={Zhu},
+           familyi={Z\bibinitperiod},
+           given={Chenguang},
+           giveni={C\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Singapore}%
+      }
+      \list{publisher}{1}{%
+        {Association for Computational Linguistics}%
+      }
+      \strng{namehash}{df83681b9acfd53a0c867d0eb509f8f3}
+      \strng{fullhash}{726e740ec42570f6413a711091ba533b}
+      \strng{fullhashraw}{726e740ec42570f6413a711091ba533b}
+      \strng{bibnamehash}{df83681b9acfd53a0c867d0eb509f8f3}
+      \strng{authorbibnamehash}{df83681b9acfd53a0c867d0eb509f8f3}
+      \strng{authornamehash}{df83681b9acfd53a0c867d0eb509f8f3}
+      \strng{authorfullhash}{726e740ec42570f6413a711091ba533b}
+      \strng{authorfullhashraw}{726e740ec42570f6413a711091ba533b}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{booktitle}{Proceedings of the 2023 {{Conference}} on {{Empirical Methods}} in {{Natural Language Processing}}}
+      \field{langid}{english}
+      \field{shorttitle}{G-{{Eval}}}
+      \field{title}{G-{{Eval}}: {{NLG Evaluation}} Using {{Gpt-4}} with {{Better Human Alignment}}}
+      \field{urlday}{27}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2023}
+      \field{urldateera}{ce}
+      \field{pages}{2511\bibrangedash 2522}
+      \range{pages}{12}
+      \verb{doi}
+      \verb 10.18653/v1/2023.emnlp-main.153
+      \endverb
+      \verb{file}
+      \verb /Users/daxmavy/Zotero/storage/LFRY8HR5/Liu et al. - 2023 - G-Eval NLG Evaluation using Gpt-4 with Better Human Alignment.pdf
+      \endverb
+    \endentry
+    \entry{kimPrometheusInducingFineGrained2023}{inproceedings}{}{}
+      \name{author}{11}{}{%
+        {{hash=bff0730b751bd0c704fb41abc4604d73}{%
+           family={Kim},
+           familyi={K\bibinitperiod},
+           given={Seungone},
+           giveni={S\bibinitperiod}}}%
+        {{hash=a78ec596f22e137330615617ef91a1c7}{%
+           family={Shin},
+           familyi={S\bibinitperiod},
+           given={Jamin},
+           giveni={J\bibinitperiod}}}%
+        {{hash=b84c1013b79814988a5930c2cf292d54}{%
+           family={Cho},
+           familyi={C\bibinitperiod},
+           given={Yejin},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=2738047d3f1523c29da88a073a1b20bd}{%
+           family={Jang},
+           familyi={J\bibinitperiod},
+           given={Joel},
+           giveni={J\bibinitperiod}}}%
+        {{hash=2e8c6baaa8411d8bda3b277ca6ff2db5}{%
+           family={Longpre},
+           familyi={L\bibinitperiod},
+           given={Shayne},
+           giveni={S\bibinitperiod}}}%
+        {{hash=9474f4e92fac3e051ebaf9996e235977}{%
+           family={Lee},
+           familyi={L\bibinitperiod},
+           given={Hwaran},
+           giveni={H\bibinitperiod}}}%
+        {{hash=eb5683d5e1e58ddad99e436c69bb62e9}{%
+           family={Yun},
+           familyi={Y\bibinitperiod},
+           given={Sangdoo},
+           giveni={S\bibinitperiod}}}%
+        {{hash=1a13ad3c44e240268c1918c44b7d3356}{%
+           family={Shin},
+           familyi={S\bibinitperiod},
+           given={Seongjin},
+           giveni={S\bibinitperiod}}}%
+        {{hash=ce454f52d2f9592778865d720c09fbbb}{%
+           family={Kim},
+           familyi={K\bibinitperiod},
+           given={Sungdong},
+           giveni={S\bibinitperiod}}}%
+        {{hash=dd549e066aa8013fdd8fda1835236922}{%
+           family={Thorne},
+           familyi={T\bibinitperiod},
+           given={James},
+           giveni={J\bibinitperiod}}}%
+        {{hash=c6a70b90cc23e43aa6914a271ac0004d}{%
+           family={Seo},
+           familyi={S\bibinitperiod},
+           given={Minjoon},
+           giveni={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{ebd6259bfc669d6276a103b1a3310484}
+      \strng{fullhash}{ce11961e9b3d1809a49890637337b602}
+      \strng{fullhashraw}{ce11961e9b3d1809a49890637337b602}
+      \strng{bibnamehash}{ebd6259bfc669d6276a103b1a3310484}
+      \strng{authorbibnamehash}{ebd6259bfc669d6276a103b1a3310484}
+      \strng{authornamehash}{ebd6259bfc669d6276a103b1a3310484}
+      \strng{authorfullhash}{ce11961e9b3d1809a49890637337b602}
+      \strng{authorfullhashraw}{ce11961e9b3d1809a49890637337b602}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{Recently, GPT-4 has become the de facto evaluator for long-form text generated by large language models (LLMs). However, for practitioners and researchers with large and custom evaluation tasks, GPT-4 is unreliable due to its closed-source nature, uncontrolled versioning, and prohibitive costs. In this work, we propose PROMETHEUS a fully open-source LLM that is on par with GPT-4's evaluation capabilities when the appropriate reference materials (reference answer, score rubric) are accompanied. For this purpose, we construct a new dataset -- FEEDBACK COLLECTION -- that consists of 1K fine-grained score rubrics, 20K instructions, and 100K natural language feedback generated by GPT-4. Using the FEEDBACK COLLECTION, we train PROMETHEUS, a 13B evaluation-specific LLM that can assess any given response based on novel and unseen score rubrics and reference materials provided by the user. Our dataset's versatility and diversity make our model generalize to challenging real-world criteria, such as prioritizing conciseness, child-readability, or varying levels of formality. We show that PROMETHEUS shows a stronger correlation with GPT-4 evaluation compared to ChatGPT on seven evaluation benchmarks (Two Feedback Collection testsets, MT Bench, Vicuna Bench, Flask Eval, MT Bench Human Judgment, and HHH Alignment), showing the efficacy of our model and dataset design. During human evaluation with hand-crafted score rubrics, PROMETHEUS shows a Pearson correlation of 0.897 with human evaluators, which is on par with GPT-4-0613 (0.882), and greatly outperforms ChatGPT (0.392). Remarkably, when assessing the quality of the generated feedback, PROMETHEUS demonstrates a win rate of 58.62\% when compared to GPT-4 evaluation and a win rate of 79.57\% when compared to ChatGPT evaluation. Our findings suggests that by adding reference materials and training on GPT-4 feedback, we can obtain effective open-source evaluator LMs.}
+      \field{booktitle}{The {{Twelfth International Conference}} on {{Learning Representations}}}
+      \field{langid}{english}
+      \field{month}{10}
+      \field{shorttitle}{Prometheus}
+      \field{title}{Prometheus: {{Inducing Fine-Grained Evaluation Capability}} in {{Language Models}}}
+      \field{urlday}{27}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2023}
+      \field{urldateera}{ce}
+      \verb{file}
+      \verb /Users/daxmavy/Zotero/storage/3YH3Q5BU/Kim et al. - 2023 - Prometheus Inducing Fine-Grained Evaluation Capability in Language Models.pdf
+      \endverb
+    \endentry
+    \entry{TRLTransformersReinforcement}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=1fd152f750da41d64d5e76ee7e0c8ac1}{%
+           family={Face},
+           familyi={F\bibinitperiod},
+           given={Hugging},
+           giveni={H\bibinitperiod}}}%
+      }
+      \strng{namehash}{1fd152f750da41d64d5e76ee7e0c8ac1}
+      \strng{fullhash}{1fd152f750da41d64d5e76ee7e0c8ac1}
+      \strng{fullhashraw}{1fd152f750da41d64d5e76ee7e0c8ac1}
+      \strng{bibnamehash}{1fd152f750da41d64d5e76ee7e0c8ac1}
+      \strng{authorbibnamehash}{1fd152f750da41d64d5e76ee7e0c8ac1}
+      \strng{authornamehash}{1fd152f750da41d64d5e76ee7e0c8ac1}
+      \strng{authorfullhash}{1fd152f750da41d64d5e76ee7e0c8ac1}
+      \strng{authorfullhashraw}{1fd152f750da41d64d5e76ee7e0c8ac1}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{We're on a journey to advance and democratize artificial intelligence through open source and open science.}
+      \field{howpublished}{https://huggingface.co/docs/trl/index}
+      \field{title}{Transformers {{Reinforcement Learning}}}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{file}
+      \verb /Users/daxmavy/Zotero/storage/FCSZHRVQ/index.html
+      \endverb
+    \endentry
+    \entry{qwenQwen2515BInstructCard}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=4622c4bb7444dadba22813c2addff5e7}{%
+           family={{Qwen Team}},
+           familyi={Q\bibinitperiod}}}%
+      }
+      \strng{namehash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{fullhash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{fullhashraw}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{bibnamehash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{authorbibnamehash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{authornamehash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{authorfullhash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{authorfullhashraw}{4622c4bb7444dadba22813c2addff5e7}
+      \field{extraname}{2}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Hugging Face}
+      \field{month}{9}
+      \field{title}{Qwen2.5-1.5B-Instruct (Model Card)}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2024}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct
+      \endverb
+      \verb{url}
+      \verb https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct
+      \endverb
+    \endentry
+    \entry{liquidaiLfm2512BInstructCard}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=1d36bfa1f8305c5eef510d65fa4348d5}{%
+           family={{Liquid AI}},
+           familyi={L\bibinitperiod}}}%
+      }
+      \strng{namehash}{1d36bfa1f8305c5eef510d65fa4348d5}
+      \strng{fullhash}{1d36bfa1f8305c5eef510d65fa4348d5}
+      \strng{fullhashraw}{1d36bfa1f8305c5eef510d65fa4348d5}
+      \strng{bibnamehash}{1d36bfa1f8305c5eef510d65fa4348d5}
+      \strng{authorbibnamehash}{1d36bfa1f8305c5eef510d65fa4348d5}
+      \strng{authornamehash}{1d36bfa1f8305c5eef510d65fa4348d5}
+      \strng{authorfullhash}{1d36bfa1f8305c5eef510d65fa4348d5}
+      \strng{authorfullhashraw}{1d36bfa1f8305c5eef510d65fa4348d5}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Hugging Face}
+      \field{month}{1}
+      \field{title}{LFM2.5-1.2B-Instruct (Model Card)}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://huggingface.co/LiquidAI/LFM2.5-1.2B-Instruct
+      \endverb
+      \verb{url}
+      \verb https://huggingface.co/LiquidAI/LFM2.5-1.2B-Instruct
+      \endverb
+    \endentry
+    \entry{aaLfm2512BInstruct}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=60a0f8adc747278c54843aa94bef2613}{%
+           family={{Artificial Analysis}},
+           familyi={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \strng{bibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorbibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \field{extraname}{7}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Artificial Analysis}
+      \field{title}{LFM2.5-1.2B-Instruct: Intelligence, Performance \& Price Analysis}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://artificialanalysis.ai/models/lfm2-5-1-2b-instruct
+      \endverb
+      \verb{url}
+      \verb https://artificialanalysis.ai/models/lfm2-5-1-2b-instruct
+      \endverb
+    \endentry
+    \entry{googleGemma31BItCard}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=8b36e9207c24c76e6719268e49201d94}{%
+           family={{Google}},
+           familyi={G\bibinitperiod}}}%
+      }
+      \strng{namehash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{fullhash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{fullhashraw}{8b36e9207c24c76e6719268e49201d94}
+      \strng{bibnamehash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{authorbibnamehash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{authornamehash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{authorfullhash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{authorfullhashraw}{8b36e9207c24c76e6719268e49201d94}
+      \field{extraname}{2}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Hugging Face}
+      \field{month}{3}
+      \field{title}{Gemma-3-1B-it (Model Card)}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2025}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://huggingface.co/google/gemma-3-1b-it
+      \endverb
+      \verb{url}
+      \verb https://huggingface.co/google/gemma-3-1b-it
+      \endverb
+    \endentry
+    \entry{aaGemma31B}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=60a0f8adc747278c54843aa94bef2613}{%
+           family={{Artificial Analysis}},
+           familyi={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \strng{bibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorbibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \field{extraname}{8}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Artificial Analysis}
+      \field{title}{Gemma 3 1B: Intelligence, Performance \& Price Analysis}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://artificialanalysis.ai/models/gemma-3-1b
+      \endverb
+      \verb{url}
+      \verb https://artificialanalysis.ai/models/gemma-3-1b
+      \endverb
+    \endentry
+    \entry{qwenQwen38BCard}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=4622c4bb7444dadba22813c2addff5e7}{%
+           family={{Qwen Team}},
+           familyi={Q\bibinitperiod}}}%
+      }
+      \strng{namehash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{fullhash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{fullhashraw}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{bibnamehash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{authorbibnamehash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{authornamehash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{authorfullhash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{authorfullhashraw}{4622c4bb7444dadba22813c2addff5e7}
+      \field{extraname}{3}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Hugging Face}
+      \field{month}{5}
+      \field{title}{Qwen3-8B (Model Card)}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2025}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://huggingface.co/Qwen/Qwen3-8B
+      \endverb
+      \verb{url}
+      \verb https://huggingface.co/Qwen/Qwen3-8B
+      \endverb
+    \endentry
+    \entry{aaQwen38B}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=60a0f8adc747278c54843aa94bef2613}{%
+           family={{Artificial Analysis}},
+           familyi={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \strng{bibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorbibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \field{extraname}{9}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Artificial Analysis}
+      \field{title}{Qwen3 8B: Intelligence, Performance \& Price Analysis}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://artificialanalysis.ai/models/qwen3-8b-instruct
+      \endverb
+      \verb{url}
+      \verb https://artificialanalysis.ai/models/qwen3-8b-instruct
+      \endverb
+    \endentry
+    \entry{qwenQwen359BCard}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=4622c4bb7444dadba22813c2addff5e7}{%
+           family={{Qwen Team}},
+           familyi={Q\bibinitperiod}}}%
+      }
+      \strng{namehash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{fullhash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{fullhashraw}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{bibnamehash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{authorbibnamehash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{authornamehash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{authorfullhash}{4622c4bb7444dadba22813c2addff5e7}
+      \strng{authorfullhashraw}{4622c4bb7444dadba22813c2addff5e7}
+      \field{extraname}{4}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Hugging Face}
+      \field{month}{2}
+      \field{title}{Qwen3.5-9B (Model Card)}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://huggingface.co/Qwen/Qwen3.5-9B
+      \endverb
+      \verb{url}
+      \verb https://huggingface.co/Qwen/Qwen3.5-9B
+      \endverb
+    \endentry
+    \entry{aaQwen359B}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=60a0f8adc747278c54843aa94bef2613}{%
+           family={{Artificial Analysis}},
+           familyi={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \strng{bibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorbibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \field{extraname}{10}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Artificial Analysis}
+      \field{title}{Qwen3.5 9B: Intelligence, Performance \& Price Analysis}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://artificialanalysis.ai/models/qwen3-5-9b
+      \endverb
+      \verb{url}
+      \verb https://artificialanalysis.ai/models/qwen3-5-9b
+      \endverb
+    \endentry
+    \entry{metaLlama318BInstructCard}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=ca43b8b2bdf82aa380c9fed8712d8db8}{%
+           family={{Meta AI}},
+           familyi={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{ca43b8b2bdf82aa380c9fed8712d8db8}
+      \strng{fullhash}{ca43b8b2bdf82aa380c9fed8712d8db8}
+      \strng{fullhashraw}{ca43b8b2bdf82aa380c9fed8712d8db8}
+      \strng{bibnamehash}{ca43b8b2bdf82aa380c9fed8712d8db8}
+      \strng{authorbibnamehash}{ca43b8b2bdf82aa380c9fed8712d8db8}
+      \strng{authornamehash}{ca43b8b2bdf82aa380c9fed8712d8db8}
+      \strng{authorfullhash}{ca43b8b2bdf82aa380c9fed8712d8db8}
+      \strng{authorfullhashraw}{ca43b8b2bdf82aa380c9fed8712d8db8}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Hugging Face}
+      \field{month}{7}
+      \field{title}{Llama-3.1-8B-Instruct (Model Card)}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2024}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct
+      \endverb
+      \verb{url}
+      \verb https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct
+      \endverb
+    \endentry
+    \entry{aaLlama318B}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=60a0f8adc747278c54843aa94bef2613}{%
+           family={{Artificial Analysis}},
+           familyi={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \strng{bibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorbibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \field{extraname}{11}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Artificial Analysis}
+      \field{title}{Llama 3.1 Instruct 8B: Intelligence, Performance \& Price Analysis}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://artificialanalysis.ai/models/llama-3-1-instruct-8b
+      \endverb
+      \verb{url}
+      \verb https://artificialanalysis.ai/models/llama-3-1-instruct-8b
+      \endverb
+    \endentry
+    \entry{googleGemma29BItCard}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=8b36e9207c24c76e6719268e49201d94}{%
+           family={{Google}},
+           familyi={G\bibinitperiod}}}%
+      }
+      \strng{namehash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{fullhash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{fullhashraw}{8b36e9207c24c76e6719268e49201d94}
+      \strng{bibnamehash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{authorbibnamehash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{authornamehash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{authorfullhash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{authorfullhashraw}{8b36e9207c24c76e6719268e49201d94}
+      \field{extraname}{3}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Hugging Face}
+      \field{month}{6}
+      \field{title}{Gemma-2-9B-it (Model Card)}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2024}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://huggingface.co/google/gemma-2-9b-it
+      \endverb
+      \verb{url}
+      \verb https://huggingface.co/google/gemma-2-9b-it
+      \endverb
+    \endentry
+    \entry{mistralaiMistralSmall24BInstruct2501Card}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=5f46782611de55f109003b4dac1b83e0}{%
+           family={{Mistral AI}},
+           familyi={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{5f46782611de55f109003b4dac1b83e0}
+      \strng{fullhash}{5f46782611de55f109003b4dac1b83e0}
+      \strng{fullhashraw}{5f46782611de55f109003b4dac1b83e0}
+      \strng{bibnamehash}{5f46782611de55f109003b4dac1b83e0}
+      \strng{authorbibnamehash}{5f46782611de55f109003b4dac1b83e0}
+      \strng{authornamehash}{5f46782611de55f109003b4dac1b83e0}
+      \strng{authorfullhash}{5f46782611de55f109003b4dac1b83e0}
+      \strng{authorfullhashraw}{5f46782611de55f109003b4dac1b83e0}
+      \field{extraname}{2}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Hugging Face}
+      \field{month}{1}
+      \field{title}{Mistral-Small-24B-Instruct-2501 (Model Card)}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2025}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://huggingface.co/mistralai/Mistral-Small-24B-Instruct-2501
+      \endverb
+      \verb{url}
+      \verb https://huggingface.co/mistralai/Mistral-Small-24B-Instruct-2501
+      \endverb
+    \endentry
+    \entry{aaMistralSmall3}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=60a0f8adc747278c54843aa94bef2613}{%
+           family={{Artificial Analysis}},
+           familyi={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \strng{bibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorbibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \field{extraname}{12}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Artificial Analysis}
+      \field{title}{Mistral Small 3: Intelligence, Performance \& Price Analysis}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://artificialanalysis.ai/models/mistral-small-3
+      \endverb
+      \verb{url}
+      \verb https://artificialanalysis.ai/models/mistral-small-3
+      \endverb
+    \endentry
+    \entry{googleGemma327BItCard}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=8b36e9207c24c76e6719268e49201d94}{%
+           family={{Google}},
+           familyi={G\bibinitperiod}}}%
+      }
+      \strng{namehash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{fullhash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{fullhashraw}{8b36e9207c24c76e6719268e49201d94}
+      \strng{bibnamehash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{authorbibnamehash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{authornamehash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{authorfullhash}{8b36e9207c24c76e6719268e49201d94}
+      \strng{authorfullhashraw}{8b36e9207c24c76e6719268e49201d94}
+      \field{extraname}{4}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Hugging Face}
+      \field{month}{3}
+      \field{title}{Gemma-3-27B-it (Model Card)}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2025}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://huggingface.co/google/gemma-3-27b-it
+      \endverb
+      \verb{url}
+      \verb https://huggingface.co/google/gemma-3-27b-it
+      \endverb
+    \endentry
+    \entry{aaGemma327B}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=60a0f8adc747278c54843aa94bef2613}{%
+           family={{Artificial Analysis}},
+           familyi={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \strng{bibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorbibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \field{extraname}{13}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Artificial Analysis}
+      \field{title}{Gemma 3 27B: Intelligence, Performance \& Price Analysis}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://artificialanalysis.ai/models/gemma-3-27b
+      \endverb
+      \verb{url}
+      \verb https://artificialanalysis.ai/models/gemma-3-27b
+      \endverb
+    \endentry
+    \entry{microsoftPhi4Card}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=140864078aeca1c7c35b4beb33c53c34}{%
+           family={{Microsoft}},
+           familyi={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{fullhash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{fullhashraw}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{bibnamehash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{authorbibnamehash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{authornamehash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{authorfullhash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{authorfullhashraw}{140864078aeca1c7c35b4beb33c53c34}
+      \field{extraname}{2}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Hugging Face}
+      \field{month}{12}
+      \field{title}{Phi-4 (Model Card)}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2024}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://huggingface.co/microsoft/phi-4
+      \endverb
+      \verb{url}
+      \verb https://huggingface.co/microsoft/phi-4
+      \endverb
+    \endentry
+    \entry{aaPhi4}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=60a0f8adc747278c54843aa94bef2613}{%
+           family={{Artificial Analysis}},
+           familyi={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{fullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \strng{bibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorbibnamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
+      \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
+      \field{extraname}{14}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Artificial Analysis}
+      \field{title}{Phi-4: Intelligence, Performance \& Price Analysis}
+      \field{urlday}{29}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://artificialanalysis.ai/models/phi-4
+      \endverb
+      \verb{url}
+      \verb https://artificialanalysis.ai/models/phi-4
+      \endverb
+    \endentry
+    \entry{bevendorffGoogleGettingWorse2024a}{inproceedings}{}{}
+      \name{author}{4}{}{%
+        {{hash=01daac293c2532395a05f79f631b3d05}{%
+           family={Bevendorff},
+           familyi={B\bibinitperiod},
+           given={Janek},
+           giveni={J\bibinitperiod}}}%
+        {{hash=7f87e68c8f008fc08ef7c57cdbd60c8d}{%
+           family={Wiegmann},
+           familyi={W\bibinitperiod},
+           given={Matti},
+           giveni={M\bibinitperiod}}}%
+        {{hash=c239bbb9437f221987397e74fbc81634}{%
+           family={Potthast},
+           familyi={P\bibinitperiod},
+           given={Martin},
+           giveni={M\bibinitperiod}}}%
+        {{hash=1ead8f029ff27a7eeedb027e8c7aaeb9}{%
+           family={Stein},
+           familyi={S\bibinitperiod},
+           given={Benno},
+           giveni={B\bibinitperiod}}}%
+      }
+      \name{editor}{7}{}{%
+        {{hash=356b8414f9f750d8ed84ca2394868caa}{%
+           family={Goharian},
+           familyi={G\bibinitperiod},
+           given={Nazli},
+           giveni={N\bibinitperiod}}}%
+        {{hash=676b71a07df45e3ff4f64968a0a7f0bc}{%
+           family={Tonellotto},
+           familyi={T\bibinitperiod},
+           given={Nicola},
+           giveni={N\bibinitperiod}}}%
+        {{hash=f3b78337b03e473fdd1fe07b5b127389}{%
+           family={He},
+           familyi={H\bibinitperiod},
+           given={Yulan},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=890ffd3ca91295544a9ea9d656a10e7c}{%
+           family={Lipani},
+           familyi={L\bibinitperiod},
+           given={Aldo},
+           giveni={A\bibinitperiod}}}%
+        {{hash=db5c3888e02786ae909dfb969fc71341}{%
+           family={McDonald},
+           familyi={M\bibinitperiod},
+           given={Graham},
+           giveni={G\bibinitperiod}}}%
+        {{hash=abb0872ff1e8610455b7c9bfd5f440e3}{%
+           family={Macdonald},
+           familyi={M\bibinitperiod},
+           given={Craig},
+           giveni={C\bibinitperiod}}}%
+        {{hash=9333f8879aa3ef9dc142dfaa2f77edbe}{%
+           family={Ounis},
+           familyi={O\bibinitperiod},
+           given={Iadh},
+           giveni={I\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Cham}%
+      }
+      \list{publisher}{1}{%
+        {Springer Nature Switzerland}%
+      }
+      \strng{namehash}{d174eab9dc68d8ad726d7508ea287ab2}
+      \strng{fullhash}{082c5c8c034bcb0d01882376d24cb28f}
+      \strng{fullhashraw}{082c5c8c034bcb0d01882376d24cb28f}
+      \strng{bibnamehash}{d174eab9dc68d8ad726d7508ea287ab2}
+      \strng{authorbibnamehash}{d174eab9dc68d8ad726d7508ea287ab2}
+      \strng{authornamehash}{d174eab9dc68d8ad726d7508ea287ab2}
+      \strng{authorfullhash}{082c5c8c034bcb0d01882376d24cb28f}
+      \strng{authorfullhashraw}{082c5c8c034bcb0d01882376d24cb28f}
+      \strng{editorbibnamehash}{d1331322b0ded9ee5eb9e188014b4a6e}
+      \strng{editornamehash}{d1331322b0ded9ee5eb9e188014b4a6e}
+      \strng{editorfullhash}{be1506a2e4bb70096ff157797bf589b0}
+      \strng{editorfullhashraw}{be1506a2e4bb70096ff157797bf589b0}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{shorttitle}
+      \field{abstract}{Many users of web search engines have been complaining in recent years about the supposedly decreasing quality of search results. This is often attributed to an increasing amount of search-engine-optimized but low-quality content. Evidence for this has always been anecdotal, yet it's not unreasonable to think that popular online marketing strategies such as affiliate marketing incentivize the mass production of such content to maximize clicks. Since neither this complaint nor affiliate marketing as such have received much attention from the IR community, we hereby lay the groundwork by conducting an in-depth exploratory study of how affiliate content affects today's search engines. We monitored Google, Bing and DuckDuckGo for a year on 7,392~product review queries. Our findings suggest that all search engines have significant problems with highly optimized (affiliate) content---more than is representative for the entire web according to a baseline retrieval system on the ClueWeb22. Focussing on the product review genre, we find that only a small portion of product reviews on the web uses affiliate marketing, but the majority of all search results do. Of all affiliate networks, Amazon Associates is by far the most popular. We further observe an inverse relationship between affiliate marketing use and content complexity, and that all search engines fall victim to large-scale affiliate link spam campaigns. However, we also notice that the line between benign content and spam in the form of content and link farms becomes increasingly blurry---a situation that will surely worsen in the wake of generative~AI. We conclude that dynamic adversarial spam in the form of low-quality, mass-produced commercial content deserves more attention. (Code and data: https://github.com/webis-de/ECIR-24).}
+      \field{booktitle}{Advances in {{Information Retrieval}}}
+      \field{isbn}{978-3-031-56063-7}
+      \field{langid}{english}
+      \field{shorttitle}{Is {{Google Getting Worse}}?}
+      \field{title}{Is {{Google Getting Worse}}? {{A~Longitudinal Investigation}} of~{{SEO Spam}} in~{{Search Engines}}}
+      \field{year}{2024}
+      \field{pages}{56\bibrangedash 71}
+      \range{pages}{16}
+      \verb{doi}
+      \verb 10.1007/978-3-031-56063-7_4
+      \endverb
+      \verb{file}
+      \verb /Users/daxmavy/Zotero/storage/RLDRPWE7/Bevendorff et al. - 2024 - Is Google Getting Worse A Longitudinal Investigation of SEO Spam in Search Engines.pdf
+      \endverb
+      \keyw{Search Engine Optimization,Web Search Quality,Web Spam}
+    \endentry
+    \entry{warzelOpenSecretGoogle2022}{article}{}{}
+      \name{author}{1}{}{%
+        {{hash=0d01dfae50906b8573f0406f43c5dd72}{%
+           family={Warzel},
+           familyi={W\bibinitperiod},
+           given={Charlie},
+           giveni={C\bibinitperiod}}}%
+      }
+      \strng{namehash}{0d01dfae50906b8573f0406f43c5dd72}
+      \strng{fullhash}{0d01dfae50906b8573f0406f43c5dd72}
+      \strng{fullhashraw}{0d01dfae50906b8573f0406f43c5dd72}
+      \strng{bibnamehash}{0d01dfae50906b8573f0406f43c5dd72}
+      \strng{authorbibnamehash}{0d01dfae50906b8573f0406f43c5dd72}
+      \strng{authornamehash}{0d01dfae50906b8573f0406f43c5dd72}
+      \strng{authorfullhash}{0d01dfae50906b8573f0406f43c5dd72}
+      \strng{authorfullhashraw}{0d01dfae50906b8573f0406f43c5dd72}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{One of the most-used tools on the internet is not what it used to be.}
+      \field{chapter}{Ideas}
+      \field{journaltitle}{The Atlantic}
+      \field{langid}{english}
+      \field{month}{6}
+      \field{title}{The {{Open Secret}} of {{Google Search}}}
+      \field{urlday}{27}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2022}
+      \field{urldateera}{ce}
+      \verb{file}
+      \verb /Users/daxmavy/Zotero/storage/PCW2FV5S/661325.html
+      \endverb
+    \endentry
+    \entry{zhengJudgingLLMasaJudgeMTBench2023}{misc}{}{}
+      \name{author}{13}{}{%
+        {{hash=0beb8f75088bfac1e81ca3840d0e89f0}{%
+           family={Zheng},
+           familyi={Z\bibinitperiod},
+           given={Lianmin},
+           giveni={L\bibinitperiod}}}%
+        {{hash=d5030c6327cf9a55d5a372b89093395a}{%
+           family={Chiang},
+           familyi={C\bibinitperiod},
+           given={Wei-Lin},
+           giveni={W\bibinithyphendelim L\bibinitperiod}}}%
+        {{hash=b99fbe22103d2d6f803495267ee1cac9}{%
+           family={Sheng},
+           familyi={S\bibinitperiod},
+           given={Ying},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=d922f0e30f0817f9514b3360b791d760}{%
+           family={Zhuang},
+           familyi={Z\bibinitperiod},
+           given={Siyuan},
+           giveni={S\bibinitperiod}}}%
+        {{hash=8b10808456d34160e841fd9eac30a4ce}{%
+           family={Wu},
+           familyi={W\bibinitperiod},
+           given={Zhanghao},
+           giveni={Z\bibinitperiod}}}%
+        {{hash=329b3ab9fbc7cbf15e931d5f693d0e81}{%
+           family={Zhuang},
+           familyi={Z\bibinitperiod},
+           given={Yonghao},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=14378cef37bf00d8a8fcc705a62d573e}{%
+           family={Lin},
+           familyi={L\bibinitperiod},
+           given={Zi},
+           giveni={Z\bibinitperiod}}}%
+        {{hash=a57e6ad48b4f46462aa4a0aa5a0f704e}{%
+           family={Li},
+           familyi={L\bibinitperiod},
+           given={Zhuohan},
+           giveni={Z\bibinitperiod}}}%
+        {{hash=0d9e6cedc08528d9cc2c770f5726e8bc}{%
+           family={Li},
+           familyi={L\bibinitperiod},
+           given={Dacheng},
+           giveni={D\bibinitperiod}}}%
+        {{hash=b80203b0ba1299db35073382e835b485}{%
+           family={Xing},
+           familyi={X\bibinitperiod},
+           given={Eric\bibnamedelima P.},
+           giveni={E\bibinitperiod\bibinitdelim P\bibinitperiod}}}%
+        {{hash=8c6d18e2d167e1a3dc88c0166bbc3471}{%
+           family={Zhang},
+           familyi={Z\bibinitperiod},
+           given={Hao},
+           giveni={H\bibinitperiod}}}%
+        {{hash=80175f489665023b28dbb4cf1775c0ef}{%
+           family={Gonzalez},
+           familyi={G\bibinitperiod},
+           given={Joseph\bibnamedelima E.},
+           giveni={J\bibinitperiod\bibinitdelim E\bibinitperiod}}}%
+        {{hash=51d9ef26181e2e8a9dc546b401e0bb26}{%
+           family={Stoica},
+           familyi={S\bibinitperiod},
+           given={Ion},
+           giveni={I\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {arXiv}%
+      }
+      \strng{namehash}{293dcbfb5b9446f7f90cf8d346a542fe}
+      \strng{fullhash}{5d79fd4ebbbfd5b26e4a0e35e41dae2f}
+      \strng{fullhashraw}{5d79fd4ebbbfd5b26e4a0e35e41dae2f}
+      \strng{bibnamehash}{293dcbfb5b9446f7f90cf8d346a542fe}
+      \strng{authorbibnamehash}{293dcbfb5b9446f7f90cf8d346a542fe}
+      \strng{authornamehash}{293dcbfb5b9446f7f90cf8d346a542fe}
+      \strng{authorfullhash}{5d79fd4ebbbfd5b26e4a0e35e41dae2f}
+      \strng{authorfullhashraw}{5d79fd4ebbbfd5b26e4a0e35e41dae2f}
+      \field{extraname}{2}
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Evaluating large language model (LLM) based chat assistants is challenging due to their broad capabilities and the inadequacy of existing benchmarks in measuring human preferences. To address this, we explore using strong LLMs as judges to evaluate these models on more open-ended questions. We examine the usage and limitations of LLM-as-a-judge, including position, verbosity, and self-enhancement biases, as well as limited reasoning ability, and propose solutions to mitigate some of them. We then verify the agreement between LLM judges and human preferences by introducing two benchmarks: MT-bench, a multi-turn question set; and Chatbot Arena, a crowdsourced battle platform. Our results reveal that strong LLM judges like GPT-4 can match both controlled and crowdsourced human preferences well, achieving over 80\% agreement, the same level of agreement between humans. Hence, LLM-as-a-judge is a scalable and explainable way to approximate human preferences, which are otherwise very expensive to obtain. Additionally, we show our benchmark and traditional benchmarks complement each other by evaluating several variants of LLaMA and Vicuna. The MT-bench questions, 3K expert votes, and 30K conversations with human preferences are publicly available at https://github.com/lm-sys/FastChat/tree/main/fastchat/llm\_judge.}
+      \field{title}{Judging {{LLM-as-a-Judge}} with {{MT-Bench}} and {{Chatbot Arena}}}
+      \field{urlday}{18}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2023}
+      \field{urldateera}{ce}
+      \verb{doi}
+      \verb 10.48550/ARXIV.2306.05685
+      \endverb
+      \keyw{Artificial Intelligence (cs.AI),Computation and Language (cs.CL),FOS: Computer and information sciences}
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

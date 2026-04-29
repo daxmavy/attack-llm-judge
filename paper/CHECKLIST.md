@@ -33,7 +33,7 @@ and Jakob Foerster's "How to ML Paper - A brief Guide".
 - [x] Reproducibility: hyperparameters, seeds, slugs, and manifests released.
 
 ## Prose style (How-to-ML + Carlini)
-- [x] 0 future tense ("we will", "will be" except one legitimate "a stance flip inside that threshold" clause).
+- [x] 0 future tense ("we will", "will be").
 - [x] 0 TODO/FIXME/XXX markers; stubs are written as content paragraphs.
 - [x] 0 doubled words.
 - [x] 0 "on the other hand" without "on the one hand".

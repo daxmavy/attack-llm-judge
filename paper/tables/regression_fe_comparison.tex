@@ -1,0 +1,19 @@
+\begin{table}[h]
+  \centering
+  \caption{Estimates and standard errors are unchanged when each \texttt{(method, rewriter)} cell is given its own fixed effect. Both specifications use cluster-robust standard errors at the source paragraph level. Differences appear only at the fourth decimal place because the design assigns every source paragraph identical coverage across rewriters, which causes their contribution to within-paragraph correlation to be absorbed by the cluster-robust variance estimator regardless of whether they are explicitly controlled for.}
+  \label{tab:fe-comparison}
+  \begin{tabular}{lrrrr}
+    \toprule
+    & \multicolumn{2}{c}{No fixed effects} & \multicolumn{2}{c}{(Method $\times$ rewriter) FE} \\
+    \cmidrule(lr){2-3} \cmidrule(lr){4-5}
+    Method & ADD & SE & ADD & SE \\
+    \midrule
+    Na\"ive                & 18.120 & 0.3583 & 18.120 & 0.3583 \\
+    Rubric-aware           & 19.430 & 0.3537 & 19.430 & 0.3537 \\
+    GRPO-NLI               & 19.003 & 0.3593 & 19.003 & 0.3593 \\
+    Lit-informed (tight)   & 23.524 & 0.3588 & 23.524 & 0.3588 \\
+    BoN (panel)            & 26.200 & 0.3706 & 26.200 & 0.3706 \\
+    GRPO                   & 26.718 & 0.3592 & 26.718 & 0.3592 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

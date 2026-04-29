@@ -1,0 +1,34 @@
+% Archive of content removed from the paper. NOT included in any build.
+% To restore a passage, copy the content back to the indicated location and
+% rebuild. The labels (\label{...}) below were defined when the content was
+% live; they will become valid again as soon as the content is re-included.
+
+% =============================================================================
+% Removed 2026-04-29 from main.tex \subsection{Measuring rewriting effectiveness}
+% (was the paragraph immediately preceding \subsection{Measuring semantic similarity}).
+% Pointed at \appref{app:reference-coverage}, which was also removed (see below).
+% =============================================================================
+
+Several of our analyses required comparing between the scores of different judges. However, the scores of LLM judges are distributed irregularly, and also strongly vary between differing LLMs or prompts. To compare between the scores of different judges, we normalised each judges' scores by mapping them to the judge's empirical cumulative distribution function on a reference distribution. For example, consider a normalised score of 0.4 for a document $x$ from a judge $J$. This means that the document's score, $J(x)$, is at the 40th percentile of the judge's scores on the reference distribution. For another example, if an average score change associated with a rewriter is 0.05, this means that each document experienced an average increase in score corresponding to a 5-percentile increase on the reference distribution. For details and validation, see \appref{app:reference-coverage}.
+
+% =============================================================================
+% Removed 2026-04-29 from appendix.tex \section{Additional Results} (was the
+% first subsection, B.1, before \subsection{Pairwise judge agreement...}).
+% Cross-referenced from main.tex via the paragraph above.
+% Figure file fig_s8_8_reference_coverage.png is still present in figures/.
+% =============================================================================
+
+\subsection{Judge-score distributions for original and rewritten content}\label{app:reference-coverage}
+
+Our method for normalising judge scores faces a possible problem: if the range of reference distribution is smaller than the range of the distribution of judge scores that we seek to normalise, then potentially many judge scores will all be mapped to the 0th or 100th percentiles.
+
+The below chart shows that this is not a problem for us. We use all human-written and AI-written paragraphs from \citet{rottgerQuantifyingDistortiveImpacts2025} (filtering to only include those relating to the 40 propositions included in our experiments) as the reference distribution. Including AI-written paragraphs ensures that the reference distribution spans the same range of judge scores as the rewritten paragraphs.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{fig_s8_8_reference_coverage.png}
+  \caption{Distributions of judge scores for original (grey) and rewritten (orange) content, by judge model and criterion. Top two rows: feedback judges (Qwen-3.5-9B, Llama-3.1-8B, Gemma-2-9B). Bottom two rows: evaluation judges (Mistral-7B-v0.3, Phi-3.5-mini, Command-R-7B). Within each judge, the upper panel shows clarity scores and the lower panel shows informativeness scores.}
+  \label{fig:reference-coverage}
+\end{figure}
+
+\backlink{app:reference-coverage}

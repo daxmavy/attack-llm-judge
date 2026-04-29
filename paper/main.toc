@@ -1,0 +1,58 @@
+\@ifundefined {etoctocstyle}{\let \etoc@startlocaltoc \@gobble \let \etoc@settocdepth \@gobble \let \etoc@depthtag \@gobble \let \etoc@setlocaltop \@gobble }{}
+\babel@toc {british}{}\relax 
+\etoc@depthtag {maintext}
+\contentsline {section}{\numberline {1}Introduction}{2}{section.1}%
+\contentsline {section}{\numberline {2}Background}{3}{section.2}%
+\contentsline {section}{\numberline {3}Methods}{3}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Data}{3}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Measuring rewriting effectiveness}{4}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Measuring semantic similarity}{4}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Rewriting methods}{5}{subsection.3.4}%
+\contentsline {paragraph}{Prompt-only and judge-free}{5}{section*.6}%
+\contentsline {paragraph}{Prompt-only and judge-in-the-loop}{5}{section*.8}%
+\contentsline {paragraph}{Reinforcement learning}{5}{section*.10}%
+\contentsline {paragraph}{Variants in feedback function}{6}{section*.12}%
+\contentsline {paragraph}{Choice of LLMs for rewriters and feedback judges}{6}{section*.13}%
+\contentsline {paragraph}{Estimating effectiveness using feedback judges}{6}{section*.14}%
+\contentsline {section}{\numberline {4}Results}{6}{section.4}%
+\contentsline {paragraph}{Rewriting effectiveness on held-out judges and held-out prompts}{6}{section*.15}%
+\contentsline {paragraph}{Relationship between original document quality and rewriting effectiveness}{6}{section*.16}%
+\contentsline {paragraph}{Impact of ensemble feedback on rewriting effectiveness}{6}{section*.17}%
+\contentsline {paragraph}{Trade-off between semantic fidelity and rewriting effectiveness}{7}{section*.18}%
+\contentsline {section}{\numberline {5}Discussion}{7}{section.5}%
+\contentsline {paragraph}{Harmfulness of rewriting attacks}{7}{section*.19}%
+\etoc@depthtag {appendix}
+\contentsline {section}{\numberline {A}Methods and Experimental Details}{11}{appendix.A}%
+\contentsline {subsection}{\numberline {A.1}The unknown-judge formulation is a generalisation of the known-judge formulation}{11}{subsection.A.1}%
+\contentsline {subsection}{\numberline {A.2}Details on document corpus and evaluation \& training datasets}{11}{subsection.A.2}%
+\contentsline {paragraph}{Original dataset}{11}{section*.24}%
+\contentsline {paragraph}{Construction of training and evaluation samples}{11}{section*.25}%
+\contentsline {subsection}{\numberline {A.3}GRPO finetuning hyperparameters}{12}{subsection.A.3}%
+\contentsline {subsection}{\numberline {A.4}Agreement-score regressor: training and evaluation}{13}{subsection.A.4}%
+\contentsline {paragraph}{Data.}{13}{section*.26}%
+\contentsline {paragraph}{Architecture.}{14}{section*.27}%
+\contentsline {paragraph}{Training procedure.}{14}{section*.28}%
+\contentsline {paragraph}{Hold-out strategy.}{14}{section*.29}%
+\contentsline {paragraph}{Evaluation metrics.}{14}{section*.30}%
+\contentsline {paragraph}{Hold-out evaluation results.}{14}{section*.31}%
+\contentsline {paragraph}{Distribution-shift validation.}{14}{section*.32}%
+\contentsline {paragraph}{Final model used for downstream analysis.}{15}{section*.33}%
+\contentsline {section}{\numberline {B}Additional Results}{15}{appendix.B}%
+\contentsline {subsection}{\numberline {B.1}Judge-score distributions for original and rewritten content}{15}{subsection.B.1}%
+\contentsline {subsection}{\numberline {B.2}Pairwise judge agreement and intra-rater reliability}{16}{subsection.B.2}%
+\contentsline {subsection}{\numberline {B.3}Returns to increasing $N$ in Best-of-N}{17}{subsection.B.3}%
+\contentsline {subsection}{\numberline {B.4}Stance-preservation rate vs paraphrase-similarity metrics}{19}{subsection.B.4}%
+\contentsline {subsection}{\numberline {B.5}Bidirectional NLI examples}{19}{subsection.B.5}%
+\contentsline {section}{\numberline {C}Supplementary Materials}{21}{appendix.C}%
+\contentsline {subsection}{\numberline {C.1}Judge prompts}{21}{subsection.C.1}%
+\contentsline {paragraph}{System prompt (all criteria)}{21}{section*.37}%
+\contentsline {paragraph}{Clarity rubric (user prompt)}{21}{section*.38}%
+\contentsline {paragraph}{Informativeness rubric (user prompt)}{22}{section*.39}%
+\contentsline {subsection}{\numberline {C.2}Rewriter prompts}{23}{subsection.C.2}%
+\contentsline {paragraph}{System prompt (all prompt-only rewriters)}{23}{section*.40}%
+\contentsline {paragraph}{Naive (criterion-agnostic)}{23}{section*.41}%
+\contentsline {paragraph}{Literature-informed (clarity)}{23}{section*.42}%
+\contentsline {paragraph}{Literature-informed (informativeness)}{24}{section*.43}%
+\contentsline {paragraph}{Rubric-aware (clarity)}{25}{section*.44}%
+\contentsline {paragraph}{Rubric-aware (informativeness)}{25}{section*.45}%
+\contentsline {paragraph}{GRPO rollout prompt (clarity)}{26}{section*.46}%

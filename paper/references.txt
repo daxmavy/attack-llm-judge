@@ -1,0 +1,192 @@
+
+\citep{kaneko2026paa}: \emph{Iteratively paraphrases scientific paper abstracts via in-context search --- feeds previous (paraphrase, score) pairs to the rewriter to guide the next candidate. 32 iterations $\times$ 8 candidates $\times$ 8 score samples per abstract, with BERTScore $\geq 0.85$ and perplexity ratio $\leq 1.2$ as drift guardrails. Matched-vs-mismatched reviewer (GPT-4o, Gemini 2.5, Sonnet 4) test shows $\sim$50\% of the attack uplift survives a judge swap.}
+- attacks on LLM reviewers
+- transferability --- but doesn't look at differential impact on transferability across methods
+- no decomposition of uplift into genuine-improvement vs.\ gaming
+
+\paragraph{Rewriting attacks on LLM judges (directly comparable).}
+
+\citep{chen2025autogeo}: \emph{Extracts preference rules from one frontier LLM (Gemini 2.5) and applies them via a second LLM to rewrite web content for higher visibility in generative search engines. An API pipeline uses frontier models; AutoGEO-Mini distils the behaviour into a 1.7B Qwen3 with GRPO using a compound reward (visibility + rule-compliance + KPR/KPC semantic preservation). Rules transfer across extractor models at 78--84\% overlap.}
+- target is a generative \emph{search engine}, not a quality judge --- criterion mismatch, but closest public training-based rewriter pipeline
+- cross-extractor transfer quantified
+- semantic-preservation reward (KPR/KPC) but no validation against a gold drift signal
+- no baseline-vs-attack decomposition of visibility uplift
+
+\paragraph{Prompt-injection attacks (suffixes, prefixes, content insertion).}
+
+\citep{raina2024robust}: \emph{Learns a universal 4-token adversarial suffix on a small FlanT5 surrogate using greedy word-by-word optimisation, then appends it to \emph{any} input evaluated by larger target judges (Llama2-7B, Mistral-7B, GPT-3.5). On SummEval and TopicalChat the suffix forces max scores irrespective of the input. Absolute scoring is much more vulnerable than comparative.}
+- suffix attack, not content rewriting --- unrealistic against content-quality judges
+- strongest published transfer result: FlanT5 surrogate $\to$ Llama2 / Mistral / GPT-3.5
+- uplift is ``fake by construction'' (universal suffix has no semantic content); sidesteps rather than addresses the genuine-improvement axis
+- no drift measurement (suffix is free of any semantic constraint)
+
+\citep{shi2024judgedeceiver}: \emph{Pairwise-judge attack: gradient-optimises an injected suffix inside the attacker-controlled candidate response so the judge prefers it. To prove the preference is gaming rather than quality, deliberately uses GPT-3.5-generated worst-quality candidates. Transfer reported as 99\% ASR Llama-3-8B $\to$ Llama-2-13B, 70\% $\to$ GPT-3.5, weaker on $>$70B.}
+- pairwise judge; gradient-optimised suffix in the attacker's candidate response
+- cross-judge transfer quantified
+- controls for genuine improvement by picking objectively worst responses; no decomposition method generalisable beyond that reductio
+- per-instance white-box optimisation; not a reusable rewriter
+
+\citep{adv2025survey}: \emph{Surveys prompt-injection attacks on judge systems. Reports cross-architecture transfer at 50.5--62.6\%, open-source $\to$ frontier at 22.4--35.2\%, and higher vulnerability in smaller models (65.9\% ASR).}
+- prompt-injection survey
+- no drift axis, no genuine-improvement decomposition
+
+\citep{li2025investigating}: \emph{Appends adversarial suffixes to one of two candidate responses in a pairwise judge setup, against small open-source judges (Qwen2.5-3B, Falcon3-3B). ASR $>$30\%; no explicit surrogate$\to$held-out transfer experiment.}
+- suffix-injection against small open-source judges only
+- no clear surrogate $\to$ held-out target split; no drift or baseline axes
+
+\citep{zhao2025onetoken}: \emph{Shows that single tokens like ``:'' or openers like ``Thought process:'' elicit false-positive high rewards from generative reward models and LLM judges including GPT-o1 and Claude-4. No optimisation needed --- the trivial inputs work across many judges. Gold signal is verifiable correctness (RLVR tasks).}
+- single-token ``master keys'' elicit false-positive rewards across many judges
+- demonstrates the floor of how semantically empty an attack can be and still succeed --- anchors the validity argument for our held-out panel
+
+\citep{pavlakos2025persuasion}: \emph{Takes math-reasoning solutions and inserts text invoking one of seven Aristotelian persuasion techniques (flattery, authority, identity, etc.), then asks LLM judges to score them. Conditions on math correctness: persuasion inflates scores by $\sim$8\% even on provably incorrect solutions, so the gain there is provably fake.}
+- persuasion-language \emph{insertion} into responses (not full rewriting)
+- conditions uplift on verifiable math correctness --- closest precedent for a genuine-improvement decomposition
+- gold signal is domain-specific (math), not a gold judge panel; no cross-judge transfer reported
+
+\citep{zheng2024cheating}: \emph{Submits a constant, input-ignoring response plus an adversarial prefix to AlpacaEval 2.0, Arena-Hard, and MT-Bench, and wins at rates that embarrass the benchmarks. The same null response wins across several judge-based leaderboards.}
+- constant null-model responses cheat major judge benchmarks
+- null is zero-quality by construction --- functions as a sanity floor for our genuine-improvement axis
+- attack ignores input entirely; not a rewriter
+
+\citep{nestaas2024advseo}: \emph{Injects adversarial instructions into candidate documents to manipulate generative engine preferences --- prompt-injection cast as SEO.}
+- adjacent; not directly comparable
+
+\citep{pfrommer2024tap}: \emph{Tree-search jailbreak baseline with pruning.}
+- included in \citet{wu2025robustjudge}'s 15-attack suite
+
+\citep{qian2025ranking}: \emph{Content-injection attack against LLM-based text rankers exploits an evaluation-goal hijacking failure mode; nDCG@10 collapses from 0.66 to 0.16 on a Llama-3-8B listwise ranker. Stronger models are \emph{more} vulnerable.}
+- criterion mismatch (ranker, not quality judge) but analogous failure-mode diagnosis
+
+\citep{zou2023gcg}: \emph{Greedy Coordinate Gradient finds adversarial suffixes on an ensemble of open-source surrogates (Vicuna-7B/13B) that transfer to GPT-3.5/4, Claude, and Bard. The template paper for surrogate-to-target transfer evaluation.}
+- canonical transferable suffix attack
+- not a rewriter, not a judge target, but the reference transfer-evaluation template
+
+\citep{liao2024amplegcg}: \emph{Collects successful GCG suffixes and trains a generative model over them, so new transferable suffixes can be produced in seconds rather than hours. 99\% ASR on GPT-3.5.}
+- trained generator of transferable suffixes
+- instance of the ``train a rewriter over the search artefacts'' idea; suffix, not rewriting
+
+\citep{huang2025iris}: \emph{Augments GCG/AutoDAN with an additional objective that suppresses the ``refusal direction'' in the target model's hidden activations. Boosts universality and transferability of suffixes.}
+- refusal-suppression objective boosts GCG/AutoDAN universality
+- orthogonal safety target
+
+\paragraph{Non-rewriting attacks on LLM judges with cross-judge transfer.}
+
+\citep{wu2025robustjudge}: \emph{First large benchmark on adversarial robustness of LLM judges --- 15 attacks $\times$ 12 judges $\times$ 7 defences. Attacks evaluated against each target judge in isolation (no surrogate/held-out split). Introduces \textbf{iSDR}: attacker's raw score gain minus a task-specific content-quality delta (BLEURT for text, CodeBLEU for code), as a single-judge measure of how much of the gain is not genuine quality.}
+- largest attack-on-judge benchmark
+- \textit{no} cross-judge transfer experiment --- each attack evaluated against its own target in isolation
+- iSDR is the only published attempt at a genuine-improvement decomposition on LLM judges; uses an automatic proxy metric, not a gold LLM panel
+- our framework extends this with a held-out transfer axis and a panel-based gold reference
+
+\paragraph{Benchmark cheating and evaluator-bias exploits.}
+
+\citep{dubois2024length}: \emph{Documents that LLM-judge benchmarks systematically reward longer responses and proposes a regression-based debias against human rankings. Defender-side; isolates length as the canonical confound in any judge-score analysis.}
+- length bias documented; regression-based debias
+- motivates controlling length as a confound in our drift / baseline analysis
+
+\citep{zhang2024format}: \emph{Shows LLM evaluators preferentially reward outputs with bold, lists, emojis, and exclamations, with content quality held constant.}
+- format-only rewriting inflates scores
+- candidate cheap-rewriter baseline for our training-free panel
+- no cross-judge generalisation or drift measurement reported
+
+\citep{pan2024spontaneous}: \emph{Runs iterative in-context self-refinement on essay editing --- an online judge gives feedback, the rewriter revises. The online judge's score rises monotonically with iterations, but held-out judges and human raters stagnate. The online-vs-held-out gap is the paper's headline diagnostic for in-context reward hacking.}
+- iterative self-refinement on essays
+- \emph{explicitly} structured as online-vs-held-out comparison --- the closest prior design for our transfer axis
+- inference-only; no trained rewriter; no drift axis
+
+\paragraph{Training-based rewriters against judge or classifier rewards.}
+
+\citep{argrewrite2026grpo}: \emph{Trains a rewriter that edits argumentative text for ``appropriateness'' with GRPO. The reward is a weighted sum of semantic similarity, fluency, pattern conformity, and an argument-level appropriateness classifier score. All rewards are training-side; no held-out evaluator and no gold decomposition.}
+- GRPO rewriter with multi-component reward --- closest methodological precedent for our GRPO arm
+- no held-out judge, no gold decomposition
+- drift reward not validated against a held-out drift signal
+
+\citep{argrewrite2024rl}: \emph{Earlier rewriter for the same appropriateness task, trained with RL from a classifier reward (not an LLM judge). Starts from an instruction-finetuned LLM policy. Introduces a ``content preservation'' criterion without a standardised validation method.}
+- RL from classifier feedback; instruction-finetuned initial policy
+- no held-out evaluator; ``content preservation'' criterion not operationalised
+- methodological precursor, not an attack on LLM-as-a-judge per se
+
+\citep{huang2025rewritejailbreak}: \emph{SFT cold-start then RL trains a rewriter that takes benign prompts and rewrites them into jailbreak prompts for safety-aligned victim models. 40--60\% attack success on unseen target models --- clean demonstration that a trained rewriter's effect transfers cross-target.}
+- SFT $\to$ RL rewriter that rewrites benign prompts into jailbreaks
+- cross-victim transfer --- blueprint for the training-based transfer test
+- target is safety-aligned victim, not a quality judge
+
+\citep{ho2025rewriterank}: \emph{SFT + PPO rewriter for ad visibility, using a frontier LLM as ranker-judge and a combined semantic+fidelity loss in SFT. Student-paper scope; limited detail on held-out evaluation.}
+- SFT + PPO ad-visibility rewriter with semantic+fidelity loss
+- LLM ranker as the reward source; likely no held-out evaluator
+
+\paragraph{RM overoptimisation / proxy-vs-gold lineage (methodological).}
+
+\citep{gao2023scaling}: \emph{The canonical study: train a policy via PPO or Best-of-N against a proxy reward model and track performance on a held-out gold RM. Uplift on the proxy initially correlates with gold, then diverges, giving the characteristic hump-shaped overoptimisation curves.}
+- canonical proxy-vs-gold curves for RMs; hump-shaped overoptimisation signature
+- RMs, not LLM judges --- our gold-panel decomposition is the LLM-judge analogue
+
+\citep{coste2024ensembles}: \emph{Ensembles of proxy RMs plus KL regularisation push the overoptimisation hump higher and later. Explicit proxy-vs-gold curves per optimisation step.}
+- ensembling proxies reduces overoptimisation against a gold RM
+- motivates a 2-proxy + gold-panel design
+
+\citep{eisenstein2023helping}: \emph{Shows that ensembling RMs does \emph{not} eliminate reward hacking because ensemble members share systematic errors. Key finding: ensembles diversified by \emph{pretraining} seed are more robust than those diversified only by fine-tuning seed.}
+- ensembling does not eliminate reward hacking
+- pretraining-seed diversity $>$ fine-tuning-seed diversity --- directly motivates selecting proxy judges from different pretraining families
+
+\citep{moskovitz2023confronting}: \emph{When RLHF optimises a composite of several correlated RMs, identifies a threshold beyond which further optimisation starts hurting gold performance. Uses constrained PPO to stay below it.}
+- composite-RM overoptimisation thresholds; constrained-PPO framing
+- relevant to KL / drift-penalty choice in GRPO arm
+
+\citep{kwa2024catastrophic}: \emph{Proves that if the RM's error is heavy-tailed, KL regularisation cannot bound proxy-gold divergence --- a policy can gain arbitrary reward while achieving no true utility above the base model. Light-tailed error is the favourable regime.}
+- KL regularisation provably does not mitigate heavy-tailed reward misspecification
+- warns against treating KL as a drift guardrail; motivates independent drift validation
+
+\citep{laidlaw2024correlated}: \emph{Reframes reward hacking as the breakdown of proxy-target correlation under optimisation pressure, and proposes $\chi^2$-divergence regularisation with formal guarantees.}
+- reward hacking formally defined as breakdown of proxy-target correlation
+- vocabulary for expressing ranking-reversal between attack-judge and gold panel
+
+\citep{beyer2025est}: \emph{Defender-side framework: probes systems with invariance-preserving perturbations and flags inputs where the reward changes but content properties don't. Includes an LLM-judge case study with two judges and 1,200 human-annotated items.}
+- defender-side invariance-preserving perturbations to detect proxy gaming
+- our gold-panel decomposition is the attacker-side mirror of the same separation
+
+\citep{khalaf2025inference}: \emph{Shows Best-of-N inference suffers a winner's-curse against a proxy reward --- the maximiser increasingly selects high-error items. Introduces Best-of-Poisson and HedgeTune to tame it without retraining.}
+- inference-time winner's-curse in BoN; gold-vs-proxy framing at inference
+- relevant to BoN as a training-free rewriter arm in the scale panel
+
+\paragraph{Judge reliability and agreement (defender-side validity).}
+
+\citep{coinflip2026}: \emph{Curates 6,642 human-verified labels for safety evaluation and shows that LLM judges drop to near-random agreement with humans under adversarial distribution shifts applied to the candidate outputs being judged.}
+- LLM judges drop to near-random under adversarial distribution shift
+- strongest published evidence that single-judge uplift can be entirely artefactual --- anchors the noise-floor argument for our held-out panel
+
+\citep{pairwise2025}: \emph{Compares pairwise and pointwise feedback protocols under distractor perturbations. Pairwise judgments flip $\sim$35\% of the time; pointwise flip only $\sim$9\%.}
+- contradicts \citet{raina2024robust} on which protocol is more vulnerable --- different vulnerability axes
+- supports absolute-scoring choice in our framework
+
+\citep{multimodel2025}: \emph{Shows that preference data drawn from \emph{many} model families makes DPO more vulnerable to reward hacking than single-source data, because cross-family differences give the policy easier separability features to exploit.}
+- multi-model synthetic preference data can facilitate reward hacking in DPO
+- competing prior to \citet{eisenstein2023helping} for multi-proxy design; our setup can adjudicate
+
+\citep{shelflife2025}: \emph{Tests whether fine-tuned LLM judges generalise across new questions, new generator models, and time --- all three axes degrade.}
+- motivates caution about treating any single fine-tuned judge as ground truth
+- background for held-out-judge validity
+
+\citep{shi2024position}: \emph{Pairwise judges show substantial position bias (preferring A or B based on order) and familial agreement (same-family judges agree more than across families).}
+- motivates pointwise scoring choice in our framework
+
+\citep{zheng2023mtbench}: \emph{Foundational study establishing that GPT-4-style judges correlate $\sim$80\% with human preferences on multi-turn dialogue, which legitimised the LLM-as-a-judge paradigm.}
+- baseline citation for judge validity
+
+\paragraph{GEO / SEO adjacent (content-rewriting, non-judge target).}
+
+\citep{aggarwal2024geo}: \emph{Defines visibility metrics (position rate, word count share, subjective impression) for content inside generative-engine answers, and benchmarks heuristic prompted rewrites.}
+- criterion mismatch, but benchmark reference for inference-only rewriting
+
+\citep{stealthrank2025}: \emph{Energy-based / Langevin optimisation that jointly maximises ranking score while constraining fluency and n-gram overlap.}
+- gradient-based rewriting with explicit drift penalties
+
+\citep{raid2025gseo}: \emph{Prompted rewriter for generative search engines with intent-aware and semantic-drift-aware step planning.}
+- design reference for cost-efficient prompted attacks
+
+\paragraph{Classical adversarial-perturbation methodology (substitution, gradient-based).}
+
+\citep{bertattack2020}: \emph{Classic token-substitution attack using masked-LM candidate proposals.}
+- historical baseline for text adversarial attacks
+
+\citep{guo2021gbda}: \emph{First general-purpose gradient-based attack on text transformers. Parameterises a distribution over adversarial perturbations via Gumbel-softmax so the whole attack is differentiable; composes target loss, LM-fluency loss, and BERTScore semantic-similarity loss.}
+- methodological ancestor for gradient-based rewriting attacks; not judge-targeted
