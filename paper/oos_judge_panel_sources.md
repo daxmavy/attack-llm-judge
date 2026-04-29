@@ -15,7 +15,7 @@ For each row in `tables/oos_judge_panel.tex`, the URLs below cover parameter cou
 ## Command-R 7B
 
 - Params, release date: <https://huggingface.co/CohereLabs/c4ai-command-r7b-12-2024>
-- AAII score (25): no dedicated AAII page; value adopted from project's prior analysis. If you want a citable AAII source for this row, the index page is the only canonical reference: <https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index>
+- AAII: not on Artificial Analysis (no dedicated page) — entry left blank in the table.
 
 ## Qwen3.5-35B-A3B
 
