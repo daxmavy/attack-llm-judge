@@ -1,17 +1,17 @@
 \begin{table}[h]
-  \centering\small
-  \caption{Feedback judges used in BoN candidate selection and as the reward signal during GRPO training. The first three (small panel, bf16) were paired with the small rewriters Qwen2.5-1.5B / LFM2.5-1.2B / Gemma-3-1B; the last three (medium panel, FP8-dynamic via RedHatAI variants) were paired with Qwen3-8B. AAII = Artificial Analysis Intelligence Index v4.0. Parameter counts are listed alongside the model name. Qwen-3.5-9B's AAII (32) is reported by Artificial Analysis only for the reasoning-mode variant; we ran the model with reasoning disabled.}
+  \centering\footnotesize
+  \caption{Feedback judges used in BoN candidate selection and as the reward signal during GRPO training. The first three (small panel, bf16) were paired with the small rewriters Qwen2.5-1.5B / LFM2.5-1.2B / Gemma-3-1B; the last three (medium panel, FP8-dynamic via RedHatAI variants) were paired with Qwen3-8B. AAII = Artificial Analysis Intelligence Index v4.0 \citep{aaIntelligenceIndex}. Parameter counts are listed alongside the model name. Qwen-3.5-9B's AAII (32) is reported by Artificial Analysis only for the reasoning-mode variant; we ran the model with reasoning disabled.}
   \label{tab:feedback-judges}
   \begin{tabular}{lrll}
     \toprule
     Judge & AAII & Released & Quantisation \\
     \midrule
-    Qwen-3.5-9B (9\,B)                  & 32\textsuperscript{\dag} & Feb 2026 & bf16          \\
-    Llama-3.1-8B-Instruct (8\,B)        & 12                       & Jul 2024 & bf16          \\
-    Gemma-2-9B-it (9\,B)                & ---                      & Jun 2024 & bf16          \\
-    Mistral-Small 24B Instruct 2501 (24\,B) & 13                   & Jan 2025 & FP8-dynamic   \\
-    Gemma-3-27B-it (27\,B)              & 10                       & Mar 2025 & FP8-dynamic   \\
-    Phi-4 (14\,B)                       & 10                       & Dec 2024 & FP8-dynamic   \\
+    Qwen-3.5-9B (9\,B) \citep{qwenQwen359BCard}                                       & 32\textsuperscript{\dag} \citep{aaQwen359B} & Feb 2026 & bf16          \\
+    Llama-3.1-8B-Instruct (8\,B) \citep{metaLlama318BInstructCard}                    & 12 \citep{aaLlama318B}                       & Jul 2024 & bf16          \\
+    Gemma-2-9B-it (9\,B) \citep{googleGemma29BItCard}                                 & ---                                          & Jun 2024 & bf16          \\
+    Mistral-Small 24B Instruct 2501 (24\,B) \citep{mistralaiMistralSmall24BInstruct2501Card} & 13 \citep{aaMistralSmall3}            & Jan 2025 & FP8-dynamic   \\
+    Gemma-3-27B-it (27\,B) \citep{googleGemma327BItCard}                              & 10 \citep{aaGemma327B}                       & Mar 2025 & FP8-dynamic   \\
+    Phi-4 (14\,B) \citep{microsoftPhi4Card}                                           & 10 \citep{aaPhi4}                            & Dec 2024 & FP8-dynamic   \\
     \bottomrule
   \end{tabular}
 

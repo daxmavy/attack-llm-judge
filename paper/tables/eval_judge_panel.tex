@@ -1,0 +1,17 @@
+\begin{table}[h]
+  \centering\footnotesize
+  \caption{Evaluation judge panel. Open-weight dense models report total parameters; open-weight Mixture-of-Experts (MoE) models report total\,/\,active. Hosted-only proprietary models do not disclose parameter counts. AAII = Artificial Analysis Intelligence Index v4.0 (composite cross-benchmark rank \citep{aaIntelligenceIndex}). The ``Inference'' column indicates whether each judge was served via local vLLM or queried through OpenRouter. For \texttt{qwen/qwen3.5-flash-02-23} and \texttt{xiaomi/mimo-v2-flash}, the OpenRouter endpoints serve the open-weight base models \texttt{Qwen/Qwen3.5-35B-A3B} and \texttt{XiaomiMiMo/MiMo-V2-Flash} respectively; the AAII figures shown are for those open base models.}
+  \label{tab:eval-judges}
+  \begin{tabular}{llrll}
+    \toprule
+    Judge & Parameters & AAII & Released & Inference \\
+    \midrule
+    Mistral-7B v0.3 \citep{mistralaiMistral7BInstructV03}                & 7\,B (dense)         &  7 \citep{aaMistral7BInstruct}     & May 2024 & local      \\
+    Phi-3.5-mini \citep{microsoftPhi35MiniInstruct}                      & 3.8\,B (dense)       & 10 \citep{aaPhi3Mini}              & Aug 2024 & local      \\
+    Command-R 7B \citep{cohereCommandR7B}                                & 7\,B (dense)         & ---                                & Dec 2024 & local      \\
+    Qwen3.5-35B-A3B \citep{qwenQwen3535BA3BCard}                         & 35\,B / 3\,B (MoE)   & 37 \citep{aaQwen3535BA3B}          & Feb 2026 & OpenRouter \\
+    Gemini 2.5 Flash-Lite \citep{googleGemini25FlashLiteAnnounce}        & undisclosed          & 13 \citep{aaGemini25FlashLite}     & Jul 2025 & OpenRouter \\
+    MiMo-V2-Flash \citep{xiaomiMimoV2FlashCard}                          & 309\,B / 15\,B (MoE) & 30 \citep{aaMimoV2Flash}           & Dec 2025 & OpenRouter \\
+    \bottomrule
+  \end{tabular}
+\end{table}
