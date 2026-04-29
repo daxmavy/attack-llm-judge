@@ -219,8 +219,6 @@ We used two prompts, corresponding to two different evaluation criteria: clarity
 
 To evaluate rewriter effectiveness effectiveness, we used two metrics: the average change in judge score between the original document and the rewritten document, and the percentage of rewritten documents with a higher average score than the original document. The first metric describes overall effectiveness, while the latter estimates the likelihood of the rewriter being counterproductive.
 
-Several of our analyses required comparing between the scores of different judges. However, the scores of LLM judges are distributed irregularly, and also strongly vary between differing LLMs or prompts. To compare between the scores of different judges, we normalised each judges' scores by mapping them to the judge's empirical cumulative distribution function on a reference distribution. For example, consider a normalised score of 0.4 for a document $x$ from a judge $J$. This means that the document's score, $J(x)$, is at the 40th percentile of the judge's scores on the reference distribution. For another example, if an average score change associated with a rewriter is 0.05, this means that each document experienced an average increase in score corresponding to a 5-percentile increase on the reference distribution. For details and validation, see \appref{app:reference-coverage}. 
-
 \subsection{Measuring semantic similarity}
 
 Similar to the measurement of rewriting effectiveness, the choice of semantic similarity function $S$ depends on the application context. We developed one method which is application-specific, and another which can be applied more generally.
