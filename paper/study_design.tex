@@ -1,0 +1,58 @@
+\documentclass[border=10pt]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta}
+\begin{document}
+\definecolor{figgray}{RGB}{95,94,90}
+\definecolor{figpurple}{RGB}{83,74,183}
+\definecolor{figteal}{RGB}{15,110,86}
+\begin{tikzpicture}[
+    font=\small,
+    >=Latex,
+    base/.style={draw, rounded corners=2pt, align=center,
+                 inner sep=4pt, line width=0.4pt},
+    gbox/.style={base, fill=figgray!8,    draw=figgray!70},
+    pbox/.style={base, fill=figpurple!10, draw=figpurple!70,
+                 text=figpurple!85!black},
+    tbox/.style={base, fill=figteal!12,   draw=figteal!70,
+                 text=figteal!75!black},
+    grouplab/.style={font=\footnotesize\itshape, color=figgray},
+    config/.style={font=\footnotesize, color=figgray},
+    arr/.style={->, line width=0.5pt, draw=figgray!85},
+]
+% --- Tier 1: Dataset ---
+\node[gbox, minimum width=7cm, minimum height=1cm] (data) at (0,0) {%
+    \textbf{Dataset (R\"ottger et al.\ 2025)}\\[1pt]
+    \footnotesize 1{,}805 docs $\rightarrow$ 1{,}091 train / 714 eval};
+% --- Section header ---
+\node[below=0.35cm of data] (head) {\textbf{Rewriting methods}};
+% --- Tier 2: 4 method boxes ---
+\node[pbox, minimum width=2.6cm, minimum height=1.1cm] (naive) at (-4.5,-2.4)
+    {\textbf{Naive}\\\footnotesize Plain rewrite};
+\node[pbox, minimum width=2.6cm, minimum height=1.1cm] (lit)   at (-1.5,-2.4)
+    {\textbf{Lit-informed}\\\footnotesize Prompt engineering};
+\node[tbox, minimum width=2.6cm, minimum height=1.1cm] (bon)   at ( 1.5,-2.4)
+    {\textbf{Best-of-N}\\\footnotesize Pick of 16};
+\node[tbox, minimum width=2.6cm, minimum height=1.1cm] (rl)    at ( 4.5,-2.4)
+    {\textbf{RL}\\\footnotesize GRPO finetune};
+\node[grouplab] at (-3.0,-3.25) {Judge-free};
+\node[grouplab] at ( 3.0,-3.25) {Judge-in-the-loop};
+\node[config]   at ( 0.0,-3.65)
+    {3 rewriter LLMs $\cdot$ 3 feedback judges $\cdot$ 3 reward variants $\rightarrow$ 84{,}966 rewrites};
+% --- Tier 3: Evaluation ---
+\node[gbox, minimum width=12cm, minimum height=1.5cm] (eval) at (0,-5.1) {%
+    \textbf{Evaluation on eval set}\\[2pt]
+    \footnotesize 6 held-out judges $\times$ 2 prompts (clarity, informativeness) $\rightarrow$ 1{,}280{,}908 judge scores\\[1pt]
+    \footnotesize Political stance preservation and MIS for meaning preservation};
+% --- Tier 4: RQs ---
+\node[gbox, minimum width=4.3cm, minimum height=1.2cm] (rq1) at (-4.5,-7.0)
+    {\textbf{RQ1 $\cdot$ Generalisation}\\\footnotesize Held-out judges, prompts};
+\node[gbox, minimum width=4.3cm, minimum height=1.2cm] (rq2) at ( 0.0,-7.0)
+    {\textbf{RQ2 $\cdot$ Heterogeneity}\\\footnotesize Across original doc quality};
+\node[gbox, minimum width=4.3cm, minimum height=1.2cm] (rq3) at ( 4.5,-7.0)
+    {\textbf{RQ3 $\cdot$ Trade-off}\\\footnotesize Score vs meaning preserved};
+% --- Arrows ---
+\draw[arr] (data.south) -- (head.north);
+\draw[arr] (0,-3.95)    -- (eval.north);
+\end{tikzpicture}
+\end{document}

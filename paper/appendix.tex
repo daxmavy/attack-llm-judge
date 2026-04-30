@@ -47,57 +47,6 @@ For evaluation and training, we only include human responses to the 40 propositi
 
 \backlink{app:corpus}
 
-\subsection{GRPO finetuning hyperparameters}\label{app:grpo-config}
-
-We use TRL 1.2.0's GRPO implementation. \Cref{tab:grpo-config} lists every hyperparameter we set; values flagged with~$\dagger$ match the TRL 1.2.0 default. The length-penalty schedule (last block of the table) is applied to each generation and subtracted from the rollout-level reward used by GRPO.
-
-\begin{table}[h]
-  \centering\small
-  \begin{tabular}{ll}
-    \toprule
-    \textbf{Setting} & \textbf{Value} \\
-    \midrule
-    \multicolumn{2}{l}{\emph{GRPO objective}} \\
-    Algorithm & GRPO (TRL implementation) \\
-    Loss type & \texttt{dapo}$^\dagger$ \\
-    KL coefficient $\beta$ & $0.01$ (TRL default $0.0$) \\
-    Clipping $\epsilon$ & $0.2^\dagger$ \\
-    Iterations per batch ($\mu$) & $1^\dagger$ \\
-    Reward scaling & group-level$^\dagger$ \\
-    \midrule
-    \multicolumn{2}{l}{\emph{Optimisation}} \\
-    Optimiser & AdamW$^\dagger$ \\
-    Learning rate & $5\times 10^{-6}$ (TRL default $1\times 10^{-6}$) \\
-    Warmup ratio & $0.0^\dagger$ \\
-    Total training steps & $400$ \\
-    Precision & bf16 (TRL default fp32) \\
-    Random seed & $42^\dagger$ \\
-    \midrule
-    \multicolumn{2}{l}{\emph{Rollout sampling}} \\
-    Generations per prompt $G$ & $4$ (TRL default $8$) \\
-    Per-device batch size (prompts) & $8$ ($= 2G$) \\
-    Gradient accumulation steps & $4$ (TRL default $1$) \\
-    Effective generations per optimiser step & $128$ ($= G \cdot 8 \cdot 4$) \\
-    Sampling temperature & $1.0^\dagger$ \\
-    Top-$p$ & $1.0^\dagger$ \\
-    Max completion length (tokens) & $260$ (TRL default $256$) \\
-    Rewriter generation backend & HuggingFace \texttt{transformers.generate}$^\dagger$ (\texttt{use\_vllm=False}) \\
-    \midrule
-    \multicolumn{2}{l}{\emph{Length penalty}} \\
-    Shape & asymmetric cubic \\
-    Length ratio & $r = w_\text{gen} / w_\text{target}$ \\
-    Penalty value & $\alpha (r - 1)^2 + \gamma \cdot \mathbb{1}[r > 1 + \tau_o] \cdot (r - 1 - \tau_o)^3$ \\
-    Quadratic weight $\alpha$ & $100$ \\
-    Cubic overshoot weight $\gamma$ & $1{,}000$ \\
-    Overshoot tolerance $\tau_o$ & $0.15$ \\
-    \bottomrule
-  \end{tabular}
-  \caption{GRPO and length-penalty hyperparameters. Values flagged $\dagger$ match the TRL 1.2.0 default; unflagged values in the GRPO and optimisation blocks are deliberate overrides (the original default is given in parentheses where applicable). The length-penalty block lists our own settings (no TRL default applies). The length-penalty value combines a symmetric quadratic on the length ratio with an additional cubic term that activates only when the generation overshoots its target word count by more than $\tau_o = 15\%$; undershoots stay at the symmetric quadratic. The penalty is subtracted from each generation's rollout reward.}
-  \label{tab:grpo-config}
-\end{table}
-
-\backlink{app:grpo-config}
-
 \subsection{Agreement-score regressor: training and evaluation}\label{app:agreement-score}
 
 We use a learned regressor to predict the rater-aggregated stance label $y \in [0, 100]$ (where $y=0$ encodes ``argues against the proposition'', $y=100$ encodes ``argues for it'') for each (proposition, paragraph) pair. The regressor lets us score every rewrite in the eval set without running a fresh rater study, and is the backbone of the agreement-score change metric reported in the main results.
@@ -173,6 +122,94 @@ After the diagnostic runs above had quantified generalisation behaviour, we retr
 
 \backlink{app:agreement-score}
 
+\subsection{Stance-preservation rate vs paraphrase-similarity metrics}\label{app:preservation-similarity}
+
+\Cref{fig:preservation-vs-similarity} shows the relationship between two paraphrase-similarity metrics (mean bidirectional NLI; e5-large-v2 cosine similarity) and the stance-preservation rate, on the subset of in-scope rewrites whose source paragraph has a strictly extreme v2 agreement score ($> 75$ or $< 25$). A rewrite is considered to \emph{preserve stance} if its v2 agreement score stays on the same side of 50 as the original (high-agreement original $\Rightarrow$ rewrite $\geq 50$; low-agreement original $\Rightarrow$ rewrite $< 50$). Each top panel pairs with a histogram showing the distribution of the metric on the same rewrites; histograms share their y-axis, and the two stance-preservation-rate panels share theirs.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{fig_preservation_vs_similarity.png}
+  \caption{Stance-preservation rate as a function of paraphrase-similarity metrics, with the corresponding metric distributions below. Bin width 0.05 for the stance-preservation-rate panels; histogram bin width 0.025. Shaded ribbons on the top panels are 95\% Wilson confidence intervals.}
+  \label{fig:preservation-vs-similarity}
+\end{figure}
+
+\input{tables/preservation_prediction.tex}
+
+\backlink{app:preservation-similarity}
+
+\subsection{Returns to increasing \texorpdfstring{$N$}{N} in Best-of-N}\label{app:bon-returns}
+
+For each (source paragraph $\times$ rewriter $\times$ criterion) cell of $K=16$ candidates from \texttt{bon\_candidate}, we sample 100 random orderings; the cumulative max along each ordering gives one realisation of the Best-of-$N$ curve $E[\max\text{-of-}N]$ for that cell, for $N \in \{1, \ldots, 16\}$. The per-cell expected max is the mean across the 100 samples; the curves shown plot the mean and 95\% confidence interval \emph{across cells}. Two metrics: the feedback judge score (mean of \texttt{qwen95b}, \texttt{llama8b}, \texttt{gemma9b} on the matching criterion) and the mean bidirectional NLI ($\tfrac{1}{2}(\mathrm{NLI}_{\rightarrow} + \mathrm{NLI}_{\leftarrow})$).
+
+\Cref{fig:bon-returns} shows the overall curves pooled across all 4{,}284 cells. \Cref{fig:bon-returns-faceted} disaggregates the same data by criterion and rewriter base model.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{fig_bon_returns.png}
+  \caption{Best-of-$N$ curves on the \texttt{bon\_candidate} pool, pooled across all cells. Both curves are concave with diminishing returns: roughly half of the total gain is realised by $N=4$ and $\sim$80\% by $N=8$. The NLI curve plateaus near 0.71 — this is the upper bound that BoN-argmax-NLI can extract from the small-rewriter candidate distribution; matching GRPO-NLI's $\sim$0.87 mean NLI requires changing the generator, not enlarging $N$. Shaded ribbons: 95\% CI across cells.}
+  \label{fig:bon-returns}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{fig_bon_returns_faceted.png}
+  \caption{Best-of-$N$ curves faceted by rewriter (columns) and criterion (rows within each metric). Top half: feedback judge score. Bottom half: mean bidirectional NLI. \texttt{Qwen2.5-1.5B} starts from substantially higher single-shot NLI ($N=1$ value $\approx 0.55$ vs $\approx 0.30$ for the other two rewriters) but caps at lower judge scores; \texttt{LFM2.5-1.2B} and \texttt{gemma-3-1B} achieve higher judge scores at the cost of much lower fidelity in the candidate distribution. Shaded ribbons: 95\% CI across cells.}
+  \label{fig:bon-returns-faceted}
+\end{figure}
+
+\backlink{app:bon-returns}
+
+\subsection{GRPO finetuning hyperparameters}\label{app:grpo-config}
+
+We use TRL 1.2.0's GRPO implementation. \Cref{tab:grpo-config} lists every hyperparameter we set; values flagged with~$\dagger$ match the TRL 1.2.0 default. The length-penalty schedule (last block of the table) is applied to each generation and subtracted from the rollout-level reward used by GRPO.
+
+\begin{table}[h]
+  \centering\small
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{Setting} & \textbf{Value} \\
+    \midrule
+    \multicolumn{2}{l}{\emph{GRPO objective}} \\
+    Algorithm & GRPO (TRL implementation) \\
+    Loss type & \texttt{dapo}$^\dagger$ \\
+    KL coefficient $\beta$ & $0.01$ (TRL default $0.0$) \\
+    Clipping $\epsilon$ & $0.2^\dagger$ \\
+    Iterations per batch ($\mu$) & $1^\dagger$ \\
+    Reward scaling & group-level$^\dagger$ \\
+    \midrule
+    \multicolumn{2}{l}{\emph{Optimisation}} \\
+    Optimiser & AdamW$^\dagger$ \\
+    Learning rate & $5\times 10^{-6}$ (TRL default $1\times 10^{-6}$) \\
+    Warmup ratio & $0.0^\dagger$ \\
+    Total training steps & $400$ \\
+    Precision & bf16 (TRL default fp32) \\
+    Random seed & $42^\dagger$ \\
+    \midrule
+    \multicolumn{2}{l}{\emph{Rollout sampling}} \\
+    Generations per prompt $G$ & $4$ (TRL default $8$) \\
+    Per-device batch size (prompts) & $8$ ($= 2G$) \\
+    Gradient accumulation steps & $4$ (TRL default $1$) \\
+    Effective generations per optimiser step & $128$ ($= G \cdot 8 \cdot 4$) \\
+    Sampling temperature & $1.0^\dagger$ \\
+    Top-$p$ & $1.0^\dagger$ \\
+    Max completion length (tokens) & $260$ (TRL default $256$) \\
+    Rewriter generation backend & HuggingFace \texttt{transformers.generate}$^\dagger$ (\texttt{use\_vllm=False}) \\
+    \midrule
+    \multicolumn{2}{l}{\emph{Length penalty}} \\
+    Shape & asymmetric cubic \\
+    Length ratio & $r = w_\text{gen} / w_\text{target}$ \\
+    Penalty value & $\alpha (r - 1)^2 + \gamma \cdot \mathbb{1}[r > 1 + \tau_o] \cdot (r - 1 - \tau_o)^3$ \\
+    Quadratic weight $\alpha$ & $100$ \\
+    Cubic overshoot weight $\gamma$ & $1{,}000$ \\
+    Overshoot tolerance $\tau_o$ & $0.15$ \\
+    \bottomrule
+  \end{tabular}
+  \caption{GRPO and length-penalty hyperparameters. Values flagged $\dagger$ match the TRL 1.2.0 default; unflagged values in the GRPO and optimisation blocks are deliberate overrides (the original default is given in parentheses where applicable). The length-penalty block lists our own settings (no TRL default applies). The length-penalty value combines a symmetric quadratic on the length ratio with an additional cubic term that activates only when the generation overshoots its target word count by more than $\tau_o = 15\%$; undershoots stay at the symmetric quadratic. The penalty is subtracted from each generation's rollout reward.}
+  \label{tab:grpo-config}
+\end{table}
+
+\backlink{app:grpo-config}
+
 \section{Additional Results}\label{app:additional-results}
 
 \subsection{Pairwise judge agreement and intra-rater reliability}\label{app:judge-correlation}
@@ -206,28 +243,6 @@ After the diagnostic runs above had quantified generalisation behaviour, we retr
 
 \backlink{app:judge-correlation}
 
-\subsection{Returns to increasing \texorpdfstring{$N$}{N} in Best-of-N}\label{app:bon-returns}
-
-For each (source paragraph $\times$ rewriter $\times$ criterion) cell of $K=16$ candidates from \texttt{bon\_candidate}, we sample 100 random orderings; the cumulative max along each ordering gives one realisation of the Best-of-$N$ curve $E[\max\text{-of-}N]$ for that cell, for $N \in \{1, \ldots, 16\}$. The per-cell expected max is the mean across the 100 samples; the curves shown plot the mean and 95\% confidence interval \emph{across cells}. Two metrics: the feedback judge score (mean of \texttt{qwen95b}, \texttt{llama8b}, \texttt{gemma9b} on the matching criterion) and the mean bidirectional NLI ($\tfrac{1}{2}(\mathrm{NLI}_{\rightarrow} + \mathrm{NLI}_{\leftarrow})$).
-
-\Cref{fig:bon-returns} shows the overall curves pooled across all 4{,}284 cells. \Cref{fig:bon-returns-faceted} disaggregates the same data by criterion and rewriter base model.
-
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=\linewidth]{fig_bon_returns.png}
-  \caption{Best-of-$N$ curves on the \texttt{bon\_candidate} pool, pooled across all cells. Both curves are concave with diminishing returns: roughly half of the total gain is realised by $N=4$ and $\sim$80\% by $N=8$. The NLI curve plateaus near 0.71 — this is the upper bound that BoN-argmax-NLI can extract from the small-rewriter candidate distribution; matching GRPO-NLI's $\sim$0.87 mean NLI requires changing the generator, not enlarging $N$. Shaded ribbons: 95\% CI across cells.}
-  \label{fig:bon-returns}
-\end{figure}
-
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=\linewidth]{fig_bon_returns_faceted.png}
-  \caption{Best-of-$N$ curves faceted by rewriter (columns) and criterion (rows within each metric). Top half: feedback judge score. Bottom half: mean bidirectional NLI. \texttt{Qwen2.5-1.5B} starts from substantially higher single-shot NLI ($N=1$ value $\approx 0.55$ vs $\approx 0.30$ for the other two rewriters) but caps at lower judge scores; \texttt{LFM2.5-1.2B} and \texttt{gemma-3-1B} achieve higher judge scores at the cost of much lower fidelity in the candidate distribution. Shaded ribbons: 95\% CI across cells.}
-  \label{fig:bon-returns-faceted}
-\end{figure}
-
-\backlink{app:bon-returns}
-
 \subsection{BoN feedback ensemble size}\label{app:bon-ensemble-size}
 
 \begin{figure}[h]
@@ -238,21 +253,6 @@ For each (source paragraph $\times$ rewriter $\times$ criterion) cell of $K=16$ 
 \end{figure}
 
 \backlink{app:bon-ensemble-size}
-
-\subsection{Stance-preservation rate vs paraphrase-similarity metrics}\label{app:preservation-similarity}
-
-\Cref{fig:preservation-vs-similarity} shows the relationship between two paraphrase-similarity metrics (mean bidirectional NLI; e5-large-v2 cosine similarity) and the stance-preservation rate, on the subset of in-scope rewrites whose source paragraph has a strictly extreme v2 agreement score ($> 75$ or $< 25$). A rewrite is considered to \emph{preserve stance} if its v2 agreement score stays on the same side of 50 as the original (high-agreement original $\Rightarrow$ rewrite $\geq 50$; low-agreement original $\Rightarrow$ rewrite $< 50$). Each top panel pairs with a histogram showing the distribution of the metric on the same rewrites; histograms share their y-axis, and the two stance-preservation-rate panels share theirs.
-
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=\linewidth]{fig_preservation_vs_similarity.png}
-  \caption{Stance-preservation rate as a function of paraphrase-similarity metrics, with the corresponding metric distributions below. Bin width 0.05 for the stance-preservation-rate panels; histogram bin width 0.025. Shaded ribbons on the top panels are 95\% Wilson confidence intervals.}
-  \label{fig:preservation-vs-similarity}
-\end{figure}
-
-\input{tables/preservation_prediction.tex}
-
-\backlink{app:preservation-similarity}
 
 \subsection{Original-document quality vs.\ rewriting effectiveness across three score sources}\label{app:quality-three-x-axes}
 
@@ -280,10 +280,10 @@ For each (source paragraph $\times$ rewriter $\times$ criterion) cell of $K=16$ 
 
 \backlink{app:tradeoff-disagg}
 
-\input{appendix_nli_examples.tex}
-
 \section{Supplementary Materials}\label{app:supplementary}
 
 \input{appendix_judge_prompts.tex}
 
 \input{appendix_rewriter_prompts.tex}
+
+\input{appendix_nli_examples.tex}

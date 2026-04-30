@@ -12,6 +12,9 @@
 \usepackage{microtype}
 \usepackage{xcolor}
 \usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta}
+\usepackage{standalone}
 \usepackage{amsmath}
 \usepackage{xspace}
 \usepackage{csquotes}
@@ -68,7 +71,7 @@
 \newcommand{\ltexvoweldummy}[1]{#1}
 \newcommand{\ltexhidden}[1]{}
 
-\title{Rewriting political content to improve LLM judge scores}
+\title{Rewriting political content to improve LLM~judge~scores}
 
 \author{%
   Candidate Number: 1099273 \\
@@ -163,7 +166,7 @@ We develop a general mathematical formulation for the rewriting problem, and use
   \item \textbf{RQ3}: When rewriting a document, is there a trade-off between boosting LLM judge scores, and preserving the document's original meaning?
 \end{enumerate}
 
-We find that when using small base models for rewriters, rewriting effectiveness is reduced but not eliminated when assessed by held-out judges, and further reduced when assessed using held-out prompts. We also find that documents which are already regarded favourably by LLM judges receive significantly reduced benefits from rewriting, and have a high likelihood of their score being degraded by rewriting. To address this risk, we find that LLMs are sufficiently good predictors of one anothers' ratings, that they can be used to determine when rewriting is likely to be helpful or harmful. We also find that when model capability is fixed, there is a trade-off between meaning preservation and rewriting effectiveness. Finally, we find that a prompt-engineered frontier model outperforms all bespoke methods we investigated. This last finding suggests that prompt-engineered high-capability models might be the most cost-effective approach to rewriting methods, and also points to the fact that genuinely improving a document's quality might be the most robust method for improving evaluation scores.
+We find that when using small base models for rewriters, rewriting effectiveness is reduced but not eliminated when assessed by held-out judges, and further reduced when assessed using held-out prompts. We also find that documents which are already regarded favourably by LLM judges receive significantly reduced benefits from rewriting, and have a high likelihood of their score being degraded by rewriting. To address this risk, we find that LLMs are sufficiently good predictors of one anothers' ratings, that they can be used to estimate when rewriting is likely to be helpful or harmful. We also find that when model capability is fixed, there is a trade-off between meaning preservation and rewriting effectiveness. Finally, we find that a prompt-engineered frontier model outperforms all bespoke methods we investigated. This last finding suggests that prompt-engineered high-capability models might be the most cost-effective approach to rewriting methods, and also points to the fact that genuinely improving a document's quality might be the most robust method for improving evaluation scores.
 
 \section{Background}
 
@@ -196,6 +199,13 @@ Because rewriter developers typically do not know the combination of prompt and 
 
 \subsection{Experiment overview}
 
+\begin{figure}[h]
+  \centering
+  \resizebox{\linewidth}{!}{\input{study_design.tex}}
+  \caption{Study design.}
+  \label{fig:study-design}
+\end{figure}
+
 Our experiment is structured in the following manner. Overall, we evaluated a variety of rewriting methods against a variety of LLM judges. We used a corpus of human-written responses to political propositions. We rewrote these documents using 3 different rewriting methods. Some `judge-in-the-loop' rewriting methods used feedback from judges reserved for training (`training judge panel'). Others (`judge-free') did not. We used 3 different LLMs as the base for rewriter models, and 3 different LLMs were in the training judge panel.
 
 Two different attributes (clarity and informativeness) were set as the evaluation targets for LLM judges. Across different combinations of rewriting methods, training judges, and target criteria, we generated $84{,}966$ rewrites.
@@ -207,9 +217,9 @@ We evaluate these rewrites in two ways. Firstly, we used a hold-out set of 6 eva
 We use a filtered corpus of documents from \citet{rottgerQuantifyingDistortiveImpacts2025} for our experiments. The full corpus consists of 10008 documents written in response to 100 UK-related political propositions, such as ``The UK should increase taxes on sugary drinks." Half the documents were written by humans selected from a Prolific UK representative sample, and half were written by LLMs. We selected human-written responses to the 40 most controversial topics, yielding 1805 documents. We split these 60/40 into a training dataset ($n=1091$) and an evaluation dataset ($n=714$) using a stratified sampling strategy to ensure balance across propositions (see \appref{app:corpus} for details). All evaluation metrics were calculated using the evaluation dataset.
 
 \subsection{Measuring rewriting effectiveness}
-Evaluating the effectiveness of a rewriter $R$ requires approximating $\mathbb{E}_\mu[J(R(x))]$. We did this by calculating the average judge score across an evaluation suite of LLM judges. 
+Evaluating the effectiveness of a rewriter $R$ requires approximating $\mathbb{E}_\mu[J(R(x))]$. We did this by calculating the average judge score across an evaluation panel of LLM judges. 
 
-Three factors determined which judges to include in our evaluation suite. Firstly, if a judge was used as a reward signal when training $R$, that they should not be included in the evaluation suite. This was to prevent the evaluation from rewarding a rewriting method which over-fit to the judge(s) used in training. Secondly, we used a diverse range of judges, including 3 judges with similar parameter sizes to those used for feedback, but also including 3 judges with much higher parameter count. Finally, we are constrained by cost and time, and we choose models that could either be run using less than 20GB of VRAM or were cost-effective on OpenRouter. The resulting evaluation panel is summarised in \cref{tab:eval-judges}.
+Three factors determined which judges to include in our evaluation panel. Firstly, if a judge was used as a reward signal when training $R$, that they should not be included in the evaluation panel. This was to prevent the evaluation from rewarding a rewriting method which over-fit to the judge(s) used in training. Secondly, we used a diverse range of judges, including 3 judges with similar parameter sizes to those used for feedback, but also including 3 judges with much higher parameter count. Finally, we are constrained by cost and time, and we choose models that could either be run using less than 20GB of VRAM or were cost-effective on OpenRouter. The resulting evaluation panel is summarised in \cref{tab:eval-judges}.
 
 \input{tables/eval_judge_panel.tex}
 
@@ -221,13 +231,13 @@ To evaluate rewriter effectiveness, we used two metrics: the average change in j
 
 Similar to the measurement of rewriting effectiveness, the choice of semantic similarity function $S$ depends on the application context. We developed one method which is application-specific, and another which can be applied more generally.
 
-Firstly, we estimated the extent to which rewritten document expressed the same stance towards the proposition that the original document was written in response to. Recall that our dataset consists of political propositions and documents written in response to them. These documents had been annotated with a rating from 0-100 (`agreement\_score') indicating the extent to which the document disagreed (0) or agreed (100) with the proposition. We trained a model which takes in an input tuple of $(\text{proposition}, \text{document})$ and returns an estimated agreement\_score. 
+\paragraph{Stance preservation} Firstly, we estimated the extent to which rewritten document expressed the same stance towards the proposition that the original document was written in response to. Recall that our dataset consists of political propositions and documents written in response to them. These documents had been annotated with a rating from 0-100 (`agreement\_score') indicating the extent to which the document disagreed (0) or agreed (100) with the proposition. We trained a model which takes in an input tuple of $(\text{proposition}, \text{document})$ and returns an estimated agreement\_score. 
 
 This model is robust: when evaluated on documents responding to propositions entirely excluded from training, it had a mean absolute error (MAE) of 7.1, and the 95th percentile of its absolute error (p95AE) was 19.8. Finally, when it was retrained on only human-written documents and evaluated only on AI-written documents, MAE and p95AE increased only slightly to 8.0 and 22.1. 
 
 We used this model to estimate agreement\_score for all original and rewritten documents. These estimated agreement\_scores were then used to calculate several metrics. Our primary metric is stance-preservation, which is calculated in the following way. A document with agreement\_score higher than 75 has had its stance preserved if the rewritten version has agreement\_score higher than 50; similarly a document with agreement\_score lower than 25 has had its stance preserved if the rewritten document has agreement\_score lower than 50. Documents with original stance between 25 and 75 are excluded from the calculation. Stance-preservation rate is the percentage of documents whose stance was preserved. Intuitively, stance-preservation rate answers the following question: for someone with a strong opinion, did their original stance survive the rewrite?
 
-The agreement\_score model is interpretable and relevant to our specific problem setting, but not generally applicable. We also used scores from a natural language inference (NLI) model to measure semantic similarity \citep{bowmanLargeAnnotatedCorpus2015}. A NLI model $NLI : D \times D$ takes an ordered tuple of documents $(x, y)$ as input and returns a score $NLI(x,y) \in [0,1]$ which measures whether the contents of $x$ `entails' the contents of $y$. NLI models are effective at preserving the meaning of documents in paragraphing or rewriting tasks \citep{babakovLargescaleComputationalStudy2022}. We adopt the Mutual Implication Score (MIS) from \citep{babakovLargescaleComputationalStudy2022} as a measure of semantic similarity which is a general alternative to the agreement\_score. It averages forward and backward entailment between the original and re-written documents,
+\paragraph{Natural language inference} The agreement\_score model is interpretable and relevant to our specific problem setting, but not generally applicable. We also used scores from a natural language inference (NLI) model to measure semantic similarity \citep{bowmanLargeAnnotatedCorpus2015}. A NLI model $NLI : D \times D$ takes an ordered tuple of documents $(x, y)$ as input and returns a score $NLI(x,y) \in [0,1]$ which measures whether the contents of $x$ `entails' the contents of $y$. NLI models are effective at preserving the meaning of documents in paragraphing or rewriting tasks \citep{babakovLargescaleComputationalStudy2022}. We adopt the Mutual Implication Score (MIS) from \citep{babakovLargescaleComputationalStudy2022} as a measure of semantic similarity which is a general alternative to the agreement\_score. It averages forward and backward entailment between the original and re-written documents,
 \begin{equation}
   \text{MIS}(x,R(x)) = \frac{1}{2} (NLI(x,R(x)) + NLI(R(x),x)).
 \end{equation}
@@ -269,6 +279,8 @@ For judge-in-the-loop rewriting methods (BoN and RL), we tested all combinations
 \subsection{Rewriting effectiveness on held-out judges and held-out prompts}\label{sec:transfer-gap}
 
 \Cref{fig:transfer-gap} measures two different kinds of generalisation error for rewriting methods. The left panel measures degradation in effectiveness due to the judge LLM varying from the feedback LLM. The right panel compares effectiveness on out-of-sample LLM judges scoring the matched criterion against the same judges scoring the criterion that was \emph{not} the rewriter's training target.
+
+All judge-in-the-loop rewriters were scored using all three 
 
 \begin{figure}[h]
   \centering
@@ -318,6 +330,27 @@ after defining some suitability probability distribution over possible input doc
 There is a notable asymmetry between the goals of the attacker and defender. The attacker wants high scores from the LLM judge; the defender wants accurate scores. If the rewriter $R$ increases document quality, and the LLM-as-a-judge $J$ maintains its accuracy on rewritten documents, then both attacker and defender achieve their goals. Such a situation is beneficial to the `attacker' without posing harms to the `defender'.
 
 - harmfulness vs efficacy (does just improving material the best way?) - similar to debates about SEO. in particular, if 
+
+
+Our main findings are as follows. All methods degraded in effectiveness when evaluated in contexts differing from their training. Improvements from rewriting are concentrated in documents which were already low-scoring, and rewriting an already-highly-scored documents risks degrading its score. However, non-evaluator LLMs can be used to estimate whether rewriting is likely to be beneficial. There is also a clear tradeoff between meaning preservation and rewriting effectiveness. Finally, Opus 4.7 outperforms all models and rewriting methods in terms of preserving meaning and boosting scores.
+
+It is not surprising that rewritten content degraded in score when evaluated using different models and prompts than that used to optimise them. However, it is important. It is difficult to think of circumstances in which a rewriter has access to the judge model. For a rewriting method to be impactful in any way (whether positive or negative), it must be effective in such uncertain circumstances. One obvious way for a prospective rewriter to circumvent this obstacle is to gain information about the judge or prompt used. The implications for designers of LLM evaluation systems is that revealing information about the prompt or LLM judge opens them up to more effective exploitation.
+
+Our findings raise questions about the extent to which rewriting methods are effective simply because they either a) produce LLM-written content, or b) produce high-quality content. It is surprising that naive rewriting resulted in a boost of \textasciitilde 13-16 points on average for rewrites that were often barely coherent (see \appref{app:nli-examples} for examples). There is substantial evidence that when LLMs are used as judges, they prefer LLM-generated content, regardless of its quality \citep{wataokaSelfPreferenceBiasLLMasaJudge2025, chenSurfaceMeasuringSelfPreference2025, panicksseryLLMEvaluatorsRecognize2024a}. It is likely that at least some of the score improvements are driven by this factor.
+
+Similarly, the high performance of Opus 4.7 as a rewriter might be due to genuinely increasing document quality. We used the term `rewriting method' throughout this paper, rather than `rewriting \textit{attack}', because it is possible for a rewriter to boost the score of a document without compromising the integrity of the LLM's judgements, by only increasing the quality of its judgements. This draws an interesting parallel to search engine optimisation. Google has long insisted that the most robust 
+
+
+
+This draws an interesting parallel to search engine optimisation relates to age-old 
+
+Given that high-capability models tend to be effective at a wide range of tasks
+
+is it quality (link to SEO)? is it AI?
+
+needs to 
+
+This points to two potential 
 
 
 

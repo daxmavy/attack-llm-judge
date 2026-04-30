@@ -1,0 +1,7 @@
+We discuss ensemble not working
+
+The findings related to generalisation are not surprising, but they have important implications. Firstly, it suggests that 
+
+The prompt-engineering Opus 4.7 rewriter clearly outperformed all other rewriter methods tested. In particular, it reliably improved documents even when they were already high-scoring (\cref{fig:SOMETHING}), and boosted effectiveness while also 
+
+
