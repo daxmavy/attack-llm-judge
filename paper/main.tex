@@ -194,13 +194,13 @@ Note that the inclusion of the semantic similarity constraint $S(x,R(x)) > \epsi
 
 \section{Methods}
 
-\subsection{Experimental overview}
+\subsection{Experiment overview}
 
-Our experiment is structured in the following manner. Overall, we evaluated a variety of rewriting methods against a variety of LLM judges. We used a corpus of human-written responses to political propositions. We rewrote these documents using 3 different rewriting methods. Some `judge-in-the-loop' rewriting methods used feedback from judges reserved for training (`training judge panel'). Others (`judge-free') did not. We used 3 different LLMs as the base for rewriter models, and 3 different LLMs were in the training judge panel.
+Our experiment is structured in the following manner. Overall, we evaluated a variety of rewriting methods against a variety of LLM judges. We used a corpus of human-written responses to political propositions. We rewrote these documents using 9 rewriting methods. Some (`judge-in-the-loop') rewriting methods used feedback from judges reserved for training (`training judge panel'); others (`judge-free') did not. We used 3 different small open-weight LLMs as the base for rewriter models, plus a frontier model (Claude Opus 4.7) for a single prompt-only baseline; 3 different LLMs were in the training judge panel. The judge-in-the-loop methods (Best-of-$N$ and GRPO) include ablation variants in which (i) NLI is incorporated into the feedback signal, and (ii) only one feedback judge is used in place of the full training panel.
 
-Two different attributes (clarity and informativeness) were set as the evaluation targets for LLM judges. Across different combinations of rewriting methods, training judges, and target criteria, we generated X rewrites.
+Two different attributes (clarity and informativeness) were set as the evaluation targets for LLM judges. Across the 9 methods, the 3-fold splits used by the judge-in-the-loop methods, the 3 small-rewriter base models (and 1 Opus rewriter for a single method), and the 2 target criteria, we generated $84{,}966$ rewrites.
 
-We evaluate these rewrites in two ways. Firstly, we used a hold-out set of 6 evaluation judges (`evaluation judge panel') to score all rewrites on both criteria. Together with the 3 judges in the training-judge panel, this resulted in Y scorings. Secondly, we developed two methods for estimating semantic similarity and investigated whether rewritten content deviated from the original in meaning.
+We evaluate these rewrites in two ways. Firstly, we used a hold-out set of 6 evaluation judges (`evaluation judge panel') to score all rewrites on both criteria. Together with the 3 judges in the training-judge panel, this resulted in $1{,}280{,}908$ rewrite-level LLM-judge scorings. Secondly, we developed two methods for estimating semantic similarity and investigated whether rewritten content deviated from the original in meaning.
 
 \subsection{Data}
 

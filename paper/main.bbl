@@ -682,39 +682,6 @@
       \endverb
       \keyw{Computer Sciences,FOS: Political science,FOS: Psychology,Physical Sciences and Mathematics,Political Science,Psychology,Social and Behavioral Sciences}
     \endentry
-    \entry{aaIntelligenceIndex}{misc}{}{}
-      \name{author}{1}{}{%
-        {{hash=60a0f8adc747278c54843aa94bef2613}{%
-           family={{Artificial Analysis}},
-           familyi={A\bibinitperiod}}}%
-      }
-      \strng{namehash}{60a0f8adc747278c54843aa94bef2613}
-      \strng{fullhash}{60a0f8adc747278c54843aa94bef2613}
-      \strng{fullhashraw}{60a0f8adc747278c54843aa94bef2613}
-      \strng{bibnamehash}{60a0f8adc747278c54843aa94bef2613}
-      \strng{authorbibnamehash}{60a0f8adc747278c54843aa94bef2613}
-      \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
-      \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
-      \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
-      \field{extraname}{1}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{howpublished}{Artificial Analysis}
-      \field{title}{Artificial Analysis Intelligence Index}
-      \field{urlday}{29}
-      \field{urlmonth}{4}
-      \field{urlyear}{2026}
-      \field{year}{2026}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index
-      \endverb
-      \verb{url}
-      \verb https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index
-      \endverb
-    \endentry
     \entry{mistralaiMistral7BInstructV03}{misc}{}{}
       \name{author}{1}{}{%
         {{hash=5f46782611de55f109003b4dac1b83e0}{%
@@ -762,7 +729,7 @@
       \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
       \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
       \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
-      \field{extraname}{2}
+      \field{extraname}{1}
       \field{sortinit}{1}
       \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
@@ -828,7 +795,7 @@
       \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
       \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
       \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
-      \field{extraname}{3}
+      \field{extraname}{2}
       \field{sortinit}{2}
       \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
@@ -929,7 +896,7 @@
       \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
       \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
       \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
-      \field{extraname}{4}
+      \field{extraname}{3}
       \field{sortinit}{2}
       \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
@@ -996,7 +963,7 @@
       \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
       \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
       \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
-      \field{extraname}{5}
+      \field{extraname}{4}
       \field{sortinit}{2}
       \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
@@ -1062,7 +1029,7 @@
       \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
       \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
       \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
-      \field{extraname}{6}
+      \field{extraname}{5}
       \field{sortinit}{2}
       \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
@@ -1547,7 +1514,7 @@
       \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
       \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
       \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
-      \field{extraname}{7}
+      \field{extraname}{6}
       \field{sortinit}{3}
       \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
@@ -1614,9 +1581,9 @@
       \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
       \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
       \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
-      \field{extraname}{8}
-      \field{sortinit}{4}
-      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{extraname}{7}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{howpublished}{Artificial Analysis}
@@ -1648,8 +1615,8 @@
       \strng{authorfullhash}{4622c4bb7444dadba22813c2addff5e7}
       \strng{authorfullhashraw}{4622c4bb7444dadba22813c2addff5e7}
       \field{extraname}{3}
-      \field{sortinit}{4}
-      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{howpublished}{Hugging Face}
@@ -1681,7 +1648,7 @@
       \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
       \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
       \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
-      \field{extraname}{9}
+      \field{extraname}{8}
       \field{sortinit}{4}
       \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
       \field{labelnamesource}{author}
@@ -1747,7 +1714,7 @@
       \strng{authornamehash}{60a0f8adc747278c54843aa94bef2613}
       \strng{authorfullhash}{60a0f8adc747278c54843aa94bef2613}
       \strng{authorfullhashraw}{60a0f8adc747278c54843aa94bef2613}
-      \field{extraname}{10}
+      \field{extraname}{9}
       \field{sortinit}{4}
       \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
       \field{labelnamesource}{author}
