@@ -228,6 +228,17 @@ For each (source paragraph $\times$ rewriter $\times$ criterion) cell of $K=16$ 
 
 \backlink{app:bon-returns}
 
+\subsection{BoN feedback ensemble size}\label{app:bon-ensemble-size}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{bon_judges_comparison.png}
+  \caption{Paired improvement in evaluation-judge score (rewrite minus matched-source-paragraph original) for BoN selection on the \texttt{bon\_candidate} pool, as a function of the size of the feedback judge ensemble used to select the rewrite (1, 2 or 3 of \texttt{qwen95b}, \texttt{llama8b}, \texttt{gemma9b}). Pooled across the three small rewriters (Qwen2.5-1.5B, LFM2.5-1.2B, Gemma-3-1B), the three folds and the six evaluation judges (Mistral-7B-v0.3, Phi-3.5-mini, Command-R 7B, Qwen3.5-35B-A3B, Gemini 2.5 Flash-Lite, MiMo-V2-Flash); $n \approx 38{,}555$ (paragraph $\times$ judge) cells per bar. Error bars are 95\% confidence intervals.}
+  \label{fig:bon-ensemble-size}
+\end{figure}
+
+\backlink{app:bon-ensemble-size}
+
 \subsection{Stance-preservation rate vs paraphrase-similarity metrics}\label{app:preservation-similarity}
 
 \Cref{fig:preservation-vs-similarity} shows the relationship between two paraphrase-similarity metrics (mean bidirectional NLI; e5-large-v2 cosine similarity) and the stance-preservation rate, on the subset of in-scope rewrites whose source paragraph has a strictly extreme v2 agreement score ($> 75$ or $< 25$). A rewrite is considered to \emph{preserve stance} if its v2 agreement score stays on the same side of 50 as the original (high-agreement original $\Rightarrow$ rewrite $\geq 50$; low-agreement original $\Rightarrow$ rewrite $< 50$). Each top panel pairs with a histogram showing the distribution of the metric on the same rewrites; histograms share their y-axis, and the two stance-preservation-rate panels share theirs.
