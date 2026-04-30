@@ -20,11 +20,14 @@ os.makedirs(OUT, exist_ok=True)
 
 NON_OPUS_METHODS = [
     "naive", "lit_informed_tight",
-    "bon_panel", "bon_panel_nli", "bon_panel_single_nli",
-    "grpo_400step", "grpo_nli_400step", "grpo_nli_single",
+    "bon_panel", "bon_panel_nli",
+    "grpo_400step", "grpo_nli_400step",
 ]
 OPUS_METHOD = "lit_informed_tight_strictlen_opus47"
 ALL_METHODS = NON_OPUS_METHODS + [OPUS_METHOD]
+# All methods reported in the paper (includes single-judge ablations) — used
+# only for X/Y count totals, not for plot.
+PAPER_METHODS_ALL = ALL_METHODS + ["bon_panel_single_nli", "grpo_nli_single"]
 
 REWRITERS_NON_OPUS = [
     "LiquidAI/LFM2.5-1.2B-Instruct",
@@ -46,12 +49,10 @@ PAPER_JUDGES = TRAINING_JUDGES + OOS_JUDGES
 METHOD_LABEL = {
     "naive": "Naïve",
     "lit_informed_tight": "Lit-informed",
-    "bon_panel": "BoN",
-    "bon_panel_nli": "BoN-NLI",
-    "bon_panel_single_nli": "BoN-NLI (single)",
-    "grpo_400step": "GRPO",
-    "grpo_nli_400step": "GRPO-NLI",
-    "grpo_nli_single": "GRPO-NLI (single)",
+    "bon_panel": "BoN (ensemble)",
+    "bon_panel_nli": "BoN-NLI (ensemble)",
+    "grpo_400step": "GRPO (ensemble)",
+    "grpo_nli_400step": "GRPO-NLI (ensemble)",
     OPUS_METHOD: "Lit-informed (Opus)",
 }
 OKABE = {
@@ -64,10 +65,8 @@ METHOD_COLOR = {
     "lit_informed_tight": OKABE["vermilion"],
     "bon_panel": OKABE["green"],
     "bon_panel_nli": OKABE["orange"],
-    "bon_panel_single_nli": OKABE["pink"],
     "grpo_400step": OKABE["sky_blue"],
     "grpo_nli_400step": OKABE["yellow"],
-    "grpo_nli_single": OKABE["black"],
     OPUS_METHOD: "#7B0099",
 }
 
@@ -75,19 +74,20 @@ METHOD_COLOR = {
 def main():
     con = sqlite3.connect(DB)
 
-    # --- in-paper rewrites ---
-    rewrites = pd.read_sql_query(
+    # --- ALL paper rewrites (including ablations) for X/Y counts ---
+    rewrites_all = pd.read_sql_query(
         "SELECT rewrite_id, source_doc_id, method, fold, rewriter_model, criterion "
         "FROM attack_rewrites "
-        "WHERE method IN (" + ",".join(f"'{m}'" for m in ALL_METHODS) + ") "
+        "WHERE method IN (" + ",".join(f"'{m}'" for m in PAPER_METHODS_ALL) + ") "
         "  AND rewriter_model IN (" + ",".join(f"'{r}'" for r in ALL_REWRITERS) + ")",
         con,
     )
-    X = len(rewrites)
-    print(f"X (rewrites in paper) = {X:,}")
-    print(rewrites.groupby("method").size().sort_values(ascending=False).to_string())
-
-    rid_set = set(rewrites["rewrite_id"])
+    X = len(rewrites_all)
+    print(f"X (paper rewrites incl. ablations) = {X:,}")
+    print("\n--- X by method ---")
+    print(rewrites_all.groupby("method").size().sort_values(ascending=False).to_string())
+    print("\n--- X by base rewriter ---")
+    print(rewrites_all.groupby("rewriter_model").size().sort_values(ascending=False).to_string())
 
     # --- judge scores: rewrites and originals share the attack_judge_scores table ---
     js = pd.read_sql_query(
@@ -96,9 +96,19 @@ def main():
         "WHERE judge_slug IN (" + ",".join(f"'{j}'" for j in PAPER_JUDGES) + ")",
         con,
     )
-    rs_scores = js[js["rewrite_id"].isin(rid_set)]
-    Y = len(rs_scores)
-    print(f"Y (rewrite scorings on paper rewrites, training+OOS judges) = {Y:,}")
+    rs_scores_all = js[js["rewrite_id"].isin(set(rewrites_all["rewrite_id"]))]
+    Y = len(rs_scores_all)
+    print(f"\nY (paper rewrite-level scorings incl. ablations) = {Y:,}")
+    print("\n--- Y by method ---")
+    yb = rs_scores_all.merge(rewrites_all[["rewrite_id", "method", "rewriter_model"]], on="rewrite_id")
+    print(yb.groupby("method").size().sort_values(ascending=False).to_string())
+    print("\n--- Y by base rewriter ---")
+    print(yb.groupby("rewriter_model").size().sort_values(ascending=False).to_string())
+
+    # --- Subset to ALL_METHODS (no singles) for the plot ---
+    rewrites = rewrites_all[rewrites_all["method"].isin(ALL_METHODS)].copy()
+    rid_set = set(rewrites["rewrite_id"])
+    rs_scores = rs_scores_all[rs_scores_all["rewrite_id"].isin(rid_set)]
 
     # --- reference distribution per (judge, criterion): both human + AI originals ---
     # Build (rewrite_id -> source_doc_id) map for method in {'original','original_ai'}
@@ -262,11 +272,18 @@ def main():
             label=METHOD_LABEL[m],
         )
         handles_for_legend.append(sc)
+        # Per-method label placement overrides
+        if m == "naive":
+            offset, ha = (0, -12), "center"
+        elif m == OPUS_METHOD:
+            offset, ha = (-8, -12), "right"
+        else:
+            offset, ha = (5, 5), "left"
         ax.annotate(
             METHOD_LABEL[m],
             xy=(r["preservation"], r["uplift"]),
-            xytext=(5, 5), textcoords="offset points",
-            fontsize=8, color="#333",
+            xytext=offset, textcoords="offset points",
+            fontsize=8, color="#333", ha=ha,
         )
 
     ax.set_xlabel("Stance preservation rate")
