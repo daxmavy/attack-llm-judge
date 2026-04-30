@@ -1,14 +1,14 @@
 \begin{table}[h]
   \centering\footnotesize
-  \caption{Feedback judges used in BoN candidate selection and as the reward signal during GRPO training. AAII = Artificial Analysis Intelligence Index v4.0 \citep{aaIntelligenceIndex}. Parameter counts are listed alongside the model name. All three judges were served in bf16. Qwen-3.5-9B's AAII (32) is reported by Artificial Analysis only for the reasoning-mode variant; we ran the model with reasoning disabled.}
+  \caption{Feedback judges used in BoN candidate selection and as the reward signal during GRPO training. AAII = Artificial Analysis Intelligence Index v4.0 \citep{aaIntelligenceIndex}. All three judges were served in bf16. Qwen-3.5-9B's AAII (32) is reported by Artificial Analysis only for the reasoning-mode variant; we ran the model with reasoning disabled.}
   \label{tab:feedback-judges}
-  \begin{tabular}{lrl}
+  \begin{tabular}{llrl}
     \toprule
-    Judge & AAII & Released \\
+    Judge & Parameters & AAII & Released \\
     \midrule
-    Qwen-3.5-9B (9\,B) \citep{qwenQwen359BCard}                    & 32\textsuperscript{\dag} \citep{aaQwen359B} & Feb 2026 \\
-    Llama-3.1-8B-Instruct (8\,B) \citep{metaLlama318BInstructCard} & 12 \citep{aaLlama318B}                      & Jul 2024 \\
-    Gemma-2-9B-it (9\,B) \citep{googleGemma29BItCard}              & ---                                         & Jun 2024 \\
+    Qwen-3.5-9B \citep{qwenQwen359BCard}                    & 9\,B (dense) & 32\textsuperscript{\dag} \citep{aaQwen359B} & Feb 2026 \\
+    Llama-3.1-8B-Instruct \citep{metaLlama318BInstructCard} & 8\,B (dense) & 12 \citep{aaLlama318B}                      & Jul 2024 \\
+    Gemma-2-9B-it \citep{googleGemma29BItCard}              & 9\,B (dense) & ---                                         & Jun 2024 \\
     \bottomrule
   \end{tabular}
 

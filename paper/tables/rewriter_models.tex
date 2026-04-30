@@ -1,14 +1,14 @@
 \begin{table}[h]
   \centering\footnotesize
-  \caption{Base rewriter models. AAII = Artificial Analysis Intelligence Index v4.0 (composite cross-benchmark rank \citep{aaIntelligenceIndex}). All three rewriters were paired with the same feedback judge panel (Qwen-3.5-9B / Llama-3.1-8B / Gemma-2-9B; \cref{tab:feedback-judges}) during BoN selection and GRPO training. Parameter counts are listed alongside the model name.}
+  \caption{Base rewriter models. AAII = Artificial Analysis Intelligence Index v4.0 (composite cross-benchmark rank \citep{aaIntelligenceIndex}). All three rewriters were paired with the same feedback judge panel (Qwen-3.5-9B / Llama-3.1-8B / Gemma-2-9B; \cref{tab:feedback-judges}) during BoN selection and GRPO training.}
   \label{tab:rewriters}
-  \begin{tabular}{lrl}
+  \begin{tabular}{llrl}
     \toprule
-    Rewriter & AAII & Released \\
+    Rewriter & Parameters & AAII & Released \\
     \midrule
-    Qwen2.5-1.5B-Instruct (1.5\,B) \citep{qwenQwen2515BInstructCard}   & ---                          & Sep 2024 \\
-    LFM2.5-1.2B-Instruct (1.2\,B) \citep{liquidaiLfm2512BInstructCard} & 8 \citep{aaLfm2512BInstruct} & Jan 2026 \\
-    Gemma-3-1B-it (1\,B) \citep{googleGemma31BItCard}                  & 6 \citep{aaGemma31B}         & Mar 2025 \\
+    Qwen2.5-1.5B-Instruct \citep{qwenQwen2515BInstructCard}   & 1.5\,B (dense) & ---                          & Sep 2024 \\
+    LFM2.5-1.2B-Instruct \citep{liquidaiLfm2512BInstructCard} & 1.2\,B (dense) & 8 \citep{aaLfm2512BInstruct} & Jan 2026 \\
+    Gemma-3-1B-it \citep{googleGemma31BItCard}                & 1\,B (dense)   & 6 \citep{aaGemma31B}         & Mar 2025 \\
     \bottomrule
   \end{tabular}
 \end{table}
