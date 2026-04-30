@@ -1,0 +1,22 @@
+# Introduction — draft
+
+## Title
+- Generalisation and meaning preservation in rewriting attacks on LLM Judges
+
+
+## Draft
+
+Large language models (LLMs) are increasingly used to make quality judgements about documents and websites \citep{zhengJudgingLLMasaJudgeMTBench2023, liuGEvalNLGEvaluation2023}. They are integrated into systems which screen resumes and rank search results \citep{sunChatGPTGoodSearch2023}. Consumers using chatbots to learn about topical issues rely on an LLM to filter hundreds of websites on their behalf \citep{chatterjiHowPeopleUse2025}. In each case, an LLM acts as a gate between content and audience, giving creators of resumes, websites, and political material an incentive to optimise for that gate. This has given rise both to startups promising to improve the visibility of their clients' content in LLM responses via `answer engine optimisation' \citep{coffeeBillionDollarQuestionHangs2025}, and to research investigating the extent to which LLM evaluators can be gamed \citep{zhengCheatingAutomaticLLM2024b}.
+
+We study rewriting attacks, by which we mean any rewrite produced with the goal of raising an LLM judge's score on a document while preserving the document's meaning. The meaning-preservation requirement distinguishes rewriting attacks from prompt-injection attacks, in which the attacker does not care about preserving the meaning of their content and may insert strings that instruct the judge to ignore the document and assign a maximum score \citep{liLLMsCannotReliably2025, zhengCheatingAutomaticLLM2024b}. This requirement applies when humans also read the document, or when the attacker still needs it to serve its original purpose. This includes settings such as conference papers reviewed first by an LLM and then by human peers, and political material ranked by a recommender but read by humans.
+
+A useful evaluation of rewriting attacks should meet three standards: (1) score rewrites with a judge the attacker did not see during optimisation; (2) verify that the rewrite preserved the original meaning; and (3) compare the proposed method against trivial baselines rather than reporting raw gains in isolation. Existing studies of rewriting attacks do not jointly satisfy these standards. \citet{kanekoParaphrasingAdversarialAttack2026} report a held-out-judge gain but never benchmark against a trivial single-prompt rewrite. \citet{wuWhatGenerativeSearch2025} attack a generative search engine, not a quality judge, and use a meaning-preservation reward without validating it externally. \citet{panSpontaneousRewardHacking2024} demonstrate the online-vs-held-out gap on a single attack method (iterative self-refinement) in a single domain (essay editing), leaving open whether the gap generalises across rewriting methods, judges, and content types.
+
+We frame the rewriting problem as optimisation under uncertainty over which judge will score the rewrite, and operationalise this framing for UK political opinion writing. Our evaluation spans 4 rewriting methods, 4 rewriter base models, 6 feedback judges, and 6 disjoint held-out judges over 40 controversial propositions. Beyond aggregate uplift, we also ask a question prior work has not: whether an attack's score gain is uniform across documents or concentrated in a low-quality subset. Three questions organise the empirical work:
+
+1. Generalisation. How much of an attack's score gain survives when the rewrite is judged by held-out judges and held-out prompts?
+2. Meaning preservation. What is the trade-off between raising an LLM judge's score and preserving the original document's meaning?
+3. Heterogeneity. Do rewriting methods uplift all documents, or are gains concentrated on low-quality ones?
+
+Our headline result is that one-shot prompting a frontier model out-performs every method we trained or ran with judge-in-the-loop search. For most methods, score gains largely survive on held-out judges. At fixed rewriter capability, however, there is a clear trade-off between score and meaning preservation. Score gains are also unevenly distributed across documents: <DESCRIBE PATTERN --- e.g., low-quality documents account for ~X\% of total uplift while already-strong documents gain only ~Y\%>. A naive single-prompt rewrite recovers <SOME>\% of the score uplift of the most elaborate method we tested. Taken together, these findings challenge the value of developing bespoke methods for optimising documents for LLM scoring.
+
