@@ -215,49 +215,63 @@
       "name": "latexmk",
       "command": "latexmk",
       "args": ["-synctex=1", "-interaction=nonstopmode", "-file-line-error", "-pdf", "-outdir=%OUTDIR%", "%DOC%"],
-      "env": {"PATH": "/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+      "env": {"PATH": "/Library/TeX/texbin:/opt/homebrew/bin:/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
     },
     {
       "name": "lualatexmk",
       "command": "latexmk",
       "args": ["-synctex=1", "-interaction=nonstopmode", "-file-line-error", "-lualatex", "-outdir=%OUTDIR%", "%DOC%"],
-      "env": {"PATH": "/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+      "env": {"PATH": "/Library/TeX/texbin:/opt/homebrew/bin:/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
     },
     {
       "name": "xelatexmk",
       "command": "latexmk",
       "args": ["-synctex=1", "-interaction=nonstopmode", "-file-line-error", "-xelatex", "-outdir=%OUTDIR%", "%DOC%"],
-      "env": {"PATH": "/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+      "env": {"PATH": "/Library/TeX/texbin:/opt/homebrew/bin:/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
     },
     {
       "name": "latexmk_rconly",
       "command": "latexmk",
       "args": ["%DOC%"],
-      "env": {"PATH": "/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+      "env": {"PATH": "/Library/TeX/texbin:/opt/homebrew/bin:/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
     },
     {
       "name": "pdflatex",
       "command": "pdflatex",
       "args": ["-synctex=1", "-interaction=nonstopmode", "-file-line-error", "-output-directory=%OUTDIR%", "%DOC%"],
-      "env": {"PATH": "/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+      "env": {"PATH": "/Library/TeX/texbin:/opt/homebrew/bin:/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
     },
     {
       "name": "bibtex",
       "command": "bibtex",
       "args": ["%DOCFILE%"],
-      "env": {"PATH": "/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+      "env": {"PATH": "/Library/TeX/texbin:/opt/homebrew/bin:/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
     },
     {
       "name": "biber",
       "command": "biber",
-      "args": ["%DOCFILE%"],
-      "env": {"PATH": "/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+      "args": ["--input-directory=%OUTDIR%", "--output-directory=%OUTDIR%", "%DOCFILE%"],
+      "env": {"PATH": "/Library/TeX/texbin:/opt/homebrew/bin:/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
     },
     {
       "name": "makeindex",
       "command": "makeindex",
       "args": ["%DOCFILE%"],
-      "env": {"PATH": "/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+      "env": {"PATH": "/Library/TeX/texbin:/opt/homebrew/bin:/workspace/texlive/bin/x86_64-linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+    }
+  ],
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "pdflatex+biber",
+      "tools": ["pdflatex", "biber", "pdflatex", "pdflatex"]
+    },
+    {
+      "name": "latexmk",
+      "tools": ["latexmk"]
+    },
+    {
+      "name": "pdflatex+bibtex",
+      "tools": ["pdflatex", "bibtex", "pdflatex", "pdflatex"]
     }
   ],
   "editor.wordWrap": "on",

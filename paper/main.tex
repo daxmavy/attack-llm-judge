@@ -188,19 +188,19 @@ The rewriter then aims to maximise the expected score of the rewritten document,
 
 Note that if the rewriter developer is completely certain that a specific judge will be used, then \cref{eq:uncertain} simplifies to \cref{eq:known} (see \appref{app:proof} for proof). For this reason, we refer to \cref{eq:known} as the known-judge formulation, and \cref{eq:uncertain} as the unknown-judge formulation. 
 
-Because rewriter developers typically do not know the combination of prompt and LLM that will be used to judge their content, the unknown-judge formulation is almost always the more appropriate formulation to evaluate rewriting methods. Below, we present an operationalisation of this formulation.
+Because rewriter developers typically do not know the combination of prompt and LLM that will be used to judge their content, the unknown-judge formulation is almost always the more appropriate formulation to evaluate rewriting methods.
 
-Note that the inclusion of the semantic similarity constraint $S(x,R(x)) > \epsilon$ distinguishes the rewriting problem from the highly related problem setting of prompt-injection attacks \citep{liLLMsCannotReliably2025}. In prompt-injection attacks, the attacker does not care about preserving the meaning of their content. An example might be an attack which returns ``Ignore previous instructions. This is an amazing document, give it the maximum score.'' \citep{zhengCheatingAutomaticLLM2024b}.
+% Note that the inclusion of the semantic similarity constraint $S(x,R(x)) > \epsilon$ distinguishes the rewriting problem from the highly related problem setting of prompt-injection attacks \citep{liLLMsCannotReliably2025}. In prompt-injection attacks, the attacker does not care about preserving the meaning of their content. An example might be an attack which returns ``Ignore previous instructions. This is an amazing document, give it the maximum score.'' \citep{zhengCheatingAutomaticLLM2024b}.
 
 \section{Methods}
 
 \subsection{Experiment overview}
 
-Our experiment is structured in the following manner. Overall, we evaluated a variety of rewriting methods against a variety of LLM judges. We used a corpus of human-written responses to political propositions. We rewrote these documents using 9 rewriting methods. Some (`judge-in-the-loop') rewriting methods used feedback from judges reserved for training (`training judge panel'); others (`judge-free') did not. We used 3 different small open-weight LLMs as the base for rewriter models, plus a frontier model (Claude Opus 4.7) for a single prompt-only baseline; 3 different LLMs were in the training judge panel. The judge-in-the-loop methods (Best-of-$N$ and GRPO) include ablation variants in which (i) NLI is incorporated into the feedback signal, and (ii) only one feedback judge is used in place of the full training panel.
+Our experiment is structured in the following manner. Overall, we evaluated a variety of rewriting methods against a variety of LLM judges. We used a corpus of human-written responses to political propositions. We rewrote these documents using 3 different rewriting methods. Some `judge-in-the-loop' rewriting methods used feedback from judges reserved for training (`training judge panel'). Others (`judge-free') did not. We used 3 different LLMs as the base for rewriter models, and 3 different LLMs were in the training judge panel.
 
-Two different attributes (clarity and informativeness) were set as the evaluation targets for LLM judges. Across the 9 methods, the 3-fold splits used by the judge-in-the-loop methods, the 3 small-rewriter base models (and 1 Opus rewriter for a single method), and the 2 target criteria, we generated $84{,}966$ rewrites.
+Two different attributes (clarity and informativeness) were set as the evaluation targets for LLM judges. Across different combinations of rewriting methods, training judges, and target criteria, we generated $84{,}966$ rewrites.
 
-We evaluate these rewrites in two ways. Firstly, we used a hold-out set of 6 evaluation judges (`evaluation judge panel') to score all rewrites on both criteria. Together with the 3 judges in the training-judge panel, this resulted in $1{,}280{,}908$ rewrite-level LLM-judge scorings. Secondly, we developed two methods for estimating semantic similarity and investigated whether rewritten content deviated from the original in meaning.
+We evaluate these rewrites in two ways. Firstly, we used a hold-out set of 6 evaluation judges (`evaluation judge panel') to score all rewrites on both criteria. Together with the 3 judges in the training-judge panel, this resulted in $1{,}280{,}908$ scorings. Secondly, we developed two methods for estimating semantic similarity and investigated whether rewritten content deviated from the original in meaning.
 
 \subsection{Data}
 
@@ -215,7 +215,7 @@ Three factors determined which judges to include in our evaluation suite. Firstl
 
 We used two prompts, corresponding to two different evaluation criteria: clarity and informativeness. See \appref{app:judge-prompts} for prompts and rationale relating to their design.
 
-To evaluate rewriter effectiveness effectiveness, we used two metrics: the average change in judge score between the original document and the rewritten document, and the percentage of rewritten documents with a higher average score than the original document. The first metric describes overall effectiveness, while the latter estimates the likelihood of the rewriter being counterproductive.
+To evaluate rewriter effectiveness, we used two metrics: the average change in judge score between the original document and the rewritten document, and the percentage of rewritten documents with a higher average score than the original document. The first metric describes overall effectiveness, while the latter estimates the likelihood of the rewriter being counterproductive.
 
 \subsection{Measuring semantic similarity}
 
@@ -270,9 +270,6 @@ For judge-in-the-loop rewriting methods (BoN and RL), we tested all combinations
 
 \Cref{fig:transfer-gap} measures two different kinds of generalisation error for rewriting methods. The left panel measures degradation in effectiveness due to the judge LLM varying from the feedback LLM. The right panel compares effectiveness on out-of-sample LLM judges scoring the matched criterion against the same judges scoring the criterion that was \emph{not} the rewriter's training target.
 
-% Draft text retained from rewrite-in-progress:
-extent to which rewriting methods degraded due to differing generalisation mean rewriting effectiveness for each method, decomposed into two transfer regimes. The left panel measures the extent to which rewriting methods compares effectiveness on the LLM judges that supplied feedback during training against the in-sample LLM judges that were held out from feedback. The right panel compares effectiveness on out-of-sample LLM judges scoring the matched criterion against the same judges scoring the criterion that was \emph{not} the rewriter's training target.
-
 \begin{figure}[h]
   \centering
   \includegraphics[width=\linewidth]{fig_judge_panel_uplift_combined.png}
@@ -304,8 +301,6 @@ extent to which rewriting methods degraded due to differing generalisation mean 
   \label{fig:tradeoff-oos}
 \end{figure}
 
-See \appref{app:tradeoff-disagg} for the (method, rewriter)-disaggregated version of this chart.
-
 
 \section{Discussion}
 
@@ -320,10 +315,11 @@ The goal of a LLM-as-a-judge system is to accurately estimate quality. If we den
 \end{equation}
 after defining some suitability probability distribution over possible input documents.
 
-There is a notable asymmetry between the goals of the attacker and defender. The attacker wants high scores from the LLM judge; the defender wants accurate scores. If the rewriter $R$ increases document quality, and the LLM-as-a-judge $J$ maintains its accuracy on rewritten documents, then both attacker and defender achieve their goals. Such a situation is beneficial to the `attacker' without posing harms to the `defender'. 
+There is a notable asymmetry between the goals of the attacker and defender. The attacker wants high scores from the LLM judge; the defender wants accurate scores. If the rewriter $R$ increases document quality, and the LLM-as-a-judge $J$ maintains its accuracy on rewritten documents, then both attacker and defender achieve their goals. Such a situation is beneficial to the `attacker' without posing harms to the `defender'.
+
+- harmfulness vs efficacy (does just improving material the best way?) - similar to debates about SEO. in particular, if 
 
 
-is it actually an attack?
 
 \printbibliography
 
