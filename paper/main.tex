@@ -254,27 +254,45 @@ A feedback function is required for both the BoN and RL rewriter methods. The si
 
 \paragraph{Choice of LLMs for rewriters and feedback judges}
 
-We evaluated rewriting methods across combinations of 4 base models and 6 feedback judge models. We focused on a low-resource training environment (1 A100), investigating 3 very small (RANGE) base models and 3 small (RANGE), but also piloted a higher-resource training environment (2 A100s) with 1 small (RANGE) base model and 3 larger quantised judge models (RANGE). The base rewriters are listed in \cref{tab:rewriters} and the feedback judges in \cref{tab:feedback-judges}.
+We evaluated rewriting methods across combinations of 3 base rewriter models and 3 feedback judge models. All experiments used a single-A100 training environment. The base rewriters are listed in \cref{tab:rewriters} and the feedback judges in \cref{tab:feedback-judges}.
 
 \input{tables/rewriter_models.tex}
 \input{tables/feedback_models.tex}
 
 For judge-in-the-loop rewriting methods (BoN and RL), we tested all combinations of rewriters and feedback models. For example, for the single <NAME> was trained separately with <>, <>, and <>
 
-% We also investigated a higher-resource training environment with 2 A100s running concurrently. This enabled running inference 2 judge models on a single GPU, while training a single model on another GPU. Due to time constraints, we only tested a single rewriter model.
+
 
 
 \paragraph{Estimating effectiveness using feedback judges} We aimed to investigate whether using the same judges for training and evaluation led to overestimated performance. Thus
 
 \section{Results}
 
-\paragraph{Rewriting effectiveness on held-out judges and held-out prompts}
+\subsection{Rewriting effectiveness on held-out judges and held-out prompts}\label{sec:transfer-gap}
 
-\paragraph{Relationship between original document quality and rewriting effectiveness}
+\Cref{fig:transfer-gap} shows mean rewriting effectiveness for each method, decomposed into two transfer regimes. The left panel compares effectiveness on the LLM judges that supplied feedback during training against the in-sample LLM judges that were held out from feedback. The right panel compares effectiveness on out-of-sample LLM judges scoring the matched criterion against the same judges scoring the criterion that was \emph{not} the rewriter's training target.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{fig_judge_panel_uplift_combined.png}
+  \caption{Rewriting effectiveness on different evaluation judge configurations. \textbf{Left:} feedback judges (used for training) vs.\ held-out in-sample judges. \textbf{Right:} out-of-sample evaluation judges scoring the matched (training-target) criterion vs.\ scoring a different criterion. Y-axes show the mean change in raw judge score (rewrite minus original); error bars are 95\% cluster-robust confidence intervals on \texttt{rewrite\_id}. Both axes share the same range and include zero. The canonical eight non-Opus methods plus the literature-informed Opus rewriter are shown.}
+  \label{fig:transfer-gap}
+\end{figure}
 
 \paragraph{Impact of ensemble feedback on rewriting effectiveness}
 
-\paragraph{Trade-off between semantic fidelity and rewriting effectiveness}
+\subsection{Relationship between original document quality and rewriting effectiveness}\label{sec:quality}
+
+\Cref{fig:quality-oos} shows how rewriting effectiveness varies with the quality of the original document, where quality is summarised by the mean score of the held-out evaluation judge panel on the original. Both panels share the same x-axis. The left panel reports the mean uplift (rewrite minus original); the right panel reports the share of (rewrite, judge) pairs for which the rewrite scored higher than the original.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{fig_quality_main_oos.png}
+  \caption{Rewriting effectiveness as a function of original-document quality, measured by the mean of the held-out LLM evaluation judge panel. \textbf{Left:} mean change in judge score per rewrite, averaged across the panel. \textbf{Right:} share of (rewrite, judge) pairs in which the rewrite is rated above the original. Five-point buckets on the x-axis; error bars are 95\% cluster-robust confidence intervals on \texttt{rewrite\_id}. Across both metrics, every method's effectiveness diminishes as the original document scores higher; the same pattern under the in-panel-LLM and human-labelled scores is reported in \cref{app:quality-three-x-axes}.}
+  \label{fig:quality-oos}
+\end{figure}
+
+\subsection{Trade-off between semantic fidelity and rewriting effectiveness}
 
 
 \section{Discussion}
