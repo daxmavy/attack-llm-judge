@@ -254,6 +254,32 @@ For each (source paragraph $\times$ rewriter $\times$ criterion) cell of $K=16$ 
 
 \backlink{app:preservation-similarity}
 
+\subsection{Original-document quality vs.\ rewriting effectiveness across three score sources}\label{app:quality-three-x-axes}
+
+\Cref{fig:quality-three-x-axes} replicates the average-uplift panel of \cref{fig:quality-oos}, varying the score source used to bucket the original document. The left-most panel uses the held-out LLM evaluation panel (matching \cref{fig:quality-oos}). The middle panel buckets by the in-panel LLM judges (the judges used during training feedback). The right panel buckets by the per-document human-labelled clarity / informativeness score from \citet{rottgerQuantifyingDistortiveImpacts2025}. The y-axis metric (mean rewrite-minus-original judge score, averaged across the held-out evaluation panel) is identical across all three panels: only the bucketing variable changes. Under both LLM-judge bucketings the negative slope is steep; under the human-labelled bucketing the relationship is essentially flat, indicating that the apparent quality-dependence of rewriting effectiveness is a property of LLM-judge score distributions rather than human judgements of document quality.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{fig_quality_three_x_axes.png}
+  \caption{Mean rewriting uplift (held-out-panel-mean change in raw judge score) bucketed by three different scores of the original document. \textbf{Left:} held-out LLM judge panel mean. \textbf{Middle:} in-panel LLM judge mean. \textbf{Right:} human-labelled clarity / informativeness. Five-point buckets on the x-axis; error bars are 95\% cluster-robust confidence intervals on \texttt{rewrite\_id}. The y-axis metric and underlying rewrite set are identical across panels; only the bucketing variable changes.}
+  \label{fig:quality-three-x-axes}
+\end{figure}
+
+\backlink{app:quality-three-x-axes}
+
+\subsection{Trade-off plane disaggregated by rewriter base model}\label{app:tradeoff-disagg}
+
+\Cref{fig:tradeoff-disagg} reproduces the aggregated trade-off chart in \cref{fig:tradeoff-oos}, but with each (method, rewriter base) cell plotted separately. Marker shape encodes the rewriter base model; colour encodes the rewriting method. Errors bars are 95\% confidence intervals on each axis. The Pareto envelope is computed over non-Opus points.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{fig_tradeoff_disagg.png}
+  \caption{Stance preservation vs.\ judge-score uplift, disaggregated by rewriter base model. Each (method, rewriter) cell is a separate mark; marker shapes encode the rewriter base, colours encode the rewriting method. Aggregated across all out-of-sample judges on the matched criterion. Dashed grey line: Pareto envelope across non-Opus points.}
+  \label{fig:tradeoff-disagg}
+\end{figure}
+
+\backlink{app:tradeoff-disagg}
+
 \input{appendix_nli_examples.tex}
 
 \section{Supplementary Materials}\label{app:supplementary}
