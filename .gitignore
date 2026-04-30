@@ -30,7 +30,6 @@ archive/
 
 # paper build artifacts
 paper/out_dir/
-paper/figures/
 paper/*.aux
 paper/*.log
 paper/*.out
